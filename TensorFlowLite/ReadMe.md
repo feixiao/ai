@@ -1,6 +1,7 @@
 ## TensorFlowLite
 
-#### 安装tensorflow
+#### 安装 tensorflow
+
 ```shell
 arch -x86_64 /usr/local/bin/brew install python@3.8
 arch -x86_64 /usr/local/bin/brew link --overwrite python@3.8
