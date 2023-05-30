@@ -21,6 +21,23 @@ python3 tf.py
 ```
 
 ##### Ubuntu
+```shell
+# anaconda
+wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
+bash Anaconda3-2023.03-1-Linux-x86_64.sh
+
+conda create -n "py39" python=3.9
+# 激活子环境
+conda activate "py39"  #  conda deactivate
+
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/msys2/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+
+conda install tensorflow-gpu==2.6.0
+
+conda run tf.py
+```
 
 #### 参考资料
 
