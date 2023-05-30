@@ -7,14 +7,19 @@
 ```shell
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
 bash Miniforge3-MacOSX-arm64.sh
-
+source ~/miniforge3/bin/activate
 source ~/.zshrc
 conda create -n py39 python=3.9
-conda activate py39
+conda activate py39 # conda deactivate
+
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/msys2/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
 
 conda install -c apple tensorflow-deps==2.6.0
 python3 -m pip install tensorflow-macos
-python3 -m pip install tensorflow-metal
+# 下面这个不需要了，2023
+# python3 -m pip install tensorflow-metal
 
 # 测试
 python3 tf.py
