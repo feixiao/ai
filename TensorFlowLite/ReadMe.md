@@ -35,6 +35,8 @@ python3 -m  pip install numpy --upgrade
 wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
 bash Anaconda3-2023.03-1-Linux-x86_64.sh
 
+# 升级
+#conda install conda=23.5.0
 conda create -n "py39" python=3.9
 # 激活子环境
 conda activate "py39"  #  conda deactivate
