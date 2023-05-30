@@ -2,13 +2,26 @@
 
 #### 安装 tensorflow
 
+##### OSX
+
 ```shell
-arch -x86_64 /usr/local/bin/brew install python@3.8
-arch -x86_64 /usr/local/bin/brew link --overwrite python@3.8
+wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
+bash Miniforge3-MacOSX-arm64.sh
 
-echo 'export PATH="/usr/local/opt/python@3.8/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+conda create -n py39 python=3.9
+conda activate py39
 
-python3.8 -m pip install tensorflow
+conda install -c apple tensorflow-deps==2.6.0
+python3 -m pip install tensorflow-macos
+python3 -m pip install tensorflow-metal
+
+# 测试
+python3 tf.py
 ```
 
-#### Colaboratory
+##### Ubuntu
+
+#### 参考资料
+
+- [macOS M1 安装运行 TensorFlow](https://www.pimspeak.com/macos-m1-install-tensorflow-speed-test.html)
