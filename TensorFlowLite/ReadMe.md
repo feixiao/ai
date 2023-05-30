@@ -18,6 +18,15 @@ python3 -m pip install tensorflow-metal
 
 # 测试
 python3 tf.py
+
+# 存在问题： platform is already registered with name: "METAL"
+# 待解决
+
+
+# fixed err
+# module compiled against API version 0x10 but this version of numpy is 0xf
+python3 -m  pip install numpy --upgrade
+
 ```
 
 ##### Ubuntu
