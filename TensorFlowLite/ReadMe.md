@@ -5,16 +5,20 @@
 ##### OSX
 
 ```shell
-wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
-bash Miniforge3-MacOSX-arm64.sh
+# 之前的方案
+# wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
+# bash Miniforge3-MacOSX-arm64.sh
+# rm -rf ~/miniforge3 rm -rf .conda rm -rf .condarc  卸载方案
 
 # 添加到bash_profile
-source ~/miniforge3/bin/activate
-# conda create -n py39 python=3.9
-# conda activate py39 # conda deactivate
+#source ~/miniforge3/bin/activate
 
-conda create -n tf_env python=3.8
-conda activate tf_env
+# 现在有arm版本的anaconda
+wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-MacOSX-arm64.sh
+bash Anaconda3-2023.03-1-MacOSX-arm64.sh
+
+# 添加到环境变量
+export PATH=${PATH}:~/anaconda3/bin
 
 conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
 conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
@@ -28,18 +32,19 @@ conda config --set show_channel_urls yes
 
 conda update --all --yes
 
+
+# conda config --set auto_activate_base false
+# conda create -n py39 python=3.9
+# conda activate py39 # conda deactivate
+
+conda create -n tf_env python=3.8
+conda activate tf_env
+python3  # 验证版本， 类似 Python 3.8.16 | packaged by conda-forge |
+
 conda install tensorflow
 
 # 测试
 python3 tf.py
-
-# 存在问题： platform is already registered with name: "METAL"
-# 待解决
-
-
-# fixed err
-# module compiled against API version 0x10 but this version of numpy is 0xf
-python3 -m  pip install numpy --upgrade
 
 ```
 
@@ -71,9 +76,3 @@ conda install -c conda-forge tensorflow
 
 conda run tf.py
 ```
-
-#### 参考资料
-
-- [《Apple MacBook M1 Anaconda 安装 Tensorflow》](https://zhuanlan.zhihu.com/p/445535362)
-
-* [macOS M1 安装运行 TensorFlow](https://www.pimspeak.com/macos-m1-install-tensorflow-speed-test.html)
