@@ -7,7 +7,7 @@
 这里为您提供一个有关人工智能（AI）和生成式预训练变换器（GPT）入门的书单：
 
 - 《Python 深度学习》（Deep Learning with Python） - François Chollet 非常适合初学者的一本书，介绍了用 Python 编程实现深度学习的基本概念和技术。
-    + [代码](https://github.com/feixiao/deep-learning-with-python-notebooks)
+  - [代码](https://github.com/feixiao/deep-learning-with-python-notebooks)
 
 -《机器学习：一种基于案例的方法》（Machine Learning: A Probabilistic Perspective） - Kevin P. Murphy 本书介绍了概率模型在机器学习中的应用，同时涵盖了生成模型的概念。
 
@@ -25,6 +25,8 @@ AI 领域博客（例如：Distill、Google AI blog、Microsoft Research blog �
 经典教程和公开课：例如吴恩达的机器学习课程，以及 Coursera、edX、Udacity 等平台提供的数据科学和 AI 相关课程。
 
 在学习过程中，不仅要关注理论知识，还要多动手实践和研究各种案例，以便更深入地理解和应用 AI 和 GPT 技术。
+
+####
 
 #### 吴恩达的课程
 

@@ -35,6 +35,7 @@ python3 -m  pip install numpy --upgrade
 ```
 
 ##### Ubuntu
+
 ```shell
 # anaconda
 wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-Linux-x86_64.sh
@@ -46,9 +47,15 @@ conda create -n "py39" python=3.9
 # 激活子环境
 conda activate "py39"  #  conda deactivate
 
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/msys2/
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/pkgs/main/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/pkgs/free/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/conda-forge/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/msys2/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/bioconda/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/menpo/
+conda config --set show_channel_urls yes
 
 conda install tensorflow-gpu==2.6.0
 
