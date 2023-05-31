@@ -5,13 +5,6 @@
 ##### OSX
 
 ```shell
-# 之前的方案
-# wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
-# bash Miniforge3-MacOSX-arm64.sh
-# rm -rf ~/miniforge3 rm -rf .conda rm -rf .condarc  卸载方案
-
-# 添加到bash_profile
-#source ~/miniforge3/bin/activate
 
 # 现在有arm版本的anaconda
 wget https://repo.anaconda.com/archive/Anaconda3-2023.03-1-MacOSX-arm64.sh
