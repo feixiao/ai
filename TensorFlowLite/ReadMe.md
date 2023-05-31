@@ -7,19 +7,28 @@
 ```shell
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-arm64.sh
 bash Miniforge3-MacOSX-arm64.sh
+
+# 添加到bash_profile
 source ~/miniforge3/bin/activate
-source ~/.zshrc
-conda create -n py39 python=3.9
-conda activate py39 # conda deactivate
+# conda create -n py39 python=3.9
+# conda activate py39 # conda deactivate
 
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/msys2/
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
-conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda create -n tf_env python=3.8
+conda activate tf_env
 
-conda install -c apple tensorflow-deps==2.6.0
-python3 -m pip install tensorflow-macos
-# 下面这个不需要了，2023
-# python3 -m pip install tensorflow-metal
+conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda config --add channels http://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/pkgs/main/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/pkgs/free/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/conda-forge/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/msys2/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/bioconda/
+conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/menpo/
+conda config --set show_channel_urls yes
+
+conda update --all --yes
+
+conda install tensorflow
 
 # 测试
 python3 tf.py
@@ -57,12 +66,14 @@ conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/bioconda/
 conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/menpo/
 conda config --set show_channel_urls yes
 
-conda install tensorflow-gpu==2.6.0
-conda install tensorflow
+conda update --all --yes
+conda install -c conda-forge tensorflow
 
 conda run tf.py
 ```
 
 #### 参考资料
 
-- [macOS M1 安装运行 TensorFlow](https://www.pimspeak.com/macos-m1-install-tensorflow-speed-test.html)
+- [《Apple MacBook M1 Anaconda 安装 Tensorflow》](https://zhuanlan.zhihu.com/p/445535362)
+
+* [macOS M1 安装运行 TensorFlow](https://www.pimspeak.com/macos-m1-install-tensorflow-speed-test.html)
