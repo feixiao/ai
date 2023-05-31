@@ -5,6 +5,8 @@
 - [conda 安装参考](./TensorFlowLite/ReadMe.md)
 
 ```shell
+
+conda activate "py39"
 conda install jupyter
 pip install notebook
 nohup jupyter-notebook --no-browser --port=8888 &

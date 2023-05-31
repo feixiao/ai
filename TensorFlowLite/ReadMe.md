@@ -58,6 +58,7 @@ conda config --add channels http://mirrors.ustc.edu.cn/anaconda/cloud/menpo/
 conda config --set show_channel_urls yes
 
 conda install tensorflow-gpu==2.6.0
+conda install tensorflow
 
 conda run tf.py
 ```
