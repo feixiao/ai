@@ -2,6 +2,8 @@
 
 注：我们在 M1 上使用 x86_64 来使用 python3，不然各种问题
 
+- [《AI FOR EVERYONE》](https://www.bilibili.com/video/BV1yC4y127uj/?spm_id_from=333.337.search-card.all.click&vd_source=9c7dc7028bdb3cc4c25b27a6f8568572)
+
 #### 来自 GPT-4 的学习建议
 
 这里为您提供一个有关人工智能（AI）和生成式预训练变换器（GPT）入门的书单：
