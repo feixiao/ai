@@ -26,3 +26,4 @@ print(torch.cuda.is_available())
 
 #### 参考资料
 + [《Accelerated PyTorch training on Mac》](https://developer.apple.com/metal/pytorch/)
++ [《炼丹5至7倍速，使用Mac M1 芯片加速pytorch完全指南》](https://cloud.tencent.com/developer/article/2221944)
