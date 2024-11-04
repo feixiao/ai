@@ -44,6 +44,13 @@ conda activate torch-intel
 pip config set global.index-url https://mirrors.aliyun.com/pypi/simple
 pip install -r requirements.txt
 
+export OCL_ICD_VENDORS=/etc/OpenCL/vendors
+python inference.py --driven_audio examples/driven_audio//chinese_news.wav \
+                    --source_image examples/source_image/art_0.png \
+                    --result_dir examples/test.mp4 \
+                    --still \
+                    --preprocess full \
+                    --enhancer gfpgan 
 ```
 
 
