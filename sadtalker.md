@@ -26,7 +26,7 @@ pip install -r requirements.txt
 
 # 测试内容 SadTalker-0.0.2-rc/examples
 
-export KMP_DUPLICATE_LIB_OK=TRUE
+#export KMP_DUPLICATE_LIB_OK=TRUE
 #export PYTORCH_ENABLE_MPS_FALLBACK=1
 
 python inference.py --driven_audio examples/driven_audio//chinese_news.wav \
