@@ -27,7 +27,7 @@ pip install -r requirements.txt
 # 测试内容 SadTalker-0.0.2-rc/examples
 
 export KMP_DUPLICATE_LIB_OK=TRUE
-export PYTORCH_ENABLE_MPS_FALLBACK=1
+#export PYTORCH_ENABLE_MPS_FALLBACK=1
 
 python inference.py --driven_audio examples/driven_audio//chinese_news.wav \
                     --source_image examples/source_image/art_0.png \
@@ -36,6 +36,16 @@ python inference.py --driven_audio examples/driven_audio//chinese_news.wav \
                     --preprocess full \
                     --enhancer gfpgan 
 ```
+
+##### Intel平台
+```shell
+conda activate torch-intel
+# 清华源没有tb-nightly包
+pip config set global.index-url https://mirrors.aliyun.com/pypi/simple
+pip install -r requirements.txt
+
+```
+
 
 ###### ComfyUI方式
 ```shell
