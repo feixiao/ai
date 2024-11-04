@@ -1,8 +1,8 @@
 #### 下载模型和配置
+https://gitee.com/frank2020/sad-talker 项目地址
+
 ##### 部署
 ```shell
-cd /Users/frank/forbuild/SadTalker
-
 #  conda remove --name sadtalker --all
 conda create -n sadtalker python=3.10
 conda activate sadtalker
@@ -35,6 +35,12 @@ python inference.py --driven_audio examples/driven_audio//chinese_news.wav \
                     --still \
                     --preprocess full \
                     --enhancer gfpgan 
+
+# 方法二 
+# https://docs.coqui.ai/en/latest/installation.html
+pip install tts
+python app_sadtalker.py
+
 ```
 
 ##### Intel平台
@@ -44,6 +50,7 @@ conda activate torch-intel
 pip config set global.index-url https://mirrors.aliyun.com/pypi/simple
 pip install -r requirements.txt
 
+export KMP_DUPLICATE_LIB_OK=TRUE
 export OCL_ICD_VENDORS=/etc/OpenCL/vendors
 python inference.py --driven_audio examples/driven_audio//chinese_news.wav \
                     --source_image examples/source_image/art_0.png \
