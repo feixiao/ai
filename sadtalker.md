@@ -43,6 +43,9 @@ pip install coqui-tts
 export HF_ENDPOINT="https://hf-mirror.com"
 python app_sadtalker.py
 
+# 浏览器访问
+http://127.0.0.1:7860/
+
 ```
 
 ##### Intel平台
