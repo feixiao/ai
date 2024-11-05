@@ -40,6 +40,7 @@ python inference.py --driven_audio examples/driven_audio//chinese_news.wav \
 # https://docs.coqui.ai/en/latest/installation.html
 # pip install tts # 参考https://gitee.com/frank2020/tts 放弃
 pip install coqui-tts
+export HF_ENDPOINT="https://hf-mirror.com"
 python app_sadtalker.py
 
 ```
