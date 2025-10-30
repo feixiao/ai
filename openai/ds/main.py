@@ -1,13 +1,18 @@
 # 安装 OpenAI SDK：pip install openai
 from openai import OpenAI
 
+# 使用 Ollama 本地部署的 deepseek-chat 模型 
 # pip install openai
+# ollama run  deepseek-r1:32b
+
 # 创建 API 客户端
-client = OpenAI(api_key="sk-xxxxxxxxxxxxxxxxxxxx", base_url="https://api.deepseek.com")
+
+dpApiKey="ollama" #随便写的，没有生成apikey
+client = OpenAI(api_key=dpApiKey, base_url="http://localhost:11434/v1")
 
 # 调用 deepseek-chat 模型
 response = client.chat.completions.create(
-    model="deepseek-chat",
+    model="deepseek-r1:32b",
     messages=[
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "什么是CNN神经网络?"},
