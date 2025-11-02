@@ -1,6 +1,6 @@
 from langchain_community.llms import Ollama
-from langchain.prompts import PromptTemplate
-from langchain_community.chains import LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain.chains import LLMChain
 
 # 创建 Ollama LLM 实例
 llm = Ollama(model="deepseek-r1:14b")
