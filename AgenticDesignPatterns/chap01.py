@@ -1,25 +1,36 @@
 
 # 提示链
-
-from openai import OpenAI
+from typing import Optional
 import os
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 # 使用 Ollama 本地部署的 deepseek-chat 模型 
 # pip install langchain langchain-community langchain-openai langgraph
-# ollama run  deepseek-r1:32b
+# ollama run  deepseek-r1:14b
 
+def build_model(provider: str, model_name: Optional[str] = None):
+	provider = provider.lower()
 
-# 为了更好的安全性，从 .env 文件加载环境变量
-# from dotenv import load_dotenv
-# load_dotenv()
-# 请确保在 .env 文件中设置了 OPENAI_API_KEY
+	if provider == "openai":
+		# 延迟导入，避免未安装依赖或本地无用时报错
+		from langchain_openai import ChatOpenAI
 
-# 创建 API 客户端
-dpApiKey="ollama" #随便写的，没有生成apikey
-llm = OpenAI(api_key=dpApiKey, base_url="http://localhost:11434/v1")
+		name = model_name or os.getenv("LLM_MODEL") or "gpt-4o-mini"
+		return ChatOpenAI(model=name)
+
+	if provider == "ollama":
+		# 延迟导入，避免未安装依赖或本地无用时报错
+		from langchain_ollama import ChatOllama
+
+		name = model_name or os.getenv("LLM_MODEL") or "deepseek-r1:14b"
+		return ChatOllama(model=name)
+
+	raise ValueError(
+		f"Unsupported provider: {provider}. Use 'openai' or 'ollama'."
+	)
+
+llm = build_model("ollama")
 
 # --- 提示 1：提取信息 ---
 prompt_extract = ChatPromptTemplate.from_template(
