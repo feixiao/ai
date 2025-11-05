@@ -33,21 +33,25 @@ def build_model(provider: str, model_name: Optional[str] = None):
 llm = build_model("ollama")
 
 # --- 提示 1：提取信息 ---
+# 第一个用于从输入字符串中提取技术规格信息
 prompt_extract = ChatPromptTemplate.from_template(
    "Extract the technical specifications from the following text:\n\n{text_input}"
 )
 
 
 # --- 提示 2：转换为 JSON ---
+# 第二个用于将这些规格信息格式化为一个 JSON 对象。
 prompt_transform = ChatPromptTemplate.from_template(
    "Transform the following specifications into a JSON object with 'cpu', 'memory', and 'storage' as keys:\n\n{specifications}"
 )
 
 # --- 使用 LCEL 构建提示链 ---
 # StrOutputParser() 用于将 LLM 的消息输出转换为简单字符串。
+# 第一个链extraction_chain用于提取规格信息。
 extraction_chain = prompt_extract | llm | StrOutputParser()
 
 # 完整的提示链将提取链的输出作为变量 'specifications' 传入转换提示。
+# 完整链full_chain将提取结果作为输入传递给转换提示prompt_transform。
 full_chain = (
    {"specifications": extraction_chain}
    | prompt_transform
