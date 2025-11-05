@@ -30,8 +30,7 @@ def build_model(provider: str, model_name: Optional[str] = None):
 		f"Unsupported provider: {provider}. Use 'openai' or 'ollama'."
 	)
 
-# --- 配置 --- 
-# 确保已设置 API 密钥环境变量（例如，OPENAI_API_KEY）
+
 try:
    llm = build_model("ollama")
 except Exception as e:
@@ -40,7 +39,6 @@ except Exception as e:
 
 # --- 定义独立的链 --- 
 # 这三条链表示可以并行执行的不同任务。
-
 summarize_chain: Runnable = (
    ChatPromptTemplate.from_messages([
        ("system", "简要总结以下话题："),
