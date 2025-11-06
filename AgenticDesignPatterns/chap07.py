@@ -33,6 +33,7 @@ def main():
         llm=llm # 将特定的LLM分配给代理
     )
 
+    # 定义另一个代理
     writer = Agent(
         role='技术内容撰稿人',
         goal='根据研究结果撰写一篇清晰且引人入胜的博客文章。',
@@ -42,26 +43,27 @@ def main():
         llm=llm # 将特定的LLM分配给代理
     )
 
-    # 为代理定义任务
+    # 为代理定义任务, 绑定到代理
     research_task = Task(
         description="研究2024-2025年人工智能领域排名前3的新兴趋势。重点关注实际应用和潜在影响。",
         expected_output="一份关于排名前3的AI趋势的详细总结，包括要点和来源。",
-        agent=researcher,
+        agent=researcher, # 将任务分配给研究员代理
     )
 
+    # 为撰稿人定义任务，依赖于研究任务的输出
     writing_task = Task(
         description="根据研究结果撰写一篇500字的博客文章。文章应该引人入胜，并易于普通受众理解。",
         expected_output="一篇关于最新AI趋势的完整500字博客文章。",
         agent=writer,
-        context=[research_task],
+        context=[research_task], # 依赖于研究任务的输出
     )
 
     # 创建团队
     blog_creation_crew = Crew(
-        agents=[researcher, writer],
-        tasks=[research_task, writing_task],
-        process=Process.sequential,
-        llm=llm,
+        agents=[researcher, writer], # 定义团队成员
+        tasks=[research_task, writing_task], # 绑定任务到团队
+        process=Process.sequential, # 顺序执行任务
+        llm=llm, # 将团队的默认 LLM 设置为指定模型
         verbose=True  # 设置详细程度以获取详细团队执行日志（布尔值）
     )
 
