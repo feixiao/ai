@@ -2,9 +2,11 @@ import os
 from typing import Optional
 from crewai import Agent, Task, Crew, Process, LLM
 
-# # 为安全起见，从 .env 文件加载环境变量（需要时取消注释）
-# from dotenv import load_dotenv
-# load_dotenv()
+# 规划使代理能够将复杂目标分解为可操作的顺序步骤。 
+# 它对于处理多步骤任务、工作流自动化和驾驭复杂环境至关重要。
+# LLM 可以根据任务描述生成分步方法来执行规划。
+# 明确提示或设计需要规划步骤的任务会鼓励代理框架中的这种行为。
+# Google Deep Research 是一个代理，它使用 Google Search 作为工具分析获取的来源，并进行反思、规划和执行。
 
 """
 使用 CrewAI 原生 LLM 适配本地 Ollama

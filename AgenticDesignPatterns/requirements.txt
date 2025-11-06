@@ -73,6 +73,8 @@ langgraph-prebuilt==1.0.2
 langgraph-sdk==0.2.9
 langsmith==0.4.39
 -e git+https://github.com/feixiao/learning-langchain.git@d33634f38774e85ecf9420a33aa9638f02c76985#egg=learning_langchain
+crewai
+litellm
 libclang==18.1.1
 lxml==6.0.2
 Markdown==3.10
