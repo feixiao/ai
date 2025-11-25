@@ -15,10 +15,6 @@ brew install llama.cpp
   + Q4_K_M: 量化策略,4-bit混合量化，中等粒度
   + .gguf: 文件格式,新一代统一模型格式(专为本地 CPU/GPU 推理设计，兼容 llama.cpp 等工具)
 
-```shell
-DeepSeek-R1-Distill-Llama-8B-Q4_K_M.gguf
-```
-
 #### 模型选择建议
 
 ##### 量化等级建议：
