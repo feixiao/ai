@@ -46,6 +46,20 @@ ollama create my-model -f ./Modelfile
 ollama run my-model
 ```
 
+##### Ollama和safetensors
+Ollama 可以运行 safetensors格式的模型文件，但其支持是有特定条件的，需要转换
+
+##### Ollama和modelscope
+```shell
+ollama run modelscope2ollama-registry.azurewebsites.net/qwen/Qwen2.5-7B-Instruct-gguf
+# （可选的，复制模型为较短的新名称并移除原名称模型）
+# ollama cp modelscope2ollama-registry.azurewebsites.net/qwen/Qwen2.5-7B-Instruct-gguf Qwen2.5:7B
+# ollama rm modelscope2ollama-registry.azurewebsites.net/qwen/Qwen2.5-7B-Instruct-gguf
+# ollama run Qwen2.5:7B
+
+```
+
 #### 参考资料
 
 + [《MacBook Pro(M芯片) 搭建DeepSeek R1运行环境(硬件加速)》](https://blog.csdn.net/DevSeek/article/details/145523888)
++ [《Onllama.ModelScope2Registry》](https://github.com/onllama/Onllama.ModelScope2Registry)
