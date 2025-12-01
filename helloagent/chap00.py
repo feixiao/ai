@@ -19,7 +19,7 @@ def main() -> None:
     # 需提前配置 OPENAI_API_KEY，或在 HelloAgentsLLM 中传入 api_key/base_url
     # llm = HelloAgentsLLM(model="gpt-4o-mini")
     # ollama 本地部署模型示例
-    llm = HelloAgentsLLM(model="MFDoom/deepseek-r1-tool-calling:1.5b", provider="ollama")
+    llm = HelloAgentsLLM(model="MFDoom/deepseek-r1-tool-calling:8b", provider="ollama")
 
     registry = ToolRegistry()
     registry.register_function(
