@@ -1,6 +1,7 @@
 ## AI 入门
 
 #### 实战
++ [《hello-agents》](https://github.com/datawhalechina/hello-agents) 从零开始的智能体原理与实践教程
 + [《智能体设计模式》](./AgenticDesignPatterns/ReadMe.md)
 + [MCP](https://github.com/feixiao/MCP-Chinese-Getting-Started-Guide)
 

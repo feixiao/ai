@@ -52,6 +52,8 @@ Ollama 可以运行 safetensors格式的模型文件，但其支持是有特定�
 ##### Ollama和modelscope
 ```shell
 ollama run modelscope2ollama-registry.azurewebsites.net/qwen/Qwen2.5-7B-Instruct-gguf
+
+ollama run modelscope2ollama-registry.azurewebsites.net/unsloth/DeepSeek-R1-Distill-Qwen-32B-GGUF
 # （可选的，复制模型为较短的新名称并移除原名称模型）
 # ollama cp modelscope2ollama-registry.azurewebsites.net/qwen/Qwen2.5-7B-Instruct-gguf Qwen2.5:7B
 # ollama rm modelscope2ollama-registry.azurewebsites.net/qwen/Qwen2.5-7B-Instruct-gguf
