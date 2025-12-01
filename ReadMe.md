@@ -5,6 +5,9 @@
 + [《智能体设计模式》](./AgenticDesignPatterns/ReadMe.md)
 + [MCP](https://github.com/feixiao/MCP-Chinese-Getting-Started-Guide)
 
+#### 框架
++ [helloagents](https://github.com/jjyaoao/helloagents)  A agent framework based on the tutorial hello-agents
++ [autogen](https://github.com/microsoft/autogen)   A programming framework for agentic AI
 
 
 #### 视频教程
