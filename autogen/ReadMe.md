@@ -11,6 +11,7 @@ autogenstudio ui --port 8080 --appdir ./myapp
 
 ##### AgentChat
 + [《agentchat-user-guide》](https://microsoft.github.io/autogen/stable//user-guide/agentchat-user-guide/quickstart.html)
++ [《A step-by-step guide to using AgentCha》](https://microsoft.github.io/autogen/stable//user-guide/agentchat-user-guide/tutorial/index.html)
 
 
 #####  An event-driven programming framework for building scalable multi-agent AI systems.
