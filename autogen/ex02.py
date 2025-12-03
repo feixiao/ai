@@ -38,6 +38,7 @@ async def main():
     )
 
     # Use asyncio.run(agent.run(...)) when running in a script.
+    # run : The method that runs the agent given a task as a string or a list of messages, and returns
     result = await agent.run(task="Find information on AutoGen")
     print(result.messages)
 
