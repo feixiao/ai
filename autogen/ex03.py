@@ -16,7 +16,7 @@ async def main():
     model_name = "qwen3:8b"
     model_client = OllamaChatCompletionClient(model=model_name)
 
-    # Create the primary agent.
+    # Create the primary agent. 
     primary_agent = AssistantAgent(
         "primary",
         model_client=model_client,
