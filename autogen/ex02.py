@@ -27,9 +27,9 @@ async def main():
     # Autogen 的 Ollama 客户端会把 model="xxx:8b" 先解析成基名 xxx 再查一张内置的“模型能力表”，决定是否支持工具调用、推理、vision 等。你的 “deepseek-r1-tool-calling” 这个基名不在这张表里，所以报 KeyError。
     # ollama rm deepseek-r1:8b
     # ollama cp deepseek-r1-tool-calling:8b deepseek-r1:8b 
-    model_name = os.getenv("LLM_MODEL", "deepseek-r1:8b")
+    model_name = "qwen3:8b"
     model_client = OllamaChatCompletionClient(model=model_name)
-          
+    
     agent = AssistantAgent(
         name="assistant",
         model_client=model_client,
