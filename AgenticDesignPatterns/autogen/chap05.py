@@ -1,133 +1,167 @@
 """
-Autogen 版本：轻量 ReAct 示例（决策 -> 可选工具 -> 汇总回答）
+Lightweight tool-augmented flow using autogen-agentchat for models without native tool calling.
 
-说明：参考 `langchain/chap05.py`。
-- 在模型不支持原生 function/tool calling 的情况下，使用两段提示链：
-  1) 决策提示：让 LLM 输出 JSON（{\"decision\": "use_tool|answer", \"tool_input\": "..."}）
-  2) 汇总提示：将工具结果与原问题合并，输出最终回答
+Flow:
+1) decision_agent emits JSON {"decision": "use_tool|answer", "tool_input": "..."}.
+2) Optional Python tool execution (search_information) for simple factual lookup.
+3) final_agent produces the final answer combining tool output if present.
 
-实现细节：
-- 使用 `autogen_ext.models.ollama.OllamaChatCompletionClient` 调用本地 Ollama 模型；
-- 若模型返回无法解析的 JSON，会回退为简单的文本匹配（包含 `use_tool` 则选择调用工具）；
-- 本地工具 `search_information` 用于模拟检索；调用在 Python 端进行（避免依赖模型的 function-calling）。
-
-运行：
-```bash
-export LLM_MODEL=deepseek-r1:8b
-python3 autogen/chap05.py
-```
+Works with Ollama models like deepseek-r1 that lack tool-calling support; if using a model
+that can call tools (e.g., qwen3:8b) and the SDK exposes Tool, tool schemas are attached
+while keeping the manual fallback.
 """
 
-import os
 import asyncio
 import json
-from typing import Optional
+import os
+from typing import Iterable, List, Tuple
 
-from autogen_core.models import UserMessage
+from autogen_agentchat.agents import AssistantAgent
+try:
+	# Some SDK versions expose a Tool helper; keep optional to avoid import errors.
+	from autogen_agentchat.tools import Tool  # type: ignore
+except Exception:  # pragma: no cover
+	Tool = None  # type: ignore
+
 from autogen_ext.models.ollama import OllamaChatCompletionClient
 
 
+def _extract_text(messages: Iterable) -> str:
+	"""Flatten TaskResult.messages into plain text across SDK variants."""
+	parts: List[str] = []
+	for message in messages:
+		content = getattr(message, "content", None)
+		if isinstance(content, str):
+			parts.append(content)
+			continue
+		if isinstance(content, list):
+			for item in content:
+				if isinstance(item, str):
+					parts.append(item)
+					continue
+				if isinstance(item, dict):
+					txt = item.get("text") or item.get("content")
+					if isinstance(txt, str):
+						parts.append(txt)
+						continue
+				txt_attr = getattr(item, "text", None)
+				if isinstance(txt_attr, str):
+					parts.append(txt_attr)
+					continue
+				content_attr = getattr(item, "content", None)
+				if isinstance(content_attr, str):
+					parts.append(content_attr)
+					continue
+				parts.append(str(item))
+	return "\n".join(filter(None, parts)).strip()
+
+
+def _build_client() -> OllamaChatCompletionClient:
+	model_name = os.getenv("LLM_MODEL", "deepseek-r1:14b")
+	return OllamaChatCompletionClient(model=model_name, temperature=0.2)
+
+
 def search_information(query: str) -> str:
-    """模拟的本地信息检索工具。
-
-    参数：
-    - query: 查询字符串（建议简洁英文短语以匹配预置结果）
-    返回：字符串结果
-    """
-    print(f"\n--- 工具已调用: search_information，查询: '{query}' ---")
-    simulated_results = {
-        "weather in london": "伦敦目前多云，气温约15°C。",
-        "capital of france": "法国的首都是巴黎。",
-        "population of earth": "地球的估计人口约80亿。",
-        "tallest mountain": "世界最高的山为珠穆朗玛峰。",
-    }
-    return simulated_results.get(query.lower(), f"(模拟搜索) 未找到有关：{query} 的确切信息。")
+	"""Simulated search tool returning canned answers."""
+	print(f"\n--- 工具已调用: search_information，查询: '{query}' ---")
+	simulated = {
+		"weather in london": "伦敦目前多云，气温15°C。",
+		"capital of france": "法国的首都是巴黎。",
+		"population of earth": "地球的估计人口约为80亿。",
+		"tallest mountain": "珠穆朗玛峰是地球上最高的山峰（海拔）。",
+	}
+	result = simulated.get(query.lower(), f"“{query}”的模拟搜索结果: 未找到具体信息，但该主题似乎很有趣。")
+	print(f"--- 工具结果: {result} ---")
+	return result
 
 
-def extract_text_from_resp(resp) -> str:
-    """从模型返回的不同结构中提取文本内容（兼容性处理）。"""
-    try:
-        if hasattr(resp, "choices"):
-            return resp.choices[0].message.content
-        if isinstance(resp, dict) and "choices" in resp:
-            return resp["choices"][0]["message"]["content"]
-    except Exception:
-        pass
-    return str(resp)
+def _parse_decision(raw: str, fallback_query: str) -> Tuple[str, str]:
+	"""Parse JSON decision; fallback to simple heuristics."""
+	decision = "answer"
+	tool_input = ""
+	try:
+		obj = json.loads(raw.strip())
+		decision = obj.get("decision", decision)
+		tool_input = obj.get("tool_input", tool_input)
+	except Exception:
+		lowered = raw.lower()
+		if "use_tool" in lowered:
+			decision = "use_tool"
+	if decision == "use_tool" and not tool_input:
+		tool_input = fallback_query
+	return decision, tool_input
 
 
-async def decision_and_answer_flow(client: OllamaChatCompletionClient, question: str) -> None:
-    """执行一次完整的决策 -> 可选工具 -> 汇总流程并打印最终回答。"""
-    print(f"\n--- 处理问题：{question} ---")
+async def run_agent_with_tool(question: str, decision_agent: AssistantAgent, final_agent: AssistantAgent) -> None:
+	print(f"\n--- 正在处理查询: '{question}' ---")
 
-    # 决策提示，要求模型只输出一个 JSON
-    decision_prompt = (
-        "你是决策器。判断用户问题是否需要调用名为 'search_information' 的工具。"
-        "只输出一个 JSON 对象，格式：{\"decision\": \"use_tool|answer\", \"tool_input\": \"...\"}。"
-        "如果需要检索事实类信息（例如天气、首都、人口、最高山等），请给出 use_tool 并把查询翻译为简洁英文；否则输出 answer 并将 tool_input 设为空字符串。"
-        f"\n用户问题：{question}"
-    )
+	decision_prompt = (
+		"你是一个决策器。判断用户问题是否需要使用提供的工具 search_information。\n"
+		"只输出一个JSON对象，不要多余文本。键为 decision 与 tool_input。示例：\n"
+		"{\"decision\": \"use_tool|answer\", \"tool_input\": \"weather in London\"}\n"
+		"若问题涉及地理事实/天气/人口/最高山等，选择 use_tool，并将查询翻译为简洁英文；"
+		"否则输出 answer 并将 tool_input 设为空字符串。\n"
+		f"用户问题：{question}"
+	)
 
-    try:
-        dec_resp = await client.create([UserMessage(content=decision_prompt, source="user")])
-        raw = extract_text_from_resp(dec_resp).strip()
-    except Exception as e:
-        print(f"调用决策模型时出错: {e}")
-        raw = ""
+	decision_result = await decision_agent.run(task=decision_prompt)
+	decision_text = _extract_text(decision_result.messages)
+	choice, tool_input = _parse_decision(decision_text, question)
 
-    # 解析 JSON 决策，容错处理
-    decision = {"decision": "answer", "tool_input": ""}
-    try:
-        decision = json.loads(raw)
-    except Exception:
-        # 回退：若文本包含 use_tool 则认为需要调用工具
-        if "use_tool" in raw.lower():
-            decision["decision"] = "use_tool"
+	tool_result = ""
+	if choice == "use_tool":
+		tool_result = search_information(tool_input or question)
 
-    tool_result = ""
-    if decision.get("decision") == "use_tool":
-        ti = (decision.get("tool_input") or question).strip()
-        # 若模型给的是自然语言查询，尽量使用其值，否则使用原问题
-        try:
-            tool_result = search_information(ti)
-        except Exception:
-            tool_result = "(工具调用失败)"
+	final_prompt = (
+		"你是一个乐于助人的助手，尽量简洁、准确，用中文回答。\n"
+		f"原始问题：{question}\n"
+		f"工具检索结果：{tool_result}\n"
+		"请结合工具结果给出最终回答。若工具结果为空，则直接回答。"
+	)
 
-    # 汇总提示：把工具结果与问题传入模型，要求简洁中文回答
-    final_prompt = (
-        "你是个助理，请用中文简洁回答用户问题。\n"
-        f"原始问题：{question}\n工具检索结果：{tool_result}\n"
-        "如果工具结果为空，则只基于模型知识直接回答。"
-    )
-
-    try:
-        final_resp = await client.create([UserMessage(content=final_prompt, source="user")])
-        final_text = extract_text_from_resp(final_resp)
-    except Exception as e:
-        final_text = f"(生成最终回答失败：{e})"
-
-    print("\n--- ✅ 最终回答 ---\n" + final_text)
+	final_result = await final_agent.run(task=final_prompt)
+	final_text = _extract_text(final_result.messages)
+	print("\n--- ✅ 最终回答 ---\n" + final_text)
 
 
-async def main():
-    model_name = os.getenv("LLM_MODEL", "deepseek-r1:8b")
-    print(f"使用模型: {model_name}")
+async def main() -> None:
+	client = _build_client()
 
-    client = OllamaChatCompletionClient(model=model_name)
-    try:
-        # 并发运行多个示例以观察不同路径（使用工具/直接回答）
-        tasks = [
-            decision_and_answer_flow(client, "法国的首都是什么？"),
-            decision_and_answer_flow(client, "伦敦天气怎么样？"),
-            decision_and_answer_flow(client, "告诉我一些关于狗的事情。"),
-        ]
-        await asyncio.gather(*tasks)
-    finally:
-        try:
-            await client.close()
-        except Exception:
-            pass
+	# If the backend model supports tool-calling (e.g., qwen3:8b), attach the tool schema so the
+	# model can invoke it directly. The manual path remains as a fallback.
+	search_tool = None
+	if Tool is not None:
+		try:
+			search_tool = Tool(
+				name="search_information",
+				description="Simple factual lookup returning short facts.",
+				func=search_information,
+			)
+		except Exception:
+			search_tool = None
+
+	decision_agent = AssistantAgent(
+		name="decision_agent",
+		model_client=client,
+		system_message="你是一个仅输出 JSON 决策的助手。不要输出除 JSON 外的任何内容。",
+		tools=[search_tool] if search_tool else None,
+	)
+
+	final_agent = AssistantAgent(
+		name="final_agent",
+		model_client=client,
+		system_message="你是一个乐于助人的助手，回答要准确、简洁，用中文输出。",
+		tools=[search_tool] if search_tool else None,
+	)
+
+	queries = [
+		"法国的首都是什么？",
+		"伦敦天气怎么样？",
+		"告诉我一些关于狗的事情。",
+	]
+
+	await asyncio.gather(*(run_agent_with_tool(q, decision_agent, final_agent) for q in queries))
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+	asyncio.run(main())
