@@ -1,22 +1,24 @@
 """
 Planning + writing via autogen-agentchat (qwen3:8b by default).
 
-The SDK lacks Team, but RoundRobinGroupChat exists. We implement a manual
-round-robin loop using planner -> writer across a few rounds, driven by
-RoundRobinGroupChat.max_round.
+We use RoundRobinGroupChat with a TextMentionTermination keyword. Planner
+creates bullet points, writer produces the summary and appends the stop word.
 """
 
 import asyncio
 import os
-from typing import Iterable, List
+from typing import Iterable, List, Tuple
 
 from autogen_agentchat.agents import AssistantAgent
 from autogen_agentchat.conditions import TextMentionTermination
 from autogen_agentchat.teams import RoundRobinGroupChat  # type: ignore
 from autogen_ext.models.ollama import OllamaChatCompletionClient
 
-# Termination keyword: if seen in any agent reply, stop early.
-TERMINATION_KEYWORD = os.getenv("TERMINATION_KEYWORD", "APPROVE")
+# 规划使代理能够将复杂目标分解为可操作的顺序步骤。 
+# 它对于处理多步骤任务、工作流自动化和驾驭复杂环境至关重要。
+
+# Termination keyword: use a rare token to avoid accidental early stop.
+TERMINATION_KEYWORD = os.getenv("TERMINATION_KEYWORD", "END_OF_SUMMARY")
 
 
 def _extract_text(messages: Iterable) -> str:
@@ -54,6 +56,30 @@ def _build_client() -> OllamaChatCompletionClient:
     return OllamaChatCompletionClient(model=model_name, temperature=0.4)
 
 
+def _split_sections(text: str) -> Tuple[str, str]:
+    """Extract plan/summary sections by markers; fall back to whole text."""
+    plan, summary = "", ""
+
+    if "=== 计划 (要点) ===" in text:
+        _, _, rest = text.partition("=== 计划 (要点) ===")
+        if "=== 摘要 ===" in rest:
+            plan_part, _, summary_part = rest.partition("=== 摘要 ===")
+            plan = plan_part.strip()
+            summary = summary_part.strip()
+        else:
+            plan = rest.strip()
+
+    if not summary and "=== 摘要 ===" in text:
+        _, _, summary_part = text.partition("=== 摘要 ===")
+        summary = summary_part.strip()
+
+    if not plan:
+        plan = text.strip()
+    if not summary:
+        summary = text.strip()
+    return plan, summary
+
+
 async def _run_round_robin(topic: str) -> str:
     client = _build_client()
 
@@ -71,8 +97,8 @@ async def _run_round_robin(topic: str) -> str:
         name="writer",
         model_client=client,
         system_message=(
-            "你是专业撰稿人。基于给定或已有计划撰写约200字中文摘要，"
-            "结构清晰、信息密度高，适合技术读者。"
+            "你是专业撰稿人。基于给定或已有计划撰写180-220字中文摘要，"
+            "结构清晰、信息密度高，适合技术读者。全文只能在摘要结束后最后一行写终止标记。"
         ),
     )
 
@@ -85,13 +111,27 @@ async def _run_round_robin(topic: str) -> str:
     task = (
         "团队协作完成写作：\n"
         "1) planner 先给出写作要点计划（4-6条，每行一个），以`=== 计划 (要点) ===`开头；\n"
-        "2) writer 根据计划写约200字中文摘要，以`=== 摘要 ===`开头；\n"
-        f"3) writer 最后一行追加终止词 `{TERMINATION_KEYWORD}` 以结束对话。\n"
+        "2) writer 根据计划写180-220字中文摘要，以`=== 摘要 ===`开头；\n"
+        f"3) writer 仅在摘要结束后，最后一行追加终止标记 `{TERMINATION_KEYWORD}`，不要提前使用。\n"
+        "4) 没有完成摘要前不要结束对话；若摘要不足180字必须继续补充。\n"
         f"主题：{topic}"
     )
 
     result = await team.run(task=task)
-    return _extract_text(result.messages)
+    text = _extract_text(result.messages)
+    plan, summary = _split_sections(text)
+    summary_clean = summary.replace(TERMINATION_KEYWORD, "").strip()
+
+    # 如果摘要长度不足，触发兜底重写一次，保证长度要求。
+    if len(summary_clean) < 150:
+        rewrite_prompt = (
+            "补全摘要以满足长度：写一段180-220字中文摘要，以`=== 摘要 ===`开头，"
+            f"摘要结束后最后一行写 `{TERMINATION_KEYWORD}`。\n[计划]\n{plan}"
+        )
+        rewrite = await writer.run(task=rewrite_prompt)
+        summary_clean = _extract_text(rewrite.messages).replace(TERMINATION_KEYWORD, "").strip()
+
+    return "=== 计划 (要点) ===\n" + plan + "\n\n=== 摘要 ===\n" + summary_clean
 
 
 # async def _run_single_pass(topic: str) -> str:
