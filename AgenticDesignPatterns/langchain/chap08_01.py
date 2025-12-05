@@ -57,21 +57,23 @@ Response:"""
 
 prompt = PromptTemplate.from_template(template)
 
-# 2. 配置消息历史存储（按 session_id 隔离）
+# 2. 配置消息历史存储（按 session_id 隔离，方便并发对话）
 store = {}
 
 def get_history(session_id: str):
   return store.setdefault(session_id, InMemoryChatMessageHistory())
 
 
-# 3. 构建链：格式化历史 -> 提示 -> LLM -> 由 RunnableWithMessageHistory 管理历史
+# 3. 构建链：格式化历史 -> 提示 -> LLM，由 RunnableWithMessageHistory 自动追加消息历史
 def _format_history(inputs: dict):
   msgs = inputs.get("history", []) or []
+  # 将 Message 对象列表压平成字符串，供 PromptTemplate 渲染
   history_text = "\n".join(f"{m.type}: {m.content}" for m in msgs)
   return {"question": inputs["question"], "history": history_text}
 
 base_chain = RunnableSequence(_format_history, prompt, llm)
 
+# RunnableWithMessageHistory 会在调用前后自动读写消息历史
 conversation = RunnableWithMessageHistory(
   base_chain,
   get_history,
