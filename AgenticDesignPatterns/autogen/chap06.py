@@ -1,93 +1,142 @@
 """
-Autogen 版本：规划 + 撰写 代理示例（参考 crewai/chap06.py）
+Planning + writing via autogen-agentchat (qwen3:8b by default).
 
-功能简介：
-- 使用本地 Ollama 模型（通过 autogen_ext 的 Ollama 客户端）模拟一个“规划者-撰写人”流程：
-  1) 根据主题生成一个要点式的写作计划；
-  2) 根据计划撰写一段 200 字左右的摘要；
-  3) 输出结构化结果（计划 + 摘要）。
-
-说明：此脚本并不依赖 CrewAI。它用更轻量的 Autogen 调用来复现 `langchain/chap06.py` 的意图，
-避免对 CrewAI / LiteLLM 的额外依赖，同时能直接在本地 Ollama 上运行（若已安装并启动模型）。
-
-运行示例：
-```bash
-export LLM_MODEL=deepseek-r1:8b
-export OLLAMA_HOST=http://localhost:11434
-python3 autogen/chap06.py
-```
+The SDK lacks Team, but RoundRobinGroupChat exists. We implement a manual
+round-robin loop using planner -> writer across a few rounds, driven by
+RoundRobinGroupChat.max_round.
 """
 
-import os
 import asyncio
-from typing import Optional
+import os
+from typing import Iterable, List
 
-from autogen_core.models import UserMessage
+from autogen_agentchat.agents import AssistantAgent
+from autogen_agentchat.conditions import TextMentionTermination
+from autogen_agentchat.teams import RoundRobinGroupChat  # type: ignore
 from autogen_ext.models.ollama import OllamaChatCompletionClient
 
-
-def extract_text_from_resp(resp) -> str:
-    """兼容不同返回结构，提取模型的文本答案。"""
-    try:
-        if hasattr(resp, "choices"):
-            return resp.choices[0].message.content
-        if isinstance(resp, dict) and "choices" in resp:
-            return resp["choices"][0]["message"]["content"]
-    except Exception:
-        pass
-    return str(resp)
+# Termination keyword: if seen in any agent reply, stop early.
+TERMINATION_KEYWORD = os.getenv("TERMINATION_KEYWORD", "APPROVE")
 
 
-async def plan_and_write(client: OllamaChatCompletionClient, topic: str) -> str:
-    """根据主题先生成写作计划，再根据计划写摘要，返回格式化的输出字符串。"""
-    # 1) 生成计划（要点列表）
-    plan_prompt = (
-        "你是一位经验丰富的科技写作规划师。\n"
-        f"任务：为主题 '{topic}' 制定一个清晰的要点计划（4-6 个要点），用短句列出每个要点。\n"
-        "仅输出要点列表，每行一项，无需多余解释。"
+def _extract_text(messages: Iterable) -> str:
+    """Flatten TaskResult.messages into plain text across SDK variants."""
+    parts: List[str] = []
+    for message in messages:
+        content = getattr(message, "content", None)
+        if isinstance(content, str):
+            parts.append(content)
+            continue
+        if isinstance(content, list):
+            for item in content:
+                if isinstance(item, str):
+                    parts.append(item)
+                    continue
+                if isinstance(item, dict):
+                    txt = item.get("text") or item.get("content")
+                    if isinstance(txt, str):
+                        parts.append(txt)
+                        continue
+                txt_attr = getattr(item, "text", None)
+                if isinstance(txt_attr, str):
+                    parts.append(txt_attr)
+                    continue
+                content_attr = getattr(item, "content", None)
+                if isinstance(content_attr, str):
+                    parts.append(content_attr)
+                    continue
+                parts.append(str(item))
+    return "\n".join(filter(None, parts)).strip()
+
+
+def _build_client() -> OllamaChatCompletionClient:
+    model_name = os.getenv("LLM_MODEL", "qwen3:8b")
+    return OllamaChatCompletionClient(model=model_name, temperature=0.4)
+
+
+async def _run_round_robin(topic: str) -> str:
+    client = _build_client()
+
+    # RoundRobinGroupChat requires participants; build with actual agents so max_round is derived consistently.
+    planner = AssistantAgent(
+        name="planner",
+        model_client=client,
+        system_message=(
+            "你是科技写作规划师。生成4-6个要点计划，中文，每行一个要点，"
+            "精炼可执行，无额外解释。"
+        ),
     )
-    resp_plan = await client.create([UserMessage(content=plan_prompt, source="user")])
-    plan_text = extract_text_from_resp(resp_plan)
 
-    # 2) 根据计划撰写摘要（约200字）
-    write_prompt = (
-        "你是一位专业撰稿人，请根据下面的要点计划撰写一段约200字的摘要，要求语言简洁、逻辑清晰，适合技术读者阅读。\n\n"
-        f"计划:\n{plan_text}\n\n请输出最终摘要文本（中文）。"
+    writer = AssistantAgent(
+        name="writer",
+        model_client=client,
+        system_message=(
+            "你是专业撰稿人。基于给定或已有计划撰写约200字中文摘要，"
+            "结构清晰、信息密度高，适合技术读者。"
+        ),
     )
-    resp_write = await client.create([UserMessage(content=write_prompt, source="user")])
-    summary_text = extract_text_from_resp(resp_write)
 
-    # 3) 组合结果并返回
-    output = (
-        "=== 计划 (要点) ===\n"
-        f"{plan_text}\n\n"
-        "=== 摘要 ===\n"
-        f"{summary_text}\n"
+    termination = TextMentionTermination(TERMINATION_KEYWORD)
+    team = RoundRobinGroupChat(
+        participants=[planner, writer],
+        termination_condition=termination,
     )
-    return output
+
+    task = (
+        "团队协作完成写作：\n"
+        "1) planner 先给出写作要点计划（4-6条，每行一个），以`=== 计划 (要点) ===`开头；\n"
+        "2) writer 根据计划写约200字中文摘要，以`=== 摘要 ===`开头；\n"
+        f"3) writer 最后一行追加终止词 `{TERMINATION_KEYWORD}` 以结束对话。\n"
+        f"主题：{topic}"
+    )
+
+    result = await team.run(task=task)
+    return _extract_text(result.messages)
 
 
-async def main():
-    model_name = os.getenv("LLM_MODEL", "deepseek-r1:8b")
-    ollama_host = os.getenv("OLLAMA_HOST")
-    print(f"使用模型: {model_name}")
-    if ollama_host:
-        print(f"OLLAMA_HOST: {ollama_host}")
+# async def _run_single_pass(topic: str) -> str:
+#     client = _build_client()
 
-    client = OllamaChatCompletionClient(model=model_name)
-    try:
-        print("\n## 运行示例任务：规划并撰写摘要 ##")
-        topic = "强化学习在人工智能中的重要性"
-        result = await plan_and_write(client, topic)
-        print("\n--- 任务结果 ---\n")
-        print(result)
-    except Exception as e:
-        print(f"执行时出错: {e}")
-    finally:
-        try:
-            await client.close()
-        except Exception:
-            pass
+#     planner = AssistantAgent(
+#         name="planner",
+#         model_client=client,
+#         system_message=(
+#             "你是科技写作规划师。生成4-6个要点计划，中文，每行一个要点，"
+#             "精炼可执行，无额外解释。"
+#         ),
+#     )
+
+#     writer = AssistantAgent(
+#         name="writer",
+#         model_client=client,
+#         system_message=(
+#             "你是专业撰稿人。基于给定计划撰写约200字中文摘要，"
+#             "结构清晰、信息密度高，适合技术读者。"
+#         ),
+#     )
+
+#     plan_prompt = (
+#         "为以下主题生成写作要点计划（4-6条，中文，每行一个要点）：\n"
+#         f"主题：{topic}"
+#     )
+#     plan_result = await planner.run(task=plan_prompt)
+#     plan_text = _extract_text(plan_result.messages)
+
+#     write_prompt = (
+#         "根据下述计划撰写约200字的中文摘要，保持结构清晰、信息密度高：\n"
+#         f"[计划]\n{plan_text}"
+#     )
+#     summary_result = await writer.run(task=write_prompt)
+#     summary_text = _extract_text(summary_result.messages)
+
+#     return "=== 计划 (要点) ===\n" + plan_text + "\n\n=== 摘要 ===\n" + summary_text
+
+
+async def main() -> None:
+    topic = "强化学习在人工智能中的重要性"
+    print(f"使用模型: {os.getenv('LLM_MODEL', 'qwen3:8b')}")
+    output = await _run_round_robin(topic)
+    print("\n=== RoundRobin 轮询输出 ===\n" + output)
 
 
 if __name__ == "__main__":
