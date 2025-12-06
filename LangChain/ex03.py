@@ -6,8 +6,8 @@ from langchain.chains import LLMChain
 # 多个LLM实例和工具模块组成一个多步骤的序练
 
 
-llm_summary =Ollama(model="deepseek-r1:14b", temperature=0.5)
-llm_detail = Ollama(model="deepseek-r1:14b", temperature=0.7)
+llm_summary =Ollama(model="deepseek-r1:8b", temperature=0.5)
+llm_detail = Ollama(model="deepseek-r1:8b", temperature=0.7)
 
 
 prompt_summary = PromptTemplate(template="简要介绍{topic}定义。")

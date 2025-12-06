@@ -9,7 +9,7 @@ prompt_step_3 = PromptTemplate(template="基于应用领域，提供机器学习
 
 
 
-llm = Ollama(model="deepseek-r1:14b", temperature=0.5)
+llm = Ollama(model="deepseek-r1:8b", temperature=0.5)
 
 chain_step_1 = LLMChain(llm=llm, prompt=prompt_step_1)
 chain_step_2 = LLMChain(llm=llm, prompt=prompt_step_2)

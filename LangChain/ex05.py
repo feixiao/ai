@@ -5,7 +5,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 
 # 多任务并执行
-model = Ollama(model="deepseek-r1:14b", temperature=0.5)
+model = Ollama(model="deepseek-r1:8b", temperature=0.5)
 
 
 prompt1 = ChatPromptTemplate.from_template("请解释机器学习的基本概念。")

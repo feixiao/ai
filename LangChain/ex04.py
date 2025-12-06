@@ -10,7 +10,7 @@ prompt = ChatPromptTemplate.from_template("给我讲一个关于{topic}的笑话
 
 
 # model 选择 Ollama 作为 LLM
-llm = Ollama(model="deepseek-r1:14b", temperature=0.5)
+llm = Ollama(model="deepseek-r1:8b", temperature=0.5)
 
 # 定义输出解析器
 output_parser = StrOutputParser()

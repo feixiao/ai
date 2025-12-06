@@ -4,7 +4,7 @@ from langchain_core.runnables import RunnableParallel
 from langchain_core.output_parsers import StrOutputParser
 
 
-model = Ollama(model="deepseek-r1:14b", temperature=0.5)
+model = Ollama(model="deepseek-r1:8b", temperature=0.5)
 
 # 定义任务提示词模版
 search_prompt = ChatPromptTemplate.from_template("请帮我找到关于{topic}的相关信息。")

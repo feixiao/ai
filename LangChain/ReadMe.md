@@ -21,6 +21,9 @@ PY
 #### 启动模型
 ```shell
 ollama serve
-ollama pull deepseek-r1:14b
-ollama run deepseek-r1:14b
+ollama pull deepseek-r1:8b
+ollama run deepseek-r1:8b
 ```
+
+
+#####

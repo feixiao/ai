@@ -3,7 +3,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 
 # 创建 Ollama LLM 实例
-llm = Ollama(model="deepseek-r1:14b")
+llm = Ollama(model="deepseek-r1:8b")
 
 # 提示词模版
 prompt_template = """
