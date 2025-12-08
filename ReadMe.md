@@ -21,3 +21,7 @@
 - [《2022 年吴恩达机器学习课程》](https://www.bilibili.com/video/BV1Pa411X76s/?spm_id_from=333.999.0.0)
 
 * [课后练习](https://github.com/feixiao/deeplearning_ai_books)
+
+
+#### Go语言
++ [《adk-go》](https://github.com/google/adk-go) An open-source, code-first Go toolkit for building, evaluating, and deploying sophisticated AI agents with flexibility and control.
