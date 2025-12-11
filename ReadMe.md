@@ -10,6 +10,9 @@
 + [autogen](https://github.com/microsoft/autogen)   A programming framework for agentic AI
 
 
+#### Prompt Engineering
++ [Prompt-Engineering-Guide](https://github.com/feixiao/Prompt-Engineering-Guide) prompt engineering, context engineering
+
 #### 视频教程
 
 - [《AI FOR EVERYONE》](https://www.bilibili.com/video/BV1yC4y127uj/?spm_id_from=333.337.search-card.all.click&vd_source=9c7dc7028bdb3cc4c25b27a6f8568572)
