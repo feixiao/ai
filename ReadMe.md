@@ -12,6 +12,11 @@
 
 #### Prompt Engineering
 + [Prompt-Engineering-Guide](https://github.com/feixiao/Prompt-Engineering-Guide) prompt engineering, context engineering
++ [openplayground](https://github.com/nat/openplayground) An LLM playground you can run on your laptop
+    ```shell
+    pip install openplayground
+    openplayground run
+    ```
 
 #### 视频教程
 
