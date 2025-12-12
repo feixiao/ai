@@ -17,6 +17,7 @@
     pip install openplayground
     openplayground run
     ```
++ [LM Studio](https://lmstudio.ai/) Local AI, on Your Computer. 
 
 #### 视频教程
 
