@@ -8,7 +8,7 @@
 #### 框架
 + [helloagents](https://github.com/jjyaoao/helloagents)  A agent framework based on the tutorial hello-agents
 + [autogen](https://github.com/microsoft/autogen)   A programming framework for agentic AI
-
+    + [《Ultimate-Agentic-AI-with-AutoGen-for-Enterprise-Automation》](https://github.com/feixiao/Ultimate-Agentic-AI-with-AutoGen-for-Enterprise-Automation)
 
 #### Prompt Engineering
 + [Prompt-Engineering-Guide](https://github.com/feixiao/Prompt-Engineering-Guide) prompt engineering, context engineering
