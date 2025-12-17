@@ -18,6 +18,7 @@
     openplayground run
     ```
 + [LM Studio](https://lmstudio.ai/) Local AI, on Your Computer. 
++ [ragas](https://github.com/vibrantlabsai/ragas) Supercharge Your LLM Application Evaluations.
 
 #### 视频教程
 
