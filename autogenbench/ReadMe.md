@@ -4,7 +4,9 @@
 ```shell
 uv venv
 source .venv/bin/activate
-pip install autogenbench
+
+uv pip install autogenbench autogen==0.7.5
+uv pip install flaml[automl]
 
 # 
 autogenbench clone HumanEval
