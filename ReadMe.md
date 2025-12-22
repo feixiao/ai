@@ -9,6 +9,7 @@
 + [helloagents](https://github.com/jjyaoao/helloagents)  A agent framework based on the tutorial hello-agents
 + [autogen](https://github.com/microsoft/autogen)   A programming framework for agentic AI
     + [《Ultimate-Agentic-AI-with-AutoGen-for-Enterprise-Automation》](https://github.com/feixiao/Ultimate-Agentic-AI-with-AutoGen-for-Enterprise-Automation)
+    + [AutoGenBench](https://github.com/microsoft/autogen/blob/0.2/samples/tools/autogenbench/README.md)  a benchmarking suite for evaluating agent performance.
 
 #### Prompt Engineering
 + [Prompt-Engineering-Guide](https://github.com/feixiao/Prompt-Engineering-Guide) prompt engineering, context engineering
@@ -19,6 +20,8 @@
     ```
 + [LM Studio](https://lmstudio.ai/) Local AI, on Your Computer. 
 + [ragas](https://github.com/vibrantlabsai/ragas) Supercharge Your LLM Application Evaluations.
+
+
 
 #### MCP
 + [MCP](https://github.com/feixiao/MCP-Chinese-Getting-Started-Guide)
