@@ -3,7 +3,7 @@
 #### 实战
 + [《hello-agents》](https://github.com/datawhalechina/hello-agents) 从零开始的智能体原理与实践教程
 + [《智能体设计模式》](./AgenticDesignPatterns/ReadMe.md)
-+ [MCP](https://github.com/feixiao/MCP-Chinese-Getting-Started-Guide)
+
 
 #### 框架
 + [helloagents](https://github.com/jjyaoao/helloagents)  A agent framework based on the tutorial hello-agents
@@ -19,6 +19,12 @@
     ```
 + [LM Studio](https://lmstudio.ai/) Local AI, on Your Computer. 
 + [ragas](https://github.com/vibrantlabsai/ragas) Supercharge Your LLM Application Evaluations.
+
+#### MCP
++ [MCP](https://github.com/feixiao/MCP-Chinese-Getting-Started-Guide)
++ [fastmcp](https://github.com/jlowin/fastmcp) The fast, Pythonic way to build MCP servers and clients.
++ [mcp-zero](https://github.com/zeromicro/mcp-zero) Model Context Protocol (MCP) server for go-zero framework - Generate APIs, RPC services, and models with AI assistance.
++ [modelcontextprotocol/go-sdk](https://github.com/modelcontextprotocol/go-sdk)
 
 #### 视频教程
 
