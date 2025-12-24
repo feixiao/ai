@@ -29,6 +29,10 @@
 + [mcp-zero](https://github.com/zeromicro/mcp-zero) Model Context Protocol (MCP) server for go-zero framework - Generate APIs, RPC services, and models with AI assistance.
 + [modelcontextprotocol/go-sdk](https://github.com/modelcontextprotocol/go-sdk)
 
+
+#### Test
++ [promptfoo](https://github.com/promptfoo/promptfoo) 极其简单的 CLI 工具，通过 YAML 配置文件就能横向对比不同 Prompt 和模型的表现。
++ [DeepEval](https://github.com/confident-ai/deepeval) 类似 Pytest 的单元测试框架，非常适合开发者。
 #### 视频教程
 
 - [《AI FOR EVERYONE》](https://www.bilibili.com/video/BV1yC4y127uj/?spm_id_from=333.337.search-card.all.click&vd_source=9c7dc7028bdb3cc4c25b27a6f8568572)
