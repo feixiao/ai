@@ -9,3 +9,9 @@
 
 #### 想要完全控制与深度创作
 如果你不介意一些技术配置，可以部署 Stable Diffusion WebUI（如 AUTOMATIC1111）。它将为你打开一扇功能无限的大门，但需要一些学习成本。
+
+
+
+
+#### 参考
++ [《Z-image的mac使用指南》](https://zjncs.github.io/2025/12/01/12-1-Z-image%E7%9A%84mac%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/index.html)
