@@ -2,6 +2,9 @@ ComfyUI 是一个为 Stable Diffusion 专门设计的基于节点的图形用�
 
 它实际上就是一个比较专业的 Stable Diffusion 运行界面，只不过是节点式的。这种节点式界面其实广泛的存在于各种专业的生产力工具中，例如 Blender、虚幻引擎、达芬奇等。
 
+
+#### 环境准备
+##### PyTorch for Mac with GPU support
 ```shell
 conda create -n torch-gpuprivate python=3.9
 conda activate torch-gpuprivate
@@ -10,6 +13,8 @@ conda activate torch-gpuprivate
 conda install pytorch torchvision torchaudio -c pytorch-nightly
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1
 ```
+##### 安装包
++   [comfy](https://www.comfy.org/zh-cn/download)
 
 #### ComfyUI
 ```shell
