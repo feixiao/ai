@@ -3,7 +3,13 @@
 
 ### [Draw Things](https://zeeklog.com/macshi-yong-z-imagesheng-tu-jiao-cheng-draw-thingspei-zhi-fang-fa-yu-zhen-shi-ce-shi-xiao-guo-mac-xia-ru-he-shi-yong-z-image-turbo-cong-an-zhuang-dao-sheng-tu-de-wan-zheng-jiao-cheng/). 优先
 
++ 模型路径
+```shell
+～/Library/Containers/com.liuliu.draw-things/Data/Documents/Models
 
+# qwen_3_vl_4b_instruct_q8p.ckpt
+# z_image_turbo_1.0_q6p.ckpt
+```
 
 ### 基于ComfyUI + GGUF 方案 
 在 Mac 上基于ComfyUI + GGUF 方案部署 Z-Image-Turbo，并封装 OpenAI 兼容 API 的全过程。
