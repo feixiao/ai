@@ -13,5 +13,3 @@
 
 
 
-#### 参考
-+ [《Z-image的mac使用指南》](https://zjncs.github.io/2025/12/01/12-1-Z-image%E7%9A%84mac%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/index.html)

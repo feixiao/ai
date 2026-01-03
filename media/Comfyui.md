@@ -41,6 +41,8 @@ python main.py
 #### 模型安装
 + [《使用 ComfyUI 部署与测试 FLUX.1 图像生成模型 教程》](https://blog.csdn.net/caroline_wendy/article/details/141201307)
 
++ [Comflowy 模型下载](https://civitai.me/search/%E5%B0%8F%E7%BA%A2%E4%B9%A6?cat)
+
 #### 参考资料
 + [《安装》](https://docs.comfy.org/get_started/manual_install#mac-arm-silicon)
 + [《ComfyUI 入门教程》](https://www.uisdc.com/comfyui-3)
