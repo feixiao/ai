@@ -30,21 +30,7 @@ brew install llama.cpp
 
 总的来说，在macOS上，Ollama和llama.cpp的性能差异对普通用户而言并不大，Ollama的自动化优化往往能提供更稳定可靠的体验。推荐从Ollama开始你的macOS大模型之旅，除非你有明确且强烈的理由需要直接驾驭llama.cpp。
 
-##### ollama直接运行GGUF模型
-+ Modelfile 示例
-```shell
-# 指定本地GGUF模型文件的路径
-FROM /path/to/your/model.gguf
-# 设置系统提示词，定义模型角色
-SYSTEM "你是一个有用的AI助手。"
-# 调整参数，例如控制生成创造性的温度参数
-PARAMETER temperature 0.7
-```
-+ 运行
-```shell
-ollama create my-model -f ./Modelfile
-ollama run my-model
-```
+
 
 ##### Ollama和safetensors
 Ollama 可以运行 safetensors格式的模型文件，但其支持是有特定条件的，需要转换
