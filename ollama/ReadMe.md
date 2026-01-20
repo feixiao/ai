@@ -51,3 +51,4 @@ ollama run modelscope2ollama-registry.azurewebsites.net/unsloth/DeepSeek-R1-Dist
 
 + [《MacBook Pro(M芯片) 搭建DeepSeek R1运行环境(硬件加速)》](https://blog.csdn.net/DevSeek/article/details/145523888)
 + [《Onllama.ModelScope2Registry》](https://github.com/onllama/Onllama.ModelScope2Registry)
++ [《Importing a Model》](https://docs.ollama.com/import)
