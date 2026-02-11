@@ -14,6 +14,7 @@ openclaw onboard --auth-choice apiKey --token-provider openrouter --token "$OPEN
 ```
 
 #### 测试key
+
 ```shell
 export OPENROUTER_API_KEY=""
 curl https://openrouter.ai/api/v1/chat/completions \
@@ -39,8 +40,13 @@ export OPENROUTER_API_KEY=""
 clawdbot onboard --auth-choice apiKey --token-provider openrouter --token "$OPENROUTER_API_KEY"
 ```
 
+#### 配置邮箱
+```shell
+openclaw plugins install https://github.com/lamelas/himalaya.git
+```
 
 
+#### minmax
 
 
 #### 参考资料
@@ -48,3 +54,4 @@ clawdbot onboard --auth-choice apiKey --token-provider openrouter --token "$OPEN
 + [clawbot老版本](https://github.com/xianyu110/clawbot)
 + [对接飞书](https://cloud.tencent.com/developer/article/2625073)
 + [对接discard](https://cloud.tencent.com/developer/article/2625092)
++ [如何为 OpenClaw 配置 NVIDIA 免费模型](https://www.openclawai.cv/zh/blog/nvidia-free-model-openclaw-config)
