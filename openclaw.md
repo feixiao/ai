@@ -62,3 +62,4 @@ openclaw plugins install https://github.com/lamelas/himalaya.git
 + [《对接discard》](https://cloud.tencent.com/developer/article/2625092)
 + [《如何为 OpenClaw 配置 NVIDIA 免费模型》](https://www.openclawai.cv/zh/blog/nvidia-free-model-openclaw-config)
 + [《最适合新手安装的10个小龙虾🦞 skills来了！》](https://mp.weixin.qq.com/s/4lUgy1nW41-6jxoRKdszeQ)
++ [《飞书多 Agent 一次讲透：一个机器人，三个角色，互不串台》](https://zhuanlan.zhihu.com/p/2009377755695974125)
