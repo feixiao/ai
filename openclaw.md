@@ -55,6 +55,10 @@ openclaw plugins install https://github.com/lamelas/himalaya.git
 + 6. proactive-agent (或 proactive-agent-1-2-4 等版本) 增加主动性，能自己规划、迭代任务。让Agent从“被动回答”变成“主动帮忙”。
 + 7. skill-vetter / security-audit 或类似安全扫描 安装前扫描技能代码、防恶意。新手安全第一，装这个后再放心装别的。
 
+
+#### 多Agent
++ [《OpenClaw 进阶：3 份“灵魂配置”，让助手从工具变成搭档》](https://cloud.tencent.com/developer/article/2633422)
+
 #### 参考资料
 + [《开源AI助手接入Discord》](https://zhuanlan.zhihu.com/p/1999598055972947248)
 + [《clawbot老版本](https://github.com/xianyu110/clawbot)
