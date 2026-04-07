@@ -89,3 +89,8 @@ pip install -r requirements.txt
 
 ## 5. 总结 (Conclusion)
 **Mac Studio (M4 Max, 128GB)** 是运行 ComfyUI + Wan2.2 的**顶级生产力工作站**。其核心优势在于通过超大容量的统一内存彻底解决了视频生成中的“显存焦虑”，为专业级 AI 视频创作提供了极高的上限。
+
+
+
+## 6. 参考资料
++ [《WAN2.2文生视频镜像部署教程》](https://modelers.csdn.net/69a7a1527bbde9200b9d5779.html)
