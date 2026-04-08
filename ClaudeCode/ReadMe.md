@@ -32,3 +32,4 @@ claude --model qwopus3.5-27b-v3
 
 #### 参考资料
 + [Use your LM Studio Models in Claude Code](https://lmstudio.ai/blog/claudecode)
++ [《Claude Code 快速上手核心指南》](https://datawhalechina.github.io/easy-vibe/zh-cn/stage-3/core-skills/basics/)
