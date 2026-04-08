@@ -63,7 +63,7 @@ claude --model qwopus3.5-27b-v3
     "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
     "OTEL_METRICS_EXPORTER": "otlp",
     "ANTHROPIC_BASE_URL": "http://127.0.0.1:1234",
-    "ANTHROPIC_MODEL":"gemma-4-31b-it",
+    "ANTHROPIC_MODEL":"gemma-4-31b-it",  # 有点慢
     "ANTHROPIC_DEFAULT_OPUS_MODEL":"qwopus3.5-27b-v3",
     "ANTHROPIC_DEFAULT_SONNET_MODEL":"gemma-4-26b-a4b-it",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL":"gemma-4-26b-a4b-it",
