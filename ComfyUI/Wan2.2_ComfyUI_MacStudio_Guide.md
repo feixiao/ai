@@ -24,6 +24,7 @@ brew install --cask miniforge
 conda create -n comfy-wan22 python=3.11
 
 # 3. 激活环境
+conda init zsh  # 首次使用 conda 或新终端需先执行本命令，然后重启终端
 conda activate comfy-wan22
 
 conda install pytorch torchvision torchaudio -c pytorch-nightly
