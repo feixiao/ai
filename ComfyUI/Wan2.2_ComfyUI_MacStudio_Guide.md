@@ -30,8 +30,10 @@ conda activate comfy-wan22
 conda install pytorch torchvision torchaudio -c pytorch-nightly
 
 # 4. 升级 pip 并安装 CoreML 基础依赖
-pip install --upgrade pip
-pip install coremltools==7.3 numpy==1.26.4 pillow==10.3.0
+# 建议优先 conda，遇到 conda 无法满足时再用 pip。
+conda install coremltools numpy pillow -c conda-forge
+#pip install --upgrade pip
+#pip install coremltools==7.3 numpy==1.26.4 pillow==10.3.0
 ```
 
 验证是否为 arm64：
@@ -42,17 +44,9 @@ python -c "import platform; print(platform.machine())"
 
 输出应为 `arm64`。
 
-##### 测试试运行以下代码，验证 CoreML 是否可用：
+##### 一行命令验证 CoreML (MPS) 是否可用：
 
-```python
-import torch
-if torch.backends.mps.is_available():
-    mps_device = torch.device("mps")
-    x = torch.ones(1, device=mps_device)
-    print (x)
-else:
-    print ("MPS device not found.")
-```
+python -c "import torch; print(torch.ones(1, device='mps') if torch.backends.mps.is_available() else 'MPS device not found.')"
 
 ### 2.3 部署 ComfyUI 并启用 CoreML 后端
 Wan2.2 工作流基于 ComfyUI 构建，但默认 ComfyUI 不支持 CoreML。建议使用轻量补丁方案：
@@ -67,8 +61,9 @@ git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git ~/ComfyUI-Core
 
 # 进入目录并安装定制化依赖
 cd ~/ComfyUI-CoreML
+conda activate comfy-wan22
 pip install -r requirements.txt
-pip install -e .
+#pip install -e .
 
 # 启动时强制启用 CoreML（关键）
 python main.py --cpu --disable-smart-memory --preview-method auto
