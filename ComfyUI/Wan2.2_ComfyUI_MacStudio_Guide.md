@@ -17,14 +17,14 @@
 打开终端，逐行执行以下命令（可直接复制粘贴）：
 
 ```bash
-# 1. 使用 Homebrew 安装 arm64 原生 Python（跳过系统自带 Python）
-brew install python@3.11
+# 1. 安装 Miniforge（推荐，原生支持 arm64，轻量无污染）
+brew install --cask miniforge
 
-# 2. 创建专用虚拟环境（避免污染全局）
-python3.11 -m venv ~/comfy-wan22-env
+# 2. 创建专用 conda 环境（避免污染全局）
+conda create -n comfy-wan22 python=3.11
 
 # 3. 激活环境
-source ~/comfy-wan22-env/bin/activate
+conda activate comfy-wan22
 
 # 4. 升级 pip 并安装 CoreML 基础依赖
 pip install --upgrade pip
