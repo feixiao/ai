@@ -32,7 +32,15 @@ brew install comfyui
 ## 4. 下载并配置 Wan 2.2 工作流
 
 1. 在 ComfyUI 右侧菜单点击“Templates（模板）”→“Video”→“Wan 2.2 14 Image to Video”。
-2. 这会加载官方的 `video_wan2_2_14B_i2v.json` 工作流。
+2. 这会加载官方的 Wan 2.2 图生视频工作流，`video_wan2_2_14B_i2v.json` 是官方仓库中对应的模板文件名，界面里一般只显示“Wan 2.2 14 Image to Video”。
+3. 如果你想尝试其它 Wan 2.2 视频生成模式，还可以在同一模板库里选择：
+   - `video_wan2_2_14B_i2v.json`：标准图像到视频（Image-to-Video）。
+   - `03_video_wan2_2_14B_i2v_subgraphed.json`：同样的图像到视频流程，但封装成子图，可用于组合其它复杂流。
+   - `video_wan2_2_14B_animate.json`：已有视频动画增强/迭代，用于对现有短视频做风格化处理。
+   - `video_wan2_2_14B_flf2v.json`：起始/结束帧生成视频，适合“首尾帧插值”场景。
+   - `video_wan2_2_14B_fun_camera.json`：有趣的相机运动效果，适合带运动镜头的画面生成。
+4. 这些模板的模型路径和节点结构一般会自动填好，但如果出现缺少模型提示，可根据本指南第7节下载 GGUF 模型并手动加载。
+
 
 ## 5. 常见问题与解决
 
@@ -67,15 +75,30 @@ brew install comfyui
 3. 在 Node Library 搜索“gguf”，添加 bootleg→Unet Loader (GGUF) 节点，替换掉原有的 Diffusion Model 节点。
 
 ## 7. 下载新模型（GGUF 格式）
+Wan 2.2 图生视频工作流需要两个 GGUF 模型：
+### 下载方法
 
-- [Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf](https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/blob/main/HighNoise/Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf)
-- [Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf](https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/blob/main/LowNoise/Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf)
+由于模型文件较大（约10GB+），建议使用终端命令下载，避免浏览器中断：
 
-下载后放入：
+1. 打开终端，进入目标目录：
+   ```bash
+   cd ~/Documents/ComfyUI/models/unet/
+   ```
 
-```
-~/Documents/ComfyUI/models/unet/
-```
+2. 使用 curl 下载（Mac 自带）：
+   ```bash
+   curl -L -o Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf "https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/resolve/main/HighNoise/Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf"
+   curl -L -o Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf "https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/resolve/main/LowNoise/Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf"
+   ```
+
+3. 或者使用 wget（需先安装 `brew install wget`）：
+   ```bash
+   wget https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/resolve/main/HighNoise/Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf
+   wget https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/resolve/main/LowNoise/Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf
+   ```
+
+4. 如果下载慢，可使用国内镜像或代理加速。
+
 
 ## 8. 工作流节点调整
 
@@ -106,6 +129,5 @@ brew install comfyui
 - 可尝试其他视频生成工作流、模型或参数，提升画质与表现力。
 - 关注 ComfyUI、Wan 2.2 相关社区，获取最新优化和模型。
 
----
-
-如需进一步定制或遇到具体报错，可补充说明，我会帮你详细解答！
+## 12. 参考资料
++ [workflow_templates](https://github.com/Comfy-Org/workflow_templates/tree/main/templates) 
