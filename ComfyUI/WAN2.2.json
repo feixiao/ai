@@ -168,7 +168,7 @@
         "0, 0, 0",
         "center",
         2,
-        "cpu"
+        "mps"
       ]
     },
     {
@@ -1487,7 +1487,7 @@
         }
       },
       "widgets_values": [
-        "wan2.2-rapid-mega-aio-nsfw-v12.1-Q4_K.gguf"
+        "models/unet/wan2.2-rapid-mega-aio-nsfw-v12.1-Q4_K.gguf"
       ]
     },
     {
@@ -1523,7 +1523,7 @@
         }
       },
       "widgets_values": [
-        "D\\wan\\umt5-xxl-encoder-Q3_K_S.gguf",
+        "models/clip/umt5-xxl-encoder-Q3_K_S.gguf",
         "wan"
       ]
     },
@@ -1619,7 +1619,7 @@
         }
       },
       "widgets_values": [
-        "D\\wan_2.1_vae.safetensors"
+        "models/vae/wan_2.1_vae.safetensors"
       ]
     },
     {
@@ -2133,7 +2133,7 @@
         true,
         "simple",
         1,
-        "WAN\\14B\\DR34ML4Y_I2V_14B_LOW_V2.safetensors",
+        "models/lora/DR34ML4Y_I2V_14B_LOW_V2.safetensors",
         0.6,
         1,
         1,

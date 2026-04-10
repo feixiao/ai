@@ -75,19 +75,43 @@ python main.py --cpu --disable-smart-memory --preview-method auto
 
 ## 3. WAN2.2 工作流导入与配置
 
-### 3.1 获取并加载 WAN2.2 专用工作流
-WAN2.2 镜像通常已预置完整工作流文件（`.json` 格式），无需手动搭建节点。建议流程：
+### 3.1 工作流导入与模型路径适配（新版ComfyUI标准）
 
-1. 从 CSDN 星图镜像广场下载 `WAN2.2-文生视频+SDXL_Prompt风格`。
-2. 解压后得到 `wan22_sdxl_prompt_style.json`。
-3. 在 ComfyUI 左上角点击 `Load`，选择该 JSON 文件。
+> ⚠️ 注意：导入任何第三方工作流（如CSDN镜像、网络教程、旧版json等）后，务必检查所有模型、VAE、LoRA等文件路径，确保它们指向ComfyUI推荐的标准目录，否则会报错或找不到模型。
 
-加载完成后，左侧节点区将自动展开完整流程，核心模块包括：
+#### 推荐目录结构
+- 主模型（Unet/SDXL/视频模型）：models/unet/
+- 文本编码器（CLIP/umt5等）：models/clip/
+- VAE：models/vae/
+- LoRA/权重：models/lora/
 
-* **SDXL Prompt Styler**：中文提示词解析与风格注入节点
-* **WAN2.2 Video Encoder**：CoreML 加速的轻量视频编码器
-* **CoreML Sampler**：替代传统 KSampler，全程在神经引擎运行
-* **Video Preview**：直接在浏览器内播放生成结果
+#### 操作流程
+1. 在 ComfyUI 左上角点击 `Load`，选择你的 json 工作流文件。
+2. 加载后，若提示找不到模型或报路径错误：
+   - 打开 json 文件，查找所有模型相关路径（如 D/wan/xxx、D\\wan\\xxx、根目录等），全部改为如 models/unet/xxx、models/clip/xxx、models/vae/xxx、models/lora/xxx。
+   - 将实际模型文件移动或复制到上述目录。
+   - 如你有 Draw Things 的模型，可用软链接共用（见下）。
+3. 回到 ComfyUI，重新加载工作流，确认所有模型均已识别。
+
+#### Draw Things 共用模型方法（可选）
+- Draw Things 默认模型目录：~/Library/Containers/com.maksym.DiffusionRunner/Data/Documents/models/
+- 在 ComfyUI 根目录下执行：
+  ```bash
+  ln -s ~/Library/Containers/com.maksym.DiffusionRunner/Data/Documents/models/unet ./models/unet
+  ln -s ~/Library/Containers/com.maksym.DiffusionRunner/Data/Documents/models/clip ./models/clip
+  ln -s ~/Library/Containers/com.maksym.DiffusionRunner/Data/Documents/models/vae ./models/vae
+  ln -s ~/Library/Containers/com.maksym.DiffusionRunner/Data/Documents/models/lora ./models/lora
+  ```
+- 这样无需复制模型，两边可共用。
+
+#### 常见问题
+- 路径有误、模型找不到：请务必用文本编辑器全局替换路径，或用软链接共用。
+- 路径不要有中文或空格。
+- 某些特殊模型（如ControlNet）需放到对应子目录。
+
+> 建议将本节内容作为导入任何第三方工作流的必读说明，避免路径不符导致的各种报错。
+
+---
 
 ### 3.2 中文提示词输入与风格选择实操
 WAN2.2 对中文提示词做了语义对齐优化，但必须通过 `SDXL Prompt Styler` 节点输入，不建议直接填入基础 CLIP 文本编码器。
