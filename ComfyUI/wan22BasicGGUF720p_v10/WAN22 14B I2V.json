@@ -233,7 +233,7 @@
       ],
       "flags": {},
       "order": 15,
-      "mode": 0,
+      "mode": 4,
       "inputs": [
         {
           "name": "model",
@@ -507,7 +507,7 @@
       ],
       "flags": {},
       "order": 16,
-      "mode": 0,
+      "mode": 4,
       "inputs": [
         {
           "name": "model",
@@ -1051,7 +1051,7 @@
         "ver": "0.3.45"
       },
       "widgets_values": [
-        "//This uses the subgraph of comfyui. If you have any node issues, please update the ComfyUI frontend.\n\nShe laughs, shaking and bouncing.\n\n\n\n\n//This is the basic workflow. The custom node only uses gguf.\n//(https://github.com/city96/ComfyUI-GGUF)\n\n//Lora: \n//https://huggingface.co/Kijai/WanVideo_comfy/tree/main/Wan22-Lightning\n\n//gguf:\n//https://huggingface.co/bullerwins/Wan2.2-I2V-A14B-GGUF/tree/main\n//https://huggingface.co/city96/umt5-xxl-encoder-gguf/tree/main\n\n\n//By default, this creates a low-quality 480P preview. \n//If you like it, turn on the upscale group(You may need to update comfyui), do a V2V at 720P, and save it in high quality. \n\n//It takes about the same amount of time and quality as creating a 720P file from scratch, but it's nice to be able to preview it first.\n\n//Latent upscale can be problematic depending on the scene. Image upscale is slower but more stable.\n\n\n//This uses the subgraph of comfyui. If you have any node issues, please update the ComfyUI frontend.\n//TorchCompile can be ignored.\n"
+        "She laughs, shaking and bouncing."
       ],
       "color": "#232",
       "bgcolor": "#353"
