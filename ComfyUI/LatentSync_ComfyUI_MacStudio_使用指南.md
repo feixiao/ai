@@ -38,12 +38,30 @@ cd ComfyUI-LatentSyncWrapper
 
 LatentSync 需要特定的权重模型（约 5GB），部分节点会自动下载，但由于网络环境原因，建议手动下载：
 
-1. 从 [HuggingFace - LatentSync](https://huggingface.co/chunyu-li/LatentSync/tree/main) 下载以下文件：
-   - `latentsync_v2.pt`
-   - `whisper/tiny.pt` (或指定版本)
-2. 存放到以下目录（视插件版本而定，通常在如下路径）：
-   - `ComfyUI/models/checkpoints/latentsync/` 
-   - 或插件目录下的 `checkpoints/` 文件夹。
+1. **第一步：建立本地文件夹**
+   由于模型文件比较散碎，建议你先在桌面上（或任意方便的地方）新建一个名为 `latentsync` 的文件夹。
+
+2. **第二步：下载并在这个新建文件夹内组织结构**
+   从 [HuggingFace - LatentSync](https://huggingface.co/chunyu-li/LatentSync/tree/main) 挑选下载以下核心模块，并将它们分门别类地放进你刚建好的 `latentsync` 文件夹中：
+
+   - **放在 `latentsync` 的根目录下**：
+     - `latentsync_unet.pt` (**必下**：核心生成模型，负责绘制唇形)
+     - `latentsync_syncnet.pt` (选下：同步判别模型，推理过程通常用不到)
+   
+   - **放在 `latentsync/whisper/` 文件夹内** (需手动新建)：
+     - `tiny.pt` (**必下**：音频特征提取，必须能听懂你录音在说什么)
+   
+   - **放在 `latentsync/auxiliary/` 文件夹内** (需手动新建)：
+     - `s3fd-619a316812.pth` 或 `sfd_face.pth` (**必下**：用于脸部精确抓取防报错)
+     - `vgg16-397923af.pth` (选下：除非插件特别要求，否则可以不装)
+     - `vit_g...` (纯评测打分用，**千万别下**，白占极多硬盘！)
+
+3. **第三步：将整个文件夹放入 ComfyUI**
+   将上面整理好的、内含所有子目录的这把大伞——**整个 `latentsync` 文件夹**，完整拷贝/移动到以下指定的绝对路径之一中：
+   - 默认检查点存放处：`~/ComfyUI/models/checkpoints/` 
+   - 或者是插件专门预留的缓存目录：`~/ComfyUI/custom_nodes/ComfyUI-LatentSyncWrapper/checkpoints/`
+   
+   *(放好后，它的完整路径就会变成像 `~/ComfyUI/models/checkpoints/latentsync/latentsync_unet.pt` 这样的结构)*
 
 
 
