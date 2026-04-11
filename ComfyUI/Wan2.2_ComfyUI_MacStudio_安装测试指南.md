@@ -28,7 +28,34 @@ brew install comfyui
 - **内存限制**：Wan 2.2 14B 模型在 FP16 精度下需要约 30GB 显存，加上 VAE 运算，极易触碰 Mac 的显存分配阈值导致系统重启或 ComfyUI 卡死。
 - **推荐方案**：**务必使用 GGUF 量化版本**。
 
----
+### 3.1 模型准备与角色说明
+
+在 Mac Studio 上运行 Wan 2.2，模型选择对性能至关重要。你通常可以从工作流发布页面获取下载地址，以下是各模型在文档结构中的存放要求及其作用：
+
+```bash
+# 确保基础目录已就绪
+mkdir -p ~/ComfyUI/models/{clip,vae,unet,loras}
+```
+
+#### 1. 文本编码器 (T5 Encoder)
+- **作用**：解析提示词（Prompt）。它是生成过程的基础，决定了模型对指令的理解程度。
+- **Mac 建议**：务必使用 **GGUF 版**（如 `umt5-xxl`）。相比 FP16 原版，GGUF 版能节省大量显存，让 14B 模型在 32GB/64GB 内存的 Mac 上也能跑通。
+- **存放路径**：`~/ComfyUI/models/clip/`
+
+#### 2. VAE 模型
+- **作用**：图像/视频解码器。负责将生成的潜空间数据转换为人眼可见的像素画面。
+- **核心提示**：使用 Wan 2.2 专用的 VAE 才能获得正确的色彩和清晰度。
+- **存放路径**：`~/ComfyUI/models/vae/`
+
+#### 3. 主推理模型 (UNET / GGUF)
+- **作用**：视频生成的核心“大脑”。
+- **Mac 建议**：**必须使用 GGUF 格式**。Apple Silicon 的统一内存架构对量化模型非常友好，Q4 或 Q5 量化能在保持极高画质的同时，避免系统因显存过载而崩溃。
+- **存放路径**：`~/ComfyUI/models/unet/`
+
+#### 4. Lightning LoRA (推荐)
+- **作用**：极速插件。能将推理步数从 50 步压缩到 4-8 步，生成耗时缩短 10 倍以上。
+- **存放路径**：`~/ComfyUI/models/loras/`
+
 
 ## 4. 快速跑通：直接使用社区 GGUF 工作流 (推荐)
 
@@ -64,7 +91,7 @@ brew install comfyui
 ### 第一步：安装 GGUF 必要节点
 1. 进入 `custom_nodes` 目录：
    ```bash
-   cd ~/Documents/ComfyUI/custom_nodes
+   cd ~/ComfyUI/custom_nodes
    git clone https://github.com/city96/ComfyUI-GGUF
    ```
 2. 重启 ComfyUI。
