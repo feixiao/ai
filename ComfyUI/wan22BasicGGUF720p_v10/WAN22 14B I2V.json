@@ -787,7 +787,7 @@
         "collapsed": true
       },
       "order": 19,
-      "mode": 4,
+      "mode": 0,
       "inputs": [
         {
           "name": "samples",
