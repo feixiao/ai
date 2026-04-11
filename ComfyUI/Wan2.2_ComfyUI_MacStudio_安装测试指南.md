@@ -178,3 +178,4 @@ Wan 2.2 是大型视频生成模型，推理速度取决于硬件配置、分辨
 
 ## 13. 参考资料
 + [workflow_templates](https://github.com/Comfy-Org/workflow_templates/tree/main/templates) 
++ [Wan 2.2 (GGUF)](https://civitai.com/search/models?sortBy=models_v9&query=Wan%202.2%20%28GGUF%29)
