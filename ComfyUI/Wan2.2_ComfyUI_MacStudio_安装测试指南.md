@@ -63,12 +63,12 @@ mkdir -p ~/ComfyUI/models/{clip,vae,unet,loras}
 ```bash
 cat > ~/Library/Application\ Support/ComfyUI/config.json << 'EOF'
 {
-        "installState": "installed",
-        "detectedGpu": "mps",
-        "basePath": "/Users/frank/ComfyUI",
-        "versionConsentedMetrics": "0.8.28",
-        "selectedDevice": "mps",
-        "args": ["--force-fp16", "--use-split-cross-attention", "--disable-torch-compile"]
+    "installState": "installed",
+    "detectedGpu": "mps",
+    "basePath": "/Users/frank/ComfyUI",
+    "versionConsentedMetrics": "0.8.28",
+    "selectedDevice": "mps",
+    "args": ["--force-fp32-unet", "--force-fp32-vae", "--use-split-cross-attention", "--disable-torch-compile"]
 }
 EOF
 ```
