@@ -87,18 +87,10 @@ Wan 2.2 图生视频工作流需要两个 GGUF 模型：
 
 2. 使用 curl 下载（Mac 自带）：
    ```bash
+   # 14B
    curl -L -o Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf "https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/resolve/main/HighNoise/Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf"
    curl -L -o Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf "https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/resolve/main/LowNoise/Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf"
    ```
-
-3. 或者使用 wget（需先安装 `brew install wget`）：
-   ```bash
-   wget https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/resolve/main/HighNoise/Wan2.2-I2V-A14B-HighNoise-Q5_K_M.gguf
-   wget https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF/resolve/main/LowNoise/Wan2.2-I2V-A14B-LowNoise-Q5_K_M.gguf
-   ```
-
-4. 如果下载慢，可使用国内镜像或代理加速。
-
 
 ## 8. 工作流节点调整
 
@@ -144,10 +136,45 @@ Wan 2.2 是大型视频生成模型，推理速度取决于硬件配置、分辨
 - **VAE Decode 像素化**：可尝试 Node Library 里的 VAE DECODE (Tiled) 节点，并适当降低参数。
 - **模型下载慢**：可用国内镜像或提前下载。
 
-## 11. 进阶探索
+## 11. 寻找与优化 Mac 工作流
+
+### 推荐资源来源
+
+为了获得最佳性能，建议寻找那些**针对 GGUF 量化模型优化**或**标注了"低显存/低功耗"**的工作流版本：
+
+#### 1. Civitai (C站) —— 社区资源最全
+- **推荐搜索词**：Wan 2.2 (GGUF) Workflow
+- **寻找特征**：关注那些文件名中带有 GGUF 字样的模型关联工作流，通常会有作者专门标注"适用于 Mac"或"低显存优化"。
+
+#### 2. ComfyUI 官方模板 —— 最稳定、最纯净
+- **操作方法**：在 ComfyUI 界面左侧点击 Templates (模板) → Video → Wan 2.2 14B Image to Video
+- **Mac 适配建议**：加载官方模板后，手动将 UNETLoader 节点替换为 Unet-GGUF 节点即可（需安装 ComfyUI-GGUF 插件）
+
+#### 3. GitHub 专项仓库 —— 针对低显存优化的技术流
+- **推荐搜索**：ComfyUI-Wan2.2-workflow（例如 Cordux 开发的版本）
+- **优点**：这些工作流通常已经配置好了针对 GGUF 模型、GGUF 文本编码器 (umt5) 以及 Tiled VAE 解码的节点连接
+
+### Mac 用户特别配置建议
+
+在寻找和使用工作流时，务必检查以下设置以匹配 Apple Silicon 性能：
+
+#### 模型选择
+- 避开 FP16，优先下载 Q4_K_M 或 Q5_K 版本的 GGUF 模型
+- 使用量化工作流能让速度从"几分钟一帧"提升到"秒级生成"
+
+#### 服务器配置
+- 将 Inference (推理) 设为 fp32（Apple MPS 后端对 fp32 兼容性更好）
+- 开启 highvram 模式（虽然听起来反直觉，但 Mac 的统一内存管理在 highvram 模式下表现更优）
+
+#### VAE 设置
+- 务必在设置中开启 Run VAE on CPU 或在工作流中使用 VAE Decode (Tiled)
+- 这能释放大量显存，避免生成长视频时系统卡死
+
+
+## 12. 进阶探索
 
 - 可尝试其他视频生成工作流、模型或参数，提升画质与表现力。
 - 关注 ComfyUI、Wan 2.2 相关社区，获取最新优化和模型。
 
-## 12. 参考资料
+## 13. 参考资料
 + [workflow_templates](https://github.com/Comfy-Org/workflow_templates/tree/main/templates) 
