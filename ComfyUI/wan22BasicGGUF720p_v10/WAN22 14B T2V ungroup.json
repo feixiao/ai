@@ -1,0 +1,1188 @@
+{
+  "id": "4fbd1416-0ad1-4f77-8018-05b11953e25e",
+  "revision": 0,
+  "last_node_id": 44,
+  "last_link_id": 79,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "UnetLoaderGGUF",
+      "pos": [
+        -57.56283950805664,
+        145.8273162841797
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            28
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UnetLoaderGGUF"
+      },
+      "widgets_values": [
+        "wan2.2_t2v_high_noise_14B_Q4_K_S.gguf"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "UnetLoaderGGUF",
+      "pos": [
+        -59.06369400024414,
+        267.84197998046875
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            6
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "UnetLoaderGGUF"
+      },
+      "widgets_values": [
+        "wan2.2_t2v_low_noise_14B_Q4_K_S.gguf"
+      ]
+    },
+    {
+      "id": 6,
+      "type": "VAELoader",
+      "pos": [
+        -57.836734771728516,
+        506.6607971191406
+      ],
+      "size": [
+        272.13916015625,
+        58
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            9
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAELoader",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45",
+        "models": [
+          {
+            "name": "wan_2.1_vae.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors",
+            "directory": "vae"
+          }
+        ]
+      },
+      "widgets_values": [
+        "wan_2.1_vae.safetensors"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "CLIPLoaderGGUF",
+      "pos": [
+        -58.646427154541016,
+        384.19091796875
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            13
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "CLIPLoaderGGUF"
+      },
+      "widgets_values": [
+        "umt5-xxl-encoder-Q8_0.gguf",
+        "wan"
+      ]
+    },
+    {
+      "id": 13,
+      "type": "ConditioningZeroOut",
+      "pos": [
+        864.2332153320312,
+        723.61376953125
+      ],
+      "size": [
+        197.712890625,
+        26
+      ],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            34,
+            74
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ConditioningZeroOut"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 7,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        244.30792236328125,
+        250.50657653808594
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            7
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "FLUX.1-Turbo-Alpha.safetensors",
+        1
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        247.61907958984375,
+        522.3748779296875
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 1
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            5
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "FLUX.1-Turbo-Alpha.safetensors",
+        1
+      ]
+    },
+    {
+      "id": 23,
+      "type": "SaveAnimatedWEBP",
+      "pos": [
+        884.1261596679688,
+        1552.2584228515625
+      ],
+      "size": [
+        270,
+        154
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 20,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 39
+        }
+      ],
+      "outputs": [],
+      "title": "SaveWEBP",
+      "properties": {},
+      "widgets_values": [
+        "ComfyUI",
+        16,
+        true,
+        1,
+        "fastest"
+      ]
+    },
+    {
+      "id": 21,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        245.80870056152344,
+        131.74205017089844
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            4
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "Wan2.2-Lightning_T2V-v1.1-A14B-4steps-lora_HIGH_fp16.safetensors",
+        1
+      ]
+    },
+    {
+      "id": 15,
+      "type": "SaveVideo",
+      "pos": [
+        -225.70252990722656,
+        846.4847412109375
+      ],
+      "size": [
+        411.9346618652344,
+        870.9302368164062
+      ],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "video",
+          "type": "VIDEO",
+          "link": 12
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveVideo"
+      },
+      "widgets_values": [
+        "ComfyUI",
+        "auto",
+        "auto"
+      ]
+    },
+    {
+      "id": 14,
+      "type": "TorchCompileModel",
+      "pos": [
+        1053.4039306640625,
+        132.87152099609375
+      ],
+      "size": [
+        210,
+        58
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 60
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            32
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TorchCompileModel"
+      },
+      "widgets_values": [
+        "inductor"
+      ]
+    },
+    {
+      "id": 5,
+      "type": "TorchCompileModel",
+      "pos": [
+        1057.1634521484375,
+        402.5418701171875
+      ],
+      "size": [
+        210,
+        58
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 61
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            72
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "TorchCompileModel"
+      },
+      "widgets_values": [
+        "inductor"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "ModelSamplingSD3",
+      "pos": [
+        535.1698608398438,
+        132.26536560058594
+      ],
+      "size": [
+        210,
+        60
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            60
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingSD3",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45"
+      },
+      "widgets_values": [
+        5
+      ]
+    },
+    {
+      "id": 11,
+      "type": "VAEDecode",
+      "pos": [
+        884.0517578125,
+        1384.539794921875
+      ],
+      "size": [
+        140,
+        46
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 75
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 9
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "slot_index": 0,
+          "links": [
+            39,
+            59,
+            79
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VAEDecode",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 4,
+      "type": "CreateVideo",
+      "pos": [
+        883.986328125,
+        1492.1495361328125
+      ],
+      "size": [
+        270,
+        78
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 59
+        },
+        {
+          "name": "audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "VIDEO",
+          "type": "VIDEO",
+          "links": [
+            12
+          ]
+        }
+      ],
+      "title": "SaveMP4",
+      "properties": {
+        "Node name for S&R": "CreateVideo"
+      },
+      "widgets_values": [
+        16
+      ]
+    },
+    {
+      "id": 16,
+      "type": "EmptyHunyuanLatentVideo",
+      "pos": [
+        198.40924072265625,
+        1383.8055419921875
+      ],
+      "size": [
+        210.09432983398438,
+        130
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            35
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "EmptyHunyuanLatentVideo"
+      },
+      "widgets_values": [
+        432,
+        768,
+        61,
+        1
+      ]
+    },
+    {
+      "id": 8,
+      "type": "ModelSamplingSD3",
+      "pos": [
+        539.1097412109375,
+        402.52569580078125
+      ],
+      "size": [
+        210,
+        58
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 5
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            61
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ModelSamplingSD3",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45"
+      },
+      "widgets_values": [
+        5
+      ]
+    },
+    {
+      "id": 9,
+      "type": "LoraLoaderModelOnly",
+      "pos": [
+        244.97402954101562,
+        401.77532958984375
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 6
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoraLoaderModelOnly"
+      },
+      "widgets_values": [
+        "Wan2.2-Lightning_T2V-v1.1-A14B-4steps-lora_LOW_fp16.safetensors",
+        1
+      ]
+    },
+    {
+      "id": 22,
+      "type": "KSamplerAdvanced",
+      "pos": [
+        415.3302001953125,
+        1385.1400146484375
+      ],
+      "size": [
+        244.748046875,
+        334
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 32
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 33
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 34
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 35
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            77
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSamplerAdvanced"
+      },
+      "widgets_values": [
+        "enable",
+        1,
+        "randomize",
+        4,
+        1,
+        "euler",
+        "simple",
+        0,
+        2,
+        "disable"
+      ]
+    },
+    {
+      "id": 42,
+      "type": "LatentUpscaleBy",
+      "pos": [
+        717.7816772460938,
+        1828.3067626953125
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 77
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            78
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LatentUpscaleBy"
+      },
+      "widgets_values": [
+        "bilinear",
+        1.33
+      ]
+    },
+    {
+      "id": 43,
+      "type": "KSampler",
+      "pos": [
+        716.6655883789062,
+        2130.22802734375
+      ],
+      "size": [
+        270,
+        262
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 72
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 73
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 74
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 76
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            75
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        0,
+        "fixed",
+        2,
+        1,
+        "euler",
+        "simple",
+        0.5
+      ]
+    },
+    {
+      "id": 41,
+      "type": "LatentUpscale",
+      "pos": [
+        717.0055541992188,
+        1952.554443359375
+      ],
+      "size": [
+        270,
+        130
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 78
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            76
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LatentUpscale"
+      },
+      "widgets_values": [
+        "bilinear",
+        720,
+        0,
+        "disabled"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "CLIPTextEncode",
+      "pos": [
+        198.4193572998047,
+        843.3555908203125
+      ],
+      "size": [
+        868.840576171875,
+        462.80615234375
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 13
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "slot_index": 0,
+          "links": [
+            10,
+            33,
+            73
+          ]
+        }
+      ],
+      "title": "CLIP Text Encode (Positive Prompt)",
+      "properties": {
+        "Node name for S&R": "CLIPTextEncode",
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45"
+      },
+      "widgets_values": [
+        "//from https://alidocs.dingtalk.com/i/nodes/EpGBa2Lm8aZxe5myC99MelA2WgN7R35y\nIn an oil painting style, a vast sea of sunflowers unfolds, their golden heads blooming brilliantly in the faint light of dawn or dusk. The impasto technique is prominently used, with bold, thick brushstrokes lending a powerful texture and vitality to the sky and petals. The deep blue of the sky creates a striking contrast with the bright sunflowers, cultivating an atmosphere that is both serene and hopeful. Swarms of bees dance and hover ceaselessly among the flowers, busily collecting nectar. These dynamic bees inject boundless energy and a sense of motion into the otherwise static painting, filling the entire scene with the vibrant life of summer and the joy of harvest.\n\n\n\n//This is the basic workflow. The custom node only uses gguf.\n//(https://github.com/city96/ComfyUI-GGUF)\n\n//Lora: 1.1v\n//https://huggingface.co/Kijai/WanVideo_comfy/tree/main/Wan22-Lightning\n\n//gguf:\n//https://huggingface.co/bullerwins/Wan2.2-T2V-A14B-GGUF/tree/main\n//https://huggingface.co/city96/umt5-xxl-encoder-gguf/tree/main\n\n//A high-LoRa strength of 1 seems to oversaturate and boring. \n//Reducing the strength seems to increase the movement, But unstable.\n//Try adjusting it to your liking. \n\n//By default, this creates a low-quality 480P preview. \n//If you like it, turn on the upscale group(You may need to update comfyui), do a V2V at 720P, and save it in high quality. \n//It takes about the same amount of time and quality as creating a 720P file from scratch, but it's nice to be able to preview it first.\n\n\n//This uses the subgraph of comfyui. If you have any node issues, please update the ComfyUI frontend.\n//TorchCompile can be ignored.\n"
+      ],
+      "color": "#232",
+      "bgcolor": "#353"
+    },
+    {
+      "id": 44,
+      "type": "SaveWEBM",
+      "pos": [
+        885.5126953125,
+        1610.0751953125
+      ],
+      "size": [
+        210,
+        495.3333435058594
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 22,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 79
+        }
+      ],
+      "outputs": [],
+      "properties": {},
+      "widgets_values": [
+        "ComfyUI",
+        "vp9",
+        30,
+        16
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      9,
+      0,
+      3,
+      0,
+      "MODEL"
+    ],
+    [
+      4,
+      21,
+      0,
+      7,
+      0,
+      "MODEL"
+    ],
+    [
+      5,
+      3,
+      0,
+      8,
+      0,
+      "MODEL"
+    ],
+    [
+      6,
+      2,
+      0,
+      9,
+      0,
+      "MODEL"
+    ],
+    [
+      7,
+      7,
+      0,
+      10,
+      0,
+      "MODEL"
+    ],
+    [
+      9,
+      6,
+      0,
+      11,
+      1,
+      "VAE"
+    ],
+    [
+      10,
+      17,
+      0,
+      13,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      12,
+      4,
+      0,
+      15,
+      0,
+      "VIDEO"
+    ],
+    [
+      13,
+      12,
+      0,
+      17,
+      0,
+      "CLIP"
+    ],
+    [
+      28,
+      1,
+      0,
+      21,
+      0,
+      "MODEL"
+    ],
+    [
+      32,
+      14,
+      0,
+      22,
+      0,
+      "MODEL"
+    ],
+    [
+      33,
+      17,
+      0,
+      22,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      34,
+      13,
+      0,
+      22,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      35,
+      16,
+      0,
+      22,
+      3,
+      "LATENT"
+    ],
+    [
+      39,
+      11,
+      0,
+      23,
+      0,
+      "IMAGE"
+    ],
+    [
+      59,
+      11,
+      0,
+      4,
+      0,
+      "IMAGE"
+    ],
+    [
+      60,
+      10,
+      0,
+      14,
+      0,
+      "MODEL"
+    ],
+    [
+      61,
+      8,
+      0,
+      5,
+      0,
+      "MODEL"
+    ],
+    [
+      72,
+      5,
+      0,
+      43,
+      0,
+      "MODEL"
+    ],
+    [
+      73,
+      17,
+      0,
+      43,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      74,
+      13,
+      0,
+      43,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      75,
+      43,
+      0,
+      11,
+      0,
+      "LATENT"
+    ],
+    [
+      76,
+      41,
+      0,
+      43,
+      3,
+      "LATENT"
+    ],
+    [
+      77,
+      22,
+      0,
+      42,
+      0,
+      "LATENT"
+    ],
+    [
+      78,
+      42,
+      0,
+      41,
+      0,
+      "LATENT"
+    ],
+    [
+      79,
+      11,
+      0,
+      44,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "Upscale",
+      "bounding": [
+        508.6866149902344,
+        1742.003173828125,
+        547.272705078125,
+        696.3636474609375
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1,
+      "offset": [
+        602.5818838407665,
+        -819.3353099159413
+      ]
+    },
+    "frontendVersion": "1.25.11"
+  },
+  "version": 0.4
+}
