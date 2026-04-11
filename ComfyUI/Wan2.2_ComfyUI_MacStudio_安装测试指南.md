@@ -56,6 +56,23 @@ mkdir -p ~/ComfyUI/models/{clip,vae,unet,loras}
 - **作用**：极速插件。能将推理步数从 50 步压缩到 4-8 步，生成耗时缩短 10 倍以上。
 - **存放路径**：`~/ComfyUI/models/loras/`
 
+### 3.2 配置文件优化 (ComfyUI Desktop 版)
+
+为了确保 ComfyUI 在 Mac Studio 上以最佳性能启动，建议预先配置 `config.json` 文件以启用 MPS 加速并禁用不兼容的优化。
+
+```bash
+cat > ~/Library/Application\ Support/ComfyUI/config.json << 'EOF'
+{
+        "installState": "installed",
+        "detectedGpu": "mps",
+        "basePath": "/Users/frank/ComfyUI",
+        "versionConsentedMetrics": "0.8.28",
+        "selectedDevice": "mps",
+        "args": ["--force-fp16", "--use-split-cross-attention", "--disable-torch-compile"]
+}
+EOF
+```
+
 
 ## 4. 快速跑通：直接使用社区 GGUF 工作流 (推荐)
 
