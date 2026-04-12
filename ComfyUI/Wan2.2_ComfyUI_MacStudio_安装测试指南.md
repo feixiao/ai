@@ -156,6 +156,9 @@ EOF
 - **推理精度**：将 Inference 设为 `fp32`。虽然 Mac 支持混合精度，但 `fp32` 在一些 Metal 实现中稳定性更高。
 - **VAE 设置**：务必使用 Tiled VAE 节点，避免长视频生成时的 OOM。
 
+
+### 8.3 FFMPEG
+ln -s /opt/homebrew/bin/ffmpeg /Users/$(whoami)/ComfyUI/.venv/bin/ffmpeg
 ---
 
 ## 9. 参考资料
