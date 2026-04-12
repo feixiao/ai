@@ -45,12 +45,16 @@ cd comfyui-kokoro
 
 ## 3. 模型下载与存放
 
-该插件通常会自动下载模型，但如果你想手动管理或遇到下载慢的问题：
+该插件支持自动下载工作流所需的模型。
 
-1. **核心模型**: 下载 `kokoro-v0_19.onnx` (或最新版本)。
-2. **存放位置**: 
-   - `~/ComfyUI/custom_nodes/comfyui-kokoro/models/`
-3. **声音配置 (Voices)**: 存放于插件目录下的 `voices/` 文件夹（插件通常自带了一些，如 `af_heart`, `am_fenrir` 等）。
+1. **自动下载 (推荐)**: 
+   - 第一次在 ComfyUI 中运行 `Kokoro Generator` 节点时，插件会自动从 GitHub 和 Hugging Face 下载 `kokoro_v1.onnx` 和音色库。
+   - **注意**: 请观察终端日志以确认下载进度，确保网络环境可以访问 GitHub/Hugging Face。
+
+2. **手动管理 (备选)**:
+   - 如果遇到下载慢或环境受限：
+   - **核心模型**: 下载 `kokoro_v1.onnx` 放入 `~/ComfyUI/custom_nodes/comfyui-kokoro/`。
+   - **声音配置**: 插件运行后会生成 `voices_v1.bin`，通常不需要手动干预。
 
 ---
 
