@@ -142,4 +142,25 @@ LatentSync 在 ComfyUI 中的典型用法：
 *   **Audio/Video Align Error**: 确保输入的视频帧率与音频长度匹配。如果视频是 24fps，计算好对应的总帧数，避免口型与声音错位。
 *   **Out of Memory**: 虽然 128G 内存很充裕，但如果遇到卡顿，请检查是否在后台同时运行了多个大模型采样任务。
 
+---
 
+## 6. Mac Studio 运行建议与替代方案
+
+### ComfyUI-LatentSyncWrapper 的现实情况：
+- **原生兼容性极差**：它是专门为 Linux + CUDA GPU 设计的。
+- **补丁丛生**：我们在 Mac 上一路打补丁（decord、torchcodec、cuda → mps 替换……），每修复一个问题往往会冒出下一个新问题。
+- **收益不确定**：即使全部修通，MPS 上跑 LatentSync 的速度和稳定性也没有任何保证。
+
+### Mac Studio 上真正可用的唇形同步方案：
+
+1. **MuseTalk（本地，支持 MPS）**
+   - 如果之前遇到兼容性问题，可能是旧版本。最新版已有人在 Apple Silicon 上跑通，值得重新尝试。
+
+2. **Wav2Lip（CPU 模式，稳定）**
+   - 虽然没有 MPS 优化，但 CPU 性能对于 Wav2Lip 来说已经足够，且有现成的 ComfyUI 节点，安装几乎不报错，非常稳定。
+
+3. **云端跑 LatentSync**
+   - 使用 **RunPod** 或 **Replicate** 进行推理，本地只做前/后处理。你的 Mac Studio 负责其他工序，唇同步这一步交给云端 GPU。10 秒左右的视频成本极低（仅需几分钱）。
+
+4. **HeyGen / Sync.so API**
+   - 如果这是生产级工作流（而非纯本地实验），直接调用 API 最省心省力，效果通常也更有保障。
