@@ -17,25 +17,20 @@ pip install --pre torch torchvision torchaudio --index-url https://download.pyto
 
 ---
 
-## 2. 模型下载 (推荐 GGUF 方案)
+## 2. 模型下载与存放路径 (推荐 GGUF 方案)
 
-对于 Apple Silicon，**GGUF 格式**比 FP8 具有更好的兼容性和响应速度。
+对于 Apple Silicon，**GGUF 格式**比 FP8 具有更好的兼容性和响应速度。请将下载的模型按以下路径存放：
 
-### 2.1 主模型 (UNET/Checkpoint替代)
-下载 [city96/FLUX.1-dev-gguf](https://huggingface.co/city96/FLUX.1-dev-gguf/tree/main) 中的模型：
-- **推荐 (16GB-32GB RAM)**: `flux1-dev-Q4_1.gguf` (约 6.7GB)，兼顾速度与画质。
-- **高质量 (32GB+ RAM)**: `flux1-dev-Q8.gguf` (约 11.3GB)。
-- **放置路径**: `ComfyUI/models/unet/`
+| 模型类型 | 推荐文件名 | 存放路径 (ComfyUI 根目录下) | 说明 |
+| :--- | :--- | :--- | :--- |
+| **主模型 (UNet)** | `flux1-dev-Q4_1.gguf` | `models/unet/` | 推荐 (16-32GB RAM)，兼顾速度与画质 |
+| **主模型 (UNet)** | `flux1-dev-Q8.gguf` | `models/unet/` | 高质量 (32GB+ RAM) |
+| **文本编码器 (Clip)** | `clip_l.safetensors` | `models/clip/` | 官方标准编码器 |
+| **文本编码器 (T5)** | `t5xxl_fp16.safetensors` | `models/clip/` | 高精度，占用内存较大 |
+| **文本编码器 (T5)** | `t5xxl_fp8_e4m3fn.safetensors`| `models/clip/` | **推荐**，更轻量，适合 Mac |
+| **VAE** | `ae.safetensors` | `models/vae/` | Flux 专用 VAE，必下 |
 
-### 2.2 文本编码器 (Clip/T5)
-下载官方或量化版的编码器：
-- `t5xxl_fp16.safetensors` 或 `t5xxl_fp8_e4m3fn.safetensors` (节省内存)
-- `clip_l.safetensors`
-- **放置路径**: `ComfyUI/models/clip/`
-
-### 2.3 VAE
-- `ae.safetensors`
-- **放置路径**: `ComfyUI/models/vae/`
+---
 
 ---
 
