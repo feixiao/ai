@@ -167,3 +167,4 @@ ln -s /opt/homebrew/bin/ffmpeg /Users/$(whoami)/ComfyUI/.venv/bin/ffmpeg
 - [Civitai Wan 2.2 GGUF Workflows](https://civitai.com/search/models?sortBy=models_v9&query=Wan%202.2%20%28GGUF%29)
 - [ComfyUI-GGUF Plugin Repo](https://github.com/city96/ComfyUI-GGUF)
 - [HuggingFace GGUF Models](https://huggingface.co/QuantStack/Wan2.2-I2V-A14B-GGUF)
++ [example_workflows](https://github.com/kijai/ComfyUI-WanVideoWrapper/blob/main/example_workflows)
