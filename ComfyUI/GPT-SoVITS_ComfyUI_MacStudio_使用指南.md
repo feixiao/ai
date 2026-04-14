@@ -54,7 +54,7 @@ GPT-SoVITS 需要两部分核心权重：**GPT 权重** 和 **SoVITS 权重**。
 
 > [!TIP]
 > 推荐直接从 [GPT-SoVITS 官方 Release](https://github.com/RVC-Boss/GPT-SoVITS/releases) 下载最新版本的权重。
-
+> ComfyUI也会自动下载，启动时候
 ---
 
 ## 4. 参考音频准备 (关键)
