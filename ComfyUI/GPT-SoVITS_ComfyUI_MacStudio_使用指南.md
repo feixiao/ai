@@ -91,3 +91,9 @@ GPT-SoVITS 的效果 80% 取决于参考音频的质量。
 *   **报错 `RuntimeError: Placeholder storage has not been allocated`**: 通常是显存/内存瞬间不足导致的 MPS 错误。尝试重启 ComfyUI。
 *   **报错 `Missing ffmpeg`**: 确认 `brew install ffmpeg` 已成功，并且在终端输入 `ffmpeg -version` 有输出。
 *   **音质有杂音**: 检查参考音频的噪声水平，或降低 `top_k` / `top_p` 参数尝试。
+*   **遇到 "Unknown pack" 或节点缺失**: 
+    如果你是通过加载他人的 JSON 工作流（如 `gsv_tts_workflow.json`）发现节点全红，最快捷的方法是：
+    > **使用 ComfyUI Manager 自动修复**:
+    > 1. 点击 Manager 按钮 → **Install Missing Custom Nodes**。
+    > 2. 它会自动识别工作流所需的特定 GPT-SoVITS 版本并提供安装。
+    > 3. 安装完成后重启 ComfyUI。
