@@ -75,10 +75,7 @@
       "properties": {
         "Node name for S&R": "LoraLoaderModelOnly"
       },
-      "widgets_values": [
-        "FLUX.1-Turbo-Alpha.safetensors",
-        1
-      ]
+      "widgets_values": []
     },
     {
       "id": 1,
@@ -253,9 +250,7 @@
       "properties": {
         "Node name for S&R": "TorchCompileModel"
       },
-      "widgets_values": [
-        "inductor"
-      ]
+      "widgets_values": []
     },
     {
       "id": 21,
@@ -490,7 +485,7 @@
       "widgets_values": [
         432,
         768,
-        61,
+        31,
         1
       ]
     },
@@ -528,9 +523,7 @@
       "properties": {
         "Node name for S&R": "TorchCompileModel"
       },
-      "widgets_values": [
-        "inductor"
-      ]
+      "widgets_values": []
     },
     {
       "id": 13,
@@ -727,7 +720,7 @@
     },
     {
       "id": 11,
-      "type": "VAEDecode",
+      "type": "VAEDecodeTiled",
       "pos": [
         884.0517578125,
         1384.539794921875
@@ -766,11 +759,11 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "VAEDecode",
-        "cnr_id": "comfy-core",
-        "ver": "0.3.45"
+        "Node name for S&R": "VAEDecodeTiled"
       },
-      "widgets_values": []
+      "widgets_values": [
+        512
+      ]
     },
     {
       "id": 73,
@@ -1566,7 +1559,7 @@
         "nodes": [
           {
             "id": 158,
-            "type": "VAEDecode",
+            "type": "VAEDecodeTiled",
             "pos": [
               -794.5228271484375,
               596.7240600585938
@@ -1598,14 +1591,16 @@
                 "name": "IMAGE",
                 "type": "IMAGE",
                 "links": [
-                  399
+                  381
                 ]
               }
             ],
             "properties": {
-              "Node name for S&R": "VAEDecode"
+              "Node name for S&R": "VAEDecodeTiled"
             },
-            "widgets_values": []
+            "widgets_values": [
+              512
+            ]
           },
           {
             "id": 170,
