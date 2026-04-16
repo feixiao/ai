@@ -77,6 +77,55 @@ python main.py --lowvram
   - A: 目前 Z-Image 的 LoRA 生态仍在发展中，建议关注 ComfyUI-Z-Image 插件的更新以获取兼容性支持。
 
 ---
+
+## 6. 基础测试工作流 (快速验证)
+
+您可以直接加载项目中的测试工作流文件：[z-image-turbo-gguf-test.json](file:///Users/frank/wk/github/ai/ComfyUI/z-image-turbo-gguf-test.json)
+
+### 6.1 节点配置清单
+
+| 节点类型 | 关键设置项 | 连接/提示 |
+| :--- | :--- | :--- |
+| **Unet Loader (GGUF)** | `z_image_turbo_q4_k_m.gguf` | 输出 MODEL 到 Sampler |
+| **GGUF Clip Loader** | `t5xxl_q4_k_m.gguf` | 输出 CLIP 到 Text Encode |
+| **VAE Loader** | `ae.safetensors` (Flux VAE) | 输出 VAE 用于解码 |
+| **CLIP Text Encode** | 提示词：*A cyberpunk cat sitting on a neon roof* | 必须连接 CLIP |
+| **Empty Latent Image** | 1024 x 1024 | 输出 LATENT 到 Sampler |
+| **KSampler (或高级采样)** | **Steps: 8**, **CFG: 1.0**, Sampler: `euler`, Scheduler: `simple` | 核心采样节点 |
+| **VAE Decode** | - | 连接 Sampler 的输出与 VAE Loader |
+| **Save Image** | - | 最终输出 |
+
+### 6.2 极简 JSON 工作流模板 (代码块)
+
+```json
+{
+  "last_node_id": 9,
+  "last_link_id": 9,
+  "nodes": [
+    {"id": 1, "type": "UnetLoaderGGUF", "pos": [100, 100], "widgets_values": ["z_image_turbo_q4_k_m.gguf"]},
+    {"id": 2, "type": "GGUFClipLoader", "pos": [100, 200], "widgets_values": ["t5_v1_1-xxl-encoder-bf16.gguf", "flux"]},
+    {"id": 3, "type": "VAELoader", "pos": [100, 300], "widgets_values": ["ae.safetensors"]},
+    {"id": 4, "type": "CLIPTextEncode", "pos": [400, 100], "widgets_values": ["a beautiful landscape, cinematic lighting, 8k, highly detailed"]},
+    {"id": 5, "type": "EmptyLatentImage", "pos": [400, 300], "widgets_values": [1024, 1024, 1]},
+    {"id": 6, "type": "KSampler", "pos": [700, 100], "widgets_values": [0, "fixed", 8, 1.0, "euler", "simple", 1.0]},
+    {"id": 7, "type": "VAEDecode", "pos": [1000, 100], "widgets_values": []},
+    {"id": 8, "type": "SaveImage", "pos": [1250, 100], "widgets_values": ["ComfyUI"]}
+  ],
+  "links": [
+    [1, 1, 0, 6, 0, "MODEL"],
+    [2, 2, 0, 4, 0, "CLIP"],
+    [3, 4, 0, 6, 1, "CONDITIONING"],
+    [4, 5, 0, 6, 3, "LATENT"],
+    [5, 6, 0, 7, 0, "LATENT"],
+    [6, 3, 0, 7, 1, "VAE"]
+  ]
+}
+```
+
+> [!CAUTION]
+> **请注意**: 上述 JSON 仅为逻辑结构示意。在实际拖入 ComfyUI 前，请确保您的模型文件名（如 `z_image_turbo_q4_k_m.gguf`）与 `UnetLoaderGGUF` 节点中的值完全一致。
+
+---
 > **关联文档**:
 > - [Flux.1 ComfyUI Mac 部署指南](file:///Users/frank/wk/github/ai/ComfyUI/FLUX_ComfyUI_Apple_Silicon_%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8D%97.md)
 > - [Wan2.2 安装测试指南](file:///Users/frank/wk/github/ai/ComfyUI/Wan2.2_ComfyUI_MacStudio_%E5%AE%89%E8%A3%85%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.md)
