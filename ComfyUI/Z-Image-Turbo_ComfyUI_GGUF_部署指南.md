@@ -35,9 +35,10 @@ Z-Image Turbo 是由阿里巴巴通义实验室 (Tongyi-MAI) 开发的 60 亿参
 ## 3. 工作流配置详解
 
 ### 3.1 核心节点设置
-- **模型加载**: 使用 `Unet Loader (GGUF)` 节点加载 `z_image_turbo_q4_k_m.gguf`。
-- **编码器加载**: 使用 `GGUF Clip Loader` 节点加载对应的文本编码器。
+- **模型加载**: 使用 `Unet Loader (GGUF)` 节点加载 `z_image_turbo_Q4_K_M.gguf`。
+- **编码器加载**: 使用 `GGUF Clip Loader` 节点加载对应的文本编码器 `t5xxl_Q4_K_M.gguf`。
 - **VAE 加载**: 选择标准的 `ae.safetensors` (Flux VAE)。
+    - *注：若本地缺失，请从 [HuggingFace](https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors) 下载并放入 `models/vae`。*
 
 ### 3.2 采样关键参数 (**非常重要**)
 Z-Image Turbo 属于蒸馏加速模型，其采样参数与传统模型差异较大：
@@ -78,54 +79,29 @@ python main.py --lowvram
 
 ---
 
-## 6. 基础测试工作流 (快速验证)
+## 6. 测试预设工作流 (快速验证)
 
-您可以直接加载项目中的测试工作流文件：[z-image-turbo-gguf-test.json](file:///Users/frank/wk/github/ai/ComfyUI/z-image-turbo-gguf-test.json)
+为了方便快速测试，建议使用下方的双路工作流文件。该文件同时包含了**文生图 (T2I)** 和 **图生图 (I2I)** 两套独立逻辑，并共享显存加载器以优化 Mac 性能。
+
+**工作流下载**: [z-image-turbo-dual-workflow.json](./z-image-turbo-dual-workflow.json)
 
 ### 6.1 节点配置清单
 
-| 节点类型 | 关键设置项 | 连接/提示 |
+| 区域 | 关键设置项 / 节点 | 说明 |
 | :--- | :--- | :--- |
-| **Unet Loader (GGUF)** | `z_image_turbo_q4_k_m.gguf` | 输出 MODEL 到 Sampler |
-| **GGUF Clip Loader** | `t5xxl_q4_k_m.gguf` | 输出 CLIP 到 Text Encode |
-| **VAE Loader** | `ae.safetensors` (Flux VAE) | 输出 VAE 用于解码 |
-| **CLIP Text Encode** | 提示词：*A cyberpunk cat sitting on a neon roof* | 必须连接 CLIP |
-| **Empty Latent Image** | 1024 x 1024 | 输出 LATENT 到 Sampler |
-| **KSampler (或高级采样)** | **Steps: 8**, **CFG: 1.0**, Sampler: `euler`, Scheduler: `simple` | 核心采样节点 |
-| **VAE Decode** | - | 连接 Sampler 的输出与 VAE Loader |
-| **Save Image** | - | 最终输出 |
-
-### 6.2 极简 JSON 工作流模板 (代码块)
-
-```json
-{
-  "last_node_id": 9,
-  "last_link_id": 9,
-  "nodes": [
-    {"id": 1, "type": "UnetLoaderGGUF", "pos": [100, 100], "widgets_values": ["z_image_turbo_q4_k_m.gguf"]},
-    {"id": 2, "type": "GGUFClipLoader", "pos": [100, 200], "widgets_values": ["t5_v1_1-xxl-encoder-bf16.gguf", "flux"]},
-    {"id": 3, "type": "VAELoader", "pos": [100, 300], "widgets_values": ["ae.safetensors"]},
-    {"id": 4, "type": "CLIPTextEncode", "pos": [400, 100], "widgets_values": ["a beautiful landscape, cinematic lighting, 8k, highly detailed"]},
-    {"id": 5, "type": "EmptyLatentImage", "pos": [400, 300], "widgets_values": [1024, 1024, 1]},
-    {"id": 6, "type": "KSampler", "pos": [700, 100], "widgets_values": [0, "fixed", 8, 1.0, "euler", "simple", 1.0]},
-    {"id": 7, "type": "VAEDecode", "pos": [1000, 100], "widgets_values": []},
-    {"id": 8, "type": "SaveImage", "pos": [1250, 100], "widgets_values": ["ComfyUI"]}
-  ],
-  "links": [
-    [1, 1, 0, 6, 0, "MODEL"],
-    [2, 2, 0, 4, 0, "CLIP"],
-    [3, 4, 0, 6, 1, "CONDITIONING"],
-    [4, 5, 0, 6, 3, "LATENT"],
-    [5, 6, 0, 7, 0, "LATENT"],
-    [6, 3, 0, 7, 1, "VAE"]
-  ]
-}
-```
-
-> [!CAUTION]
-> **请注意**: 上述 JSON 仅为逻辑结构示意。在实际拖入 ComfyUI 前，请确保您的模型文件名（如 `z_image_turbo_q4_k_m.gguf`）与 `UnetLoaderGGUF` 节点中的值完全一致。
+| **Unet Loader (GGUF)** | `z_image_turbo_Q4_K_M.gguf` | 输出 MODEL 到 Sampler |
+| **CLIPLoaderGGUF** | `t5xxl_Q4_K_M.gguf` | 输出 CLIP 到 Text Encode |
+| **文生图 (T2I)** | `Empty Latent Image`<br>`KSampler` (Steps: 8, CFG: 1.0) | 标准 1024x1024 生成 |
+| **图生图 (I2I)** | `Load Image` + `VAE Encode`<br>`KSampler` (Denoise: 0.6) | 保持原图结构进行 Turbo 风格化 |
 
 ---
-> **关联文档**:
-> - [Flux.1 ComfyUI Mac 部署指南](file:///Users/frank/wk/github/ai/ComfyUI/FLUX_ComfyUI_Apple_Silicon_%E9%83%A8%E7%BD%B2%E6%8C%87%E5%8D%97.md)
-> - [Wan2.2 安装测试指南](file:///Users/frank/wk/github/ai/ComfyUI/Wan2.2_ComfyUI_MacStudio_%E5%AE%89%E8%A3%85%E6%B5%8B%E8%AF%95%E6%8C%87%E5%8D%97.md)
+
+## 7. 高级技巧
+
+- **提示词建议**: 由于使用 T5XXL 编码器，模型对自然语言理解极佳。建议直接用短句描述场景。
+- **显存回退**: 如果您的 Mac 只有 32G 内存，且在运行 I2I 时报错，请在启动时务必带上 `--lowvram`，并考虑将 Clip 模型降级为 `Q4_K` 版本。
+
+> [!CAUTION]
+> **请注意**: 点击生成前，请确保您的模型文件名（如 `z_image_turbo_q4_k_m.gguf`）与 Loader 节点中的值完全一致。
+
+
