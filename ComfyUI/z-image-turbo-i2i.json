@@ -75,9 +75,9 @@
     },
     {
       "id": 6,
-      "type": "VAEEncode",
+      "type": "VAEEncodeTiled",
       "pos": [850, 450],
-      "size": [210, 46],
+      "size": [210, 82],
       "flags": {},
       "order": 6,
       "mode": 0,
@@ -86,7 +86,7 @@
         {"name": "vae", "type": "VAE", "link": 5}
       ],
       "outputs": [{"name": "LATENT", "type": "LATENT", "links": [6], "shape": 3}],
-      "widgets_values": []
+      "widgets_values": [512]
     },
     {
       "id": 7,

@@ -105,7 +105,20 @@ python main.py --lowvram
 | **Unet Loader (GGUF)** | `z_image_turbo_Q4_K_M.gguf` | 输出 MODEL 到 Sampler |
 | **CLIPLoaderGGUF** | `t5xxl_Q4_K_M.gguf` | 输出 CLIP 到 Text Encode |
 | **文生图 (T2I)** | `Empty Latent Image`<br>`KSampler` (Steps: 8, CFG: 1.0) | 标准 1024x1024 生成 |
-| **图生图 (I2I)** | `Load Image` + `VAE Encode`<br>`KSampler` (Denoise: 0.6) | 保持原图结构进行 Turbo 风格化 |
+| **图生图 (I2I)** | `Load Image` + `VAEEncodeTiled` | 建议开启 Tiled 模式以避免 Mac 显存爆满 |
+
+## 7. Mac Studio (Apple Silicon) 专项优化
+
+如果你在 Mac 上运行遇到报错，请参考以下优化建议：
+
+### 7.1 解决 MPSGraph INT_MAX 报错
+在进行高分辨率图生图时，Mac 的 Metal 后台可能会因为张量维度过大而报错。
+- **解决方案**: 在工作流中使用 **`VAEEncodeTiled`** (分块编码) 和 **`VAEDecodeTiled`** (分块解码)。
+- **推荐设置**: `tile_size` 设置为 **512**。如果依然报错，可下调至 **256**。
+
+### 7.2 显存管理
+- 对于 32GB 内存的 Mac Studio，建议在启动 ComfyUI 时添加 `--lowvram` 参数。
+- 确保系统设置中没有限制单一进程的显存占用比例。
 
 ---
 
