@@ -79,13 +79,22 @@ python main.py --lowvram
 
 ---
 
-## 6. 测试预设工作流 (快速验证)
+## 6. 测试预设工作流 (分步验证)
 
-为了方便快速测试，建议使用下方的双路工作流文件。该文件同时包含了**文生图 (T2I)** 和 **图生图 (I2I)** 两套独立逻辑，并共享显存加载器以优化 Mac 性能。
+为了方便排查问题，我们将双路工作流拆分为两个独立的文件，分别用于测试**文生图**和**图生图**。
 
-**工作流下载**: [z-image-turbo-dual-workflow.json](./z-image-turbo-dual-workflow.json)
+### 6.1 文生图 (T2I) 测试
+最基础的生成测试。如果此工作流报错，请检查 Unet/Clip 加载是否正常。
+- **工作流下载**: [z-image-turbo-t2i.json](./z-image-turbo-t2i.json)
 
-### 6.1 节点配置清单
+### 6.2 图生图 (I2I) 测试
+在文生图正常的基础上测试。如果此工作流报错，请重点检查 VAE Encode 和图片加载。
+- **工作流下载**: [z-image-turbo-i2i.json](./z-image-turbo-i2i.json)
+
+> [!TIP]
+> **双路合一版**: 如果你已经熟悉流程，可以使用 [z-image-turbo-dual-workflow.json](./z-image-turbo-dual-workflow.json) 在一个页面内切换测试。
+
+### 6.3 节点配置清单
 
 | 区域 | 关键设置项 / 节点 | 说明 |
 | :--- | :--- | :--- |
