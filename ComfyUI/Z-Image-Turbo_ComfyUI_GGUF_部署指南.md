@@ -35,8 +35,12 @@ Z-Image Turbo 是由阿里巴巴通义实验室 (Tongyi-MAI) 开发的 60 亿参
 ## 3. 工作流配置详解
 
 ### 3.1 核心节点设置
-- **模型加载**: 使用 `Unet Loader (GGUF)` 节点加载 `z_image_turbo_Q4_K_M.gguf`。
-- **编码器加载**: 使用 `GGUF Clip Loader` 节点加载对应的文本编码器 `t5xxl_Q4_K_M.gguf`。
+> [!CAUTION]
+> **文本编码器注意**: Z-Image Turbo (Lumina) **不兼容** T5-XXL (Flux/Wan 版)。
+> 它必须使用 **Qwen-based** 编码器（维度 2560）。
+
+- **编码器加载**: 使用 `CLIPLoaderGGUF` 节点加载对应的 Qwen 编码器。
+    - **Type 设置**: 请将其设置为 **`qwen_image`**。
 - **VAE 加载**: 选择标准的 `ae.safetensors` (Flux VAE)。
     - *注：若本地缺失，请从 [HuggingFace](https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors) 下载并放入 `models/vae`。*
 
@@ -70,10 +74,10 @@ python main.py --lowvram
 
 ## 5. 常见问题 (FAQ)
 
-- **Q: 为什么生成的图片是全黑或全噪点？**
-  - A: 检查 CFG 是否设置为 1.0。大于 1.0 的值通常是主要诱因。
-- **Q: 模型加载非常慢？**
-  - A: 首次在 MPS 上运行 DiT 模型时，系统会进行 Shader 编译。后续运行会恢复正常速度。
+- **Q: 报错 Required input is missing: negative？**
+  - A: 较新版本的采样器要求必须连接负向提示词节点。即使你不写内容，也需要连接一个空的 `CLIP Text Encode` 节点。目前工作流已默认补全。
+- **Q: 报错 Value not in list: type？**
+  - A: 插件更新后 `flux` 可能被改名为了 `flux2`。请在 `CLIPLoaderGGUF` 节点的 `type` 下拉菜单中选择正确的模型族。
 - **Q: 是否支持 LoRA？**
   - A: 目前 Z-Image 的 LoRA 生态仍在发展中，建议关注 ComfyUI-Z-Image 插件的更新以获取兼容性支持。
 

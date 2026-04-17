@@ -1,6 +1,6 @@
 {
-  "last_node_id": 14,
-  "last_link_id": 16,
+  "last_node_id": 16,
+  "last_link_id": 19,
   "nodes": [
     {
       "id": 1,
@@ -21,8 +21,8 @@
       "flags": {},
       "order": 1,
       "mode": 0,
-      "outputs": [{"name": "CLIP", "type": "CLIP", "links": [2, 8], "shape": 3}],
-      "widgets_values": ["t5xxl_Q4_K_M.gguf", "flux"]
+      "outputs": [{"name": "CLIP", "type": "CLIP", "links": [2, 8, 17, 18], "shape": 3}],
+      "widgets_values": ["qwen_3_4b_Q4_K_M.gguf", "qwen_image"]
     },
     {
       "id": 3,
@@ -39,7 +39,7 @@
       "id": 4,
       "type": "CLIPTextEncode",
       "pos": [500, 120],
-      "size": [400, 200],
+      "size": [400, 150],
       "flags": {},
       "order": 3,
       "mode": 0,
@@ -48,12 +48,24 @@
       "widgets_values": ["(T2I) a beautiful landscape, cinematic lighting, 8k, highly detailed"]
     },
     {
-      "id": 5,
-      "type": "EmptyLatentImage",
-      "pos": [500, 360],
-      "size": [315, 106],
+      "id": 15,
+      "type": "CLIPTextEncode",
+      "pos": [500, 300],
+      "size": [400, 100],
       "flags": {},
       "order": 4,
+      "mode": 0,
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 17}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [14], "shape": 3}],
+      "widgets_values": ["(negative) low quality, blurry"]
+    },
+    {
+      "id": 5,
+      "type": "EmptyLatentImage",
+      "pos": [500, 420],
+      "size": [315, 106],
+      "flags": {},
+      "order": 5,
       "mode": 0,
       "outputs": [{"name": "LATENT", "type": "LATENT", "links": [4], "shape": 3}],
       "widgets_values": [1024, 1024, 1]
@@ -64,12 +76,12 @@
       "pos": [1000, 120],
       "size": [315, 262],
       "flags": {},
-      "order": 7,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {"name": "model", "type": "MODEL", "link": 1},
         {"name": "positive", "type": "CONDITIONING", "link": 3},
-        {"name": "negative", "type": "CONDITIONING", "link": null},
+        {"name": "negative", "type": "CONDITIONING", "link": 14},
         {"name": "latent_image", "type": "LATENT", "link": 4}
       ],
       "outputs": [{"name": "LATENT", "type": "LATENT", "links": [5], "shape": 3}],
@@ -81,7 +93,7 @@
       "pos": [1400, 120],
       "size": [210, 46],
       "flags": {},
-      "order": 9,
+      "order": 11,
       "mode": 0,
       "inputs": [
         {"name": "samples", "type": "LATENT", "link": 5},
@@ -96,7 +108,7 @@
       "pos": [1700, 120],
       "size": [210, 270],
       "flags": {},
-      "order": 11,
+      "order": 13,
       "mode": 0,
       "inputs": [{"name": "images", "type": "IMAGE", "link": 12}],
       "widgets_values": ["Z-Image-Turbo-T2I"]
@@ -105,35 +117,47 @@
       "id": 9,
       "type": "CLIPTextEncode",
       "pos": [500, 650],
-      "size": [400, 200],
+      "size": [400, 150],
       "flags": {},
-      "order": 5,
+      "order": 6,
       "mode": 0,
       "inputs": [{"name": "clip", "type": "CLIP", "link": 8}],
       "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [9], "shape": 3}],
       "widgets_values": ["(I2I) same character, different pose, studio lighting"]
     },
     {
+      "id": 16,
+      "type": "CLIPTextEncode",
+      "pos": [500, 830],
+      "size": [400, 100],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 18}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [19], "shape": 3}],
+      "widgets_values": ["(negative) low quality, blurry"]
+    },
+    {
       "id": 10,
       "type": "LoadImage",
-      "pos": [500, 900],
+      "pos": [500, 950],
       "size": [315, 314],
       "flags": {},
-      "order": 6,
+      "order": 8,
       "mode": 0,
       "outputs": [
         {"name": "IMAGE", "type": "IMAGE", "links": [10], "shape": 3},
         {"name": "MASK", "type": "MASK", "links": null, "shape": 3}
       ],
-      "widgets_values": ["example.png", "image"]
+      "widgets_values": ["input_image.png", "image"]
     },
     {
       "id": 11,
       "type": "VAEEncode",
-      "pos": [850, 900],
+      "pos": [850, 950],
       "size": [210, 46],
       "flags": {},
-      "order": 8,
+      "order": 10,
       "mode": 0,
       "inputs": [
         {"name": "pixels", "type": "IMAGE", "link": 10},
@@ -148,12 +172,12 @@
       "pos": [1000, 650],
       "size": [315, 262],
       "flags": {},
-      "order": 10,
+      "order": 12,
       "mode": 0,
       "inputs": [
         {"name": "model", "type": "MODEL", "link": 7},
         {"name": "positive", "type": "CONDITIONING", "link": 9},
-        {"name": "negative", "type": "CONDITIONING", "link": null},
+        {"name": "negative", "type": "CONDITIONING", "link": 19},
         {"name": "latent_image", "type": "LATENT", "link": 14}
       ],
       "outputs": [{"name": "LATENT", "type": "LATENT", "links": [15], "shape": 3}],
@@ -165,7 +189,7 @@
       "pos": [1400, 650],
       "size": [210, 46],
       "flags": {},
-      "order": 12,
+      "order": 14,
       "mode": 0,
       "inputs": [
         {"name": "samples", "type": "LATENT", "link": 15},
@@ -180,7 +204,7 @@
       "pos": [1700, 650],
       "size": [210, 270],
       "flags": {},
-      "order": 13,
+      "order": 15,
       "mode": 0,
       "inputs": [{"name": "images", "type": "IMAGE", "link": 16}],
       "widgets_values": ["Z-Image-Turbo-I2I"]
@@ -200,9 +224,12 @@
     [11, 3, 0, 11, 1, "VAE"],
     [12, 7, 0, 8, 0, "IMAGE"],
     [13, 3, 0, 13, 1, "VAE"],
-    [14, 11, 0, 12, 3, "LATENT"],
+    [14, 15, 0, 6, 2, "CONDITIONING"],
     [15, 12, 0, 13, 0, "LATENT"],
-    [16, 13, 0, 14, 0, "IMAGE"]
+    [16, 13, 0, 14, 0, "IMAGE"],
+    [17, 2, 0, 15, 0, "CLIP"],
+    [18, 2, 0, 16, 0, "CLIP"],
+    [19, 16, 0, 12, 2, "CONDITIONING"]
   ],
   "groups": [
     {
@@ -217,7 +244,7 @@
     },
     {
       "title": "Image to Image (Turbo)",
-      "bounding": [460, 600, 1500, 680],
+      "bounding": [460, 600, 1500, 750],
       "color": "#653730"
     }
   ],
