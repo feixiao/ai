@@ -213,8 +213,11 @@ python main.py --lowvram
 针对 Mac Studio 用户，建议根据你的使用场景进行选择：
 
 ### 🏆 首选：[Amazing Z-Image Workflow](https://github.com/martin-rizzo/AmazingZImageWorkflow) (全能旗舰型)
-**适用场景**: 正式创作、追求极致画质、需要高清大图。
-- **优点**: 内置 **Refiner (精修)** 和 **Upscaler (放大)**，能充分利用 Mac Studio 的大内存产出 2K/4K 级细节图；界面极其友好，支持一键切换风格和构图。
+**适用场景**: 正式创作、**自媒体封面/配图**、追求极致画质、高清大图。
+- **自媒体优化专项建议**:
+    - **视频封面/头图**: 使用 **Photo-P (摄影版)** 并开启 **Refiner**，配合 `Cinematic` 风格可产出具有影院质感的封面。
+    - **内容配图**: 使用 **Comics-C (漫画版)** 并开启 **Upscaler**，可产出细腻的 2K/4K 级商业插画。
+- **优点**: 内置 **Refiner (精修)** 和 **Upscaler (放大)**，能充分利用 Mac Studio 的大内存优势；支持一键切换风格和构图，极大提升出片效率。
 - **要求**: 必须安装 `rgthree-comfy` 和 `Z-Image Power Nodes` 插件。
 
 ### 🥈 次选：[Power Nodes 官方示例](https://github.com/martin-rizzo/ComfyUI-ZImagePowerNodes/tree/master/workflows/GGUF) (轻量功能型)
