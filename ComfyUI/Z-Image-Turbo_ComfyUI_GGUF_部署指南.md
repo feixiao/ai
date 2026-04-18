@@ -107,27 +107,121 @@ python main.py --lowvram
 | **文生图 (T2I)** | `Empty Latent Image`<br>`KSampler` (Steps: 8, CFG: 1.0) | 标准 1024x1024 生成 |
 | **图生图 (I2I)** | `Load Image` + `VAEEncodeTiled` | 建议开启 Tiled 模式以避免 Mac 显存爆满 |
 
-## 7. Mac Studio (Apple Silicon) 专项优化
+---
 
-如果你在 Mac 上运行遇到报错，请参考以下优化建议：
+## 7. 进阶篇：Z-Image Power Nodes (深度掌控)
 
-### 7.1 解决 MPSGraph INT_MAX 报错
-在进行高分辨率图生图时，Mac 的 Metal 后台可能会因为张量维度过大而报错。
-- **解决方案**: 在工作流中使用 **`VAEEncodeTiled`** (分块编码) 和 **`VAEDecodeTiled`** (分块解码)。
-- **推荐设置**: `tile_size` 设置为 **512**。如果依然报错，可下调至 **256**。
+对于追求极致效果的用户，推荐安装 **[ComfyUI-ZImagePowerNodes](https://github.com/martin-rizzo/ComfyUI-ZImagePowerNodes)**。这是一套专门为 Z-Image 优化的增强节点，能够大幅提升生成效率与可控性。
 
-### 7.2 显存管理
-- 对于 32GB 内存的 Mac Studio，建议在启动 ComfyUI 时添加 `--lowvram` 参数。
-- 确保系统设置中没有限制单一进程的显存占用比例。
+### 7.1 安装与必备模型 (Mac 完全兼容)
+
+该插件虽然在 GitHub 上较多提及 Windows，但经测试在 **Apple Silicon (M1/M2/M3)** 平台上运行完全稳定。
+
+#### A. 安装步骤
+- **Manager 安装 (推荐)**: 
+    1. 点击 ComfyUI 界面右侧的 **Manager** -> **Custom Nodes Manager**。
+    2. 搜索 `Z-Image Power Nodes`。
+    3. 点击 **Install** 并根据提示点击 **Restart** 重启 ComfyUI。
+- **手动安装 (命令行)**: 
+    ```bash
+    cd custom_nodes
+    git clone https://github.com/martin-rizzo/ComfyUI-ZImagePowerNodes.git
+    ```
+
+#### B. 必备模型组合 (GGUF)
+- **UNet**: `z_image_turbo-Q5_K_S.gguf` 或 `Q8_0` 版本。
+- **Clip**: `Qwen3-4B-Q8_0.gguf` (目前对 Power Nodes 支持最佳)。
+
+### 7.2 核心增强功能
+
+#### A. 视觉风格引擎 (`⚡Style Prompt Encoder`)
+内置 **100+ 预设风格**（电影、二次元、写实、赛博朋克等）。
+- **优势**: 无需编写复杂的提示词描述风格，只需选择 Thumbnail 预览图，即可将极简提示词转化为高质量成品。
+- **动态注入**: 使用 `Style String Injector` 可以将风格描述灵活嵌入现有的提示词模板。
+
+#### B. 专业版采样器 (`⚡Z-Sampler Turbo`)
+相比原生采样器，提供了更细致的微调参数：
+- **Intensity (对比度调节)**:
+    - 正值 (>0): 提高画面对比度与边缘清晰度，适合插画与原画。
+    - 负值 (<0): 画面更柔和、具有“氛围感”，适合人像摄影。
+- **Turbo Creativity (创意发散)**:
+    - 通过潜空间微扰增加画面的随机性，解决 Z-Image Turbo 在相同 Seed 下构图过于固定的问题。
+- **极致步数**: 此采样器在 **3 - 5 步** 即可产生具有参考价值的预览图。
+
+#### C. 局部重绘增强 (`⚡VAE Encode for Soft Inpainting`)
+专为 Z-Image 设计的 VAE 编码节点。它能更自然地处理 Mask 边缘，支持“软掩码”效果，使重绘区域与原图无缝融合。
 
 ---
 
-## 7. 高级技巧
+## 8. 全能型旗舰工作流：Amazing Z-Image Workflow
 
-- **提示词建议**: 由于使用 T5XXL 编码器，模型对自然语言理解极佳。建议直接用短句描述场景。
-- **显存回退**: 如果您的 Mac 只有 32G 内存，且在运行 I2I 时报错，请在启动时务必带上 `--lowvram`，并考虑将 Clip 模型降级为 `Q4_K` 版本。
+如果你想跳过碎片的节点搭建，直接使用成熟的成品，推荐 **[Amazing Z-Image Workflow](https://github.com/martin-rizzo/AmazingZImageWorkflow)**。这是目前社区公认的最强 Z-Image 全能型工作流。
 
-> [!CAUTION]
-> **请注意**: 点击生成前，请确保您的模型文件名（如 `z_image_turbo_q4_k_m.gguf`）与 Loader 节点中的值完全一致。
+### 8.1 核心特色
+- **内置精修 (Refiner)**: 自动进行二次采样，显著提升人像细节与背景自然度。
+- **内置放大 (Upscaler)**: 支持 1.5 倍 - 2 倍的无损放大，解决 DiT 模型原生分辨率不足的问题。
+- **场景化适配**: 提供针对 `Photo` (摄影)、`Comics` (漫画)、`Art` (艺术) 独立优化的专用版本。
+- **快捷控制面板**: 预置了横竖屏、分辨率、步数（7 步/12 步）的逻辑开关，操作极简。
 
+### 8.2 新增依赖安装
+运行此工作流除了上述插件外，还必须安装：
+- **[rgthree-comfy](https://github.com/rgthree/rgthree-comfy)**: 提供逻辑控制面板和布局管理能力。
 
+### 8.3 下载链接 (GGUF 专版)
+直接下载以下 `.json` 文件并拖入 ComfyUI：
+- **[通用全能版-A](https://github.com/martin-rizzo/AmazingZImageWorkflow/blob/master/amazing-z-image-a_GGUF.json)**: 复盖 18+ 种常用风格。
+- **[大师摄影版-P](https://github.com/martin-rizzo/AmazingZImageWorkflow/blob/master/amazing-z-photo_GGUF.json)**: 极致的真实感，由于 Mac 内存大，建议开启其中的 Refiner。
+- **[致郁/唯美漫画版-C](https://github.com/martin-rizzo/AmazingZImageWorkflow/blob/master/amazing-z-comics_GGUF.json)**: 包含赛博朋克、像素画、二次元等。
+
+---
+
+## 9. 专项参考工作流 (分步验证版)
+
+如果你希望从基础开始，或者仅需要特定的功能测试，可以使用我们整理的单路工作流：
+
+- **文生图 (T2I) 测试**: [z-image-turbo-t2i.json](./z-image-turbo-t2i.json)
+- **图生图 (I2I) 测试**: [z-image-turbo-i2i.json](./z-image-turbo-i2i.json)
+- **局部重绘 (进阶版)**: [z-image-turbo__inpainting.json](https://github.com/martin-rizzo/ComfyUI-ZImagePowerNodes/blob/master/workflows/GGUF/z-image-turbo__inpainting.json)
+
+---
+
+## 10. Mac Studio (Apple Silicon) 专项优化
+
+### 10.1 解决 MPSGraph INT_MAX 报错
+在进行高分辨率图生图或使用 Amazing Workflow 的 Upscaler 时，Mac 的 Metal 后台可能会报错。
+- **解决方案**: 确保工作流中使用的是 **`VAEEncodeTiled`**。在 Amazing 工作流中，请在相关的 VAE 节点开启 `tiled` 选项。
+
+### 10.2 显存与启动建议
+- **低显存模式**: 对于 32GB 内存机型，启动参数 `--lowvram` 是保障不闪退的前提。
+- **预览优化**: 将预览模式设置为 `TAESD`。
+
+---
+
+## 11. 常见问题 (FAQ)
+
+- **Q: 报错 Required input is missing: negative？**
+  - A: 即使不写内容，也需要连接一个空的 `CLIP Text Encode` 节点。
+- **Q: 是否支持 LoRA？**
+  - A: 支持。Amazing Workflow 内置了 `Power Lora Loader`，可以同时加载多个 LoRA。建议将 LoRA 放入 `models/loras` 并在面板中开启。
+- **Q: 为什么生成的图片是灰色的？**
+  - A: 通常是 VAE 加载错误。请检查 `ae.safetensors` 是否正确连接，且 Loader 的路径指向正确。
+
+---
+
+## 12. 选型建议：我该使用哪一个？
+
+针对 Mac Studio 用户，建议根据你的使用场景进行选择：
+
+### 🏆 首选：[Amazing Z-Image Workflow](https://github.com/martin-rizzo/AmazingZImageWorkflow) (全能旗舰型)
+**适用场景**: 正式创作、追求极致画质、需要高清大图。
+- **优点**: 内置 **Refiner (精修)** 和 **Upscaler (放大)**，能充分利用 Mac Studio 的大内存产出 2K/4K 级细节图；界面极其友好，支持一键切换风格和构图。
+- **要求**: 必须安装 `rgthree-comfy` 和 `Z-Image Power Nodes` 插件。
+
+### 🥈 次选：[Power Nodes 官方示例](https://github.com/martin-rizzo/ComfyUI-ZImagePowerNodes/tree/master/workflows/GGUF) (轻量功能型)
+**适用场景**: 局部重绘 (Inpainting)、功能调试、极速出草图。
+- **优点**: 结构简单，加载速度极快；其中的 `Inpainting` 工作流是目前处理 Z-Image 局部修改的最优选。
+- **要求**: 仅需安装 `Z-Image Power Nodes` 插件。
+
+---
+> [!TIP]
+> **总结建议**: 日常生成图片请无脑选择 **Amazing Z-Image Photo-P (摄影版)** 并开启 Refiner。
