@@ -10,6 +10,7 @@
 + [autogen](https://github.com/microsoft/autogen)   A programming framework for agentic AI
     + [《Ultimate-Agentic-AI-with-AutoGen-for-Enterprise-Automation》](https://github.com/feixiao/Ultimate-Agentic-AI-with-AutoGen-for-Enterprise-Automation)
     + [AutoGenBench](https://github.com/microsoft/autogen/blob/0.2/samples/tools/autogenbench/README.md)  a benchmarking suite for evaluating agent performance.
++ [ds4 (DwarfStar)](./ds4/README.md) antirez 开源的高性能原生推理引擎与编码 Agent（支持 DeepSeek V4 Flash/PRO、GLM 5.2）
 
 #### Prompt Engineering
 + [Prompt-Engineering-Guide](https://github.com/feixiao/Prompt-Engineering-Guide) prompt engineering, context engineering
