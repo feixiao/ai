@@ -166,15 +166,44 @@ curl http://127.0.0.1:8400/v1/chat/completions \
 
 ### 4.3 接入 Claude Code / OpenCode / 外部工具
 
-#### 接入 Claude Code (作为本地模型后端)
-在终端中设置环境变量即可将 Claude Code 指向本地 ds4-server：
+#### 💡 推荐：使用 `claude-ds4` 一键启动脚本接入 Claude Code
+
+我们为您准备了完整的 Claude Code 包装脚本（已安装至系统命令 `claude-ds4`，同时位于 `~/forbuild/ds4/claude-ds4.sh`）。
+
+它会自动清除云端 API Key，并将 Claude Code 内部的 Sonnet、Haiku、Opus 及子 Agent 全部路由映射到本地运行的 `ds4-server`（8400 端口），同时禁用非必要后台流量与非流式回退：
 
 ```bash
+# 启动本地服务后，在任意目录下直接执行：
+claude-ds4
+```
+
+##### 包装脚本源码详情 (`~/forbuild/ds4/claude-ds4.sh`)：
+```bash
+#!/bin/sh
+unset ANTHROPIC_API_KEY
+
+# 基础端点配置 (与 start_server.sh 端口 8400 保持一致)
 export ANTHROPIC_BASE_URL="http://127.0.0.1:8400"
 export ANTHROPIC_AUTH_TOKEN="dsv4-local"
 export ANTHROPIC_MODEL="deepseek-v4-flash"
 
-claude
+# 自定义模型名称与展示信息
+export ANTHROPIC_CUSTOM_MODEL_OPTION="deepseek-v4-flash"
+export ANTHROPIC_CUSTOM_MODEL_OPTION_NAME="DeepSeek V4 Flash local ds4"
+export ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION="ds4.c local GGUF"
+
+# 全量将 Sonnet / Haiku / Opus / 子 Agent 路由重定向到本地模型
+export ANTHROPIC_DEFAULT_SONNET_MODEL="deepseek-v4-flash"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="deepseek-v4-flash"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="deepseek-v4-flash"
+export CLAUDE_CODE_SUBAGENT_MODEL="deepseek-v4-flash"
+
+# 流量与流式超时优化
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
+export CLAUDE_STREAM_IDLE_TIMEOUT_MS=600000
+
+exec "$HOME/.local/bin/claude" "$@"
 ```
 
 #### 接入 OpenCode (`~/.config/opencode/opencode.json`)
