@@ -246,7 +246,7 @@ ds4 内置了深度结合底层 KV 缓存的原生 Coding Agent，无需 API 转
 ```bash
 cd ~/forbuild/ds4
 
-# 一键运行测试并自动生成 CSV 数据和 SVG 折线图表（默认测试从 32k 起至 100k，步长 16k 保证快速测试）
+# 一键运行测试并自动生成 CSV 数据和 SVG 折线图表（默认测试从 32k 起至 100k，步长 32k 保证快速测试）
 ./run_bench.sh
 
 # （可选）也可以指定自定义测试上限与步长。例如测试到 64k 上下文，步长 8k：
@@ -260,14 +260,14 @@ cd ~/forbuild/ds4
 
 #### 手动分步运行与自定义绘图命令：
 
-1. **手动运行评测并导出 CSV**（例如最大 100k 上下文，32k 起）：
+1. **手动运行评测并导出 CSV**（例如最大 100k 上下文，32k 起，32k 步长）：
    ```bash
    ./ds4-bench \
      -m ds4flash.gguf \
      --prompt-file speed-bench/promessi_sposi.txt \
      --ctx-start 32768 \
      --ctx-max 102400 \
-     --step-incr 16384 \
+     --step-incr 32768 \
      --gen-tokens 128 > speed-bench/m4_max.csv
    ```
 2. **手动调用绘图脚本生成 SVG 图表**：
