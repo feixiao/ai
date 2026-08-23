@@ -237,19 +237,40 @@ ds4 内置了深度结合底层 KV 缓存的原生 Coding Agent，无需 API 转
 
 ## 5. 性能基准测试与质量评估
 
-### 5.1 吞吐量基准测试 (`ds4-bench`)
+### 5.1 吞吐量基准测试与图表一键生成 (`ds4-bench`)
 
-测试在不同上下文长度下的 Prefill 与生成速率：
+我们已为您配置了自动进行基准测试并自动绘图的自动化脚本。
+
+在 `~/forbuild/ds4/` 目录下运行以下命令（若后台有运行中的 `ds4-server`，脚本会提示是否需要先停止以防止数据干扰）：
 
 ```bash
-./ds4-bench \
-  -m ds4flash.gguf \
-  --prompt-file speed-bench/promessi_sposi.txt \
-  --ctx-start 2048 \
-  --ctx-max 32768 \
-  --step-incr 4096 \
-  --gen-tokens 128
+cd ~/forbuild/ds4
+
+# 一键运行测试并自动生成 CSV 数据和 SVG 折线图表
+./run_bench.sh
 ```
+
+**运行结果说明：**
+* 运行结束后，会在 `speed-bench/` 文件夹下生成两个文件：
+  * **`speed-bench/m4_max.csv`**（原始评测数据）。
+  * **`speed-bench/m4_max_ts.svg`**（走势图表，可以直接在 Finder 中双击使用浏览器查看图表曲线）。
+
+#### 手动分步运行与自定义绘图命令：
+
+1. **手动运行评测并导出 CSV**：
+   ```bash
+   ./ds4-bench \
+     -m ds4flash.gguf \
+     --prompt-file speed-bench/promessi_sposi.txt \
+     --ctx-start 2048 \
+     --ctx-max 32768 \
+     --step-incr 4096 \
+     --gen-tokens 128 > speed-bench/m4_max.csv
+   ```
+2. **手动调用绘图脚本生成 SVG 图表**：
+   ```bash
+   python3 speed-bench/plot_speed.py speed-bench/m4_max.csv --title "M4 Max Benchmark"
+   ```
 
 ### 5.2 能力回归评测 (`ds4-eval`)
 
