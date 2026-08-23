@@ -101,10 +101,13 @@ ds4 提供了自动化下载脚本 `download_model.sh`，支持断点续传（�
 
 由于全量加载模型会占用约 **81 GB 显存/内存**，推荐采用 **按需后台启停** 方案，用时秒级启动，不用时一键释放内存。
 
-#### 💡 推荐：一键按需管理脚本
+#### 💡 推荐：一键按需管理脚本 (运行于 `~/forbuild/ds4/`)
+
+为了便于查找与管理，脚本、模型软链接及编译可执行文件均统一收录在 `~/forbuild/ds4/` 目录下。
 
 ```bash
-cd /Users/frank/wk/github/ai/ds4
+# 进入部署运行目录
+cd ~/forbuild/ds4
 
 # 1. 后台静默启动（推荐日常使用，日志自动写入 server.log）
 ./start_server.sh -d
@@ -118,6 +121,10 @@ tail -f server.log
 # （可选）前台启动（用于调试，按 Ctrl+C 退出）
 ./start_server.sh
 ```
+
+> **💡 说明：** 
+> 1. 您也可以在当前 AI 仓库的 `/Users/frank/wk/github/ai/ds4` 目录下直接运行 `./start_server.sh` 和 `./stop_server.sh`，它们会自动路由调用 `~/forbuild/ds4` 下的主逻辑。
+> 2. `start_server.sh` 启动时会自动切换工作目录 (`cd`) 到真实的源码仓库，以保证 Metal 渲染文件 (`metal/*.metal`) 被底层正常加载。
 
 #### 手动启动完整命令（供自定义调试参考）：
 ```bash
