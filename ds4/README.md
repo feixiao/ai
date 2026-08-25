@@ -170,21 +170,48 @@ curl http://127.0.0.1:8400/v1/chat/completions \
 
 我们为您准备了完整的 Claude Code 包装脚本（已安装至系统命令 `claude-ds4`，同时位于 `~/forbuild/ds4/claude-ds4.sh`）。
 
-它会自动清除云端 API Key，并将 Claude Code 内部的 Sonnet、Haiku、Opus 及子 Agent 全部路由映射到本地运行的 `ds4-server`（8400 端口），同时禁用非必要后台流量与非流式回退：
+它会自动将配置隔离至 `~/.ds4/claude_config`，自动增量双向同步官方会话（支持直接 `--resume <id>` 恢复任何历史会话），清除云端 API Key，并将 Claude Code 内部的 Sonnet、Haiku、Opus 及子 Agent 全部路由映射到本地运行的 `ds4-server`（8400 端口）：
 
 ```bash
 # 启动本地服务后，在任意目录下直接执行：
 claude-ds4
+
+# 恢复历史会话（已实现官方 ~/.claude 与 ds4 会话互通）
+claude-ds4 --resume <session-id>
+```
+
+##### 独立会话同步工具 (`sync_sessions.sh`)
+
+如果需要手动同步或指定单个 UUID 会话迁移，可直接使用配套同步脚本：
+
+```bash
+cd ~/forbuild/ds4
+
+# 1. 默认增量同步所有官方会话到 ds4
+./sync_sessions.sh
+
+# 2. 双向同步（两边保持最新）
+./sync_sessions.sh -b
+
+# 3. 精准同步单个指定 UUID 会话
+./sync_sessions.sh 2ce044f6-9934-4e69-b974-c6881e1764da
 ```
 
 ##### 包装脚本源码详情 (`~/forbuild/ds4/claude-ds4.sh`)：
 ```bash
 #!/bin/sh
-unset ANTHROPIC_API_KEY
+# 1. 独立配置目录，避免与官方 Claude Code 登录凭证（Keychain/OAuth）冲突
+export CLAUDE_CONFIG_DIR="$HOME/.ds4/claude_config"
+mkdir -p "$CLAUDE_CONFIG_DIR"
 
-# 基础端点配置 (与 start_server.sh 端口 8400 保持一致)
+# 2. 避免代理干扰本地 127.0.0.1 通信
+export NO_PROXY="127.0.0.1,localhost,$NO_PROXY"
+export no_proxy="127.0.0.1,localhost,$no_proxy"
+
+# 3. 基础端点与本地鉴权配置
+unset ANTHROPIC_AUTH_TOKEN
+export ANTHROPIC_API_KEY="dsv4-local"
 export ANTHROPIC_BASE_URL="http://127.0.0.1:8400"
-export ANTHROPIC_AUTH_TOKEN="dsv4-local"
 export ANTHROPIC_MODEL="deepseek-v4-flash"
 
 # 自定义模型名称与展示信息
@@ -198,12 +225,24 @@ export ANTHROPIC_DEFAULT_HAIKU_MODEL="deepseek-v4-flash"
 export ANTHROPIC_DEFAULT_OPUS_MODEL="deepseek-v4-flash"
 export CLAUDE_CODE_SUBAGENT_MODEL="deepseek-v4-flash"
 
-# 流量与流式超时优化
+# 流量与流式超时及未知模型窗口优化
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
+export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1
 export CLAUDE_STREAM_IDLE_TIMEOUT_MS=600000
 
-exec "$HOME/.local/bin/claude" "$@"
+# 4. 自动增量同步会话与共享配置
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SYNC_SCRIPT="$SCRIPT_DIR/sync_sessions.sh"
+if [ "${CLAUDE_DS4_NO_SYNC:-0}" != "1" ] && [ -f "$SYNC_SCRIPT" ] && [ -x "$SYNC_SCRIPT" ]; then
+    "$SYNC_SCRIPT" -b >/dev/null 2>&1 || true
+    trap '"$SYNC_SCRIPT" -b >/dev/null 2>&1 || true' EXIT
+fi
+
+# 5. 查找并启动 claude
+CLAUDE_BIN="$HOME/.local/bin/claude"
+[ ! -f "$CLAUDE_BIN" ] && CLAUDE_BIN="$(which claude 2>/dev/null)"
+"$CLAUDE_BIN" "$@"
 ```
 
 #### 接入 OpenCode (`~/.config/opencode/opencode.json`)
@@ -280,6 +319,7 @@ cd ~/forbuild/ds4
 
 # （可选）也可以指定自定义测试上限与步长。例如测试到 64k 上下文，步长 8k：
 ./run_bench.sh 65536 8192
+./run_bench.sh 10240 65536
 ```
 
 **运行结果说明：**

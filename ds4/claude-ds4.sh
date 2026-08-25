@@ -48,7 +48,21 @@ export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
 export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1
 export CLAUDE_STREAM_IDLE_TIMEOUT_MS=600000
 
-# 4. 查找实际安装的 claude 二进制路径
+# 4. 自动增量同步会话与共享配置（使官方 Claude 与 ds4 会话互通、支持无缝 --resume）
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SYNC_SCRIPT="$SCRIPT_DIR/sync_sessions.sh"
+if [ ! -f "$SYNC_SCRIPT" ]; then
+    SYNC_SCRIPT="$HOME/forbuild/ds4/sync_sessions.sh"
+fi
+
+if [ "${CLAUDE_DS4_NO_SYNC:-0}" != "1" ] && [ -f "$SYNC_SCRIPT" ] && [ -x "$SYNC_SCRIPT" ]; then
+    # 启动前同步官方会话到 ds4
+    "$SYNC_SCRIPT" -b >/dev/null 2>&1 || true
+    # 退出时同步 ds4 会话回官方目录
+    trap '"$SYNC_SCRIPT" -b >/dev/null 2>&1 || true' EXIT
+fi
+
+# 5. 查找实际安装的 claude 二进制路径
 CLAUDE_BIN="$HOME/.local/bin/claude"
 if [ ! -f "$CLAUDE_BIN" ]; then
     CLAUDE_BIN="$(which claude 2>/dev/null)"
@@ -59,4 +73,4 @@ if [ -z "$CLAUDE_BIN" ] || [ ! -x "$CLAUDE_BIN" ]; then
     exit 1
 fi
 
-exec "$CLAUDE_BIN" "$@"
+"$CLAUDE_BIN" "$@"
