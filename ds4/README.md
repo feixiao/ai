@@ -103,16 +103,16 @@ ds4 提供了自动化下载脚本 `download_model.sh`，支持断点续传（�
 
 #### 💡 推荐：一键按需管理脚本 (运行于 `~/forbuild/ds4/`)
 
-为了便于查找与管理，脚本、模型软链接及编译可执行文件均统一收录在 `~/forbuild/ds4/` 目录下。
+为了便于查找与管理，脚本、模型软链接及编译可执行文件均统一收录在 `~/forbuild/ds4/` 目录下。`start_server.sh` 脚本已内置 **DSpark 投机加速自动探测与挂载** 逻辑（检测到 `./gguf/DeepSeek-V4-Flash-DSpark-support-0731.gguf` 即自动追加 `--mtp` 和 `--dspark` 参数）。
 
 ```bash
 # 进入部署运行目录
 cd ~/forbuild/ds4
 
-# 1. 后台静默启动（推荐日常使用，日志自动写入 server.log）
+# 1. 后台静默启动（推荐日常使用，自动探测并启用 DSpark，日志写入 server.log）
 ./start_server.sh -d
 
-# 2. 停止服务并立即释放 81GB 内存
+# 2. 停止服务并立即释放 87GB 显存与内存
 ./stop_server.sh
 
 # （可选）查看运行日志
@@ -125,11 +125,14 @@ tail -f server.log
 > **💡 说明：** 
 > 1. 您也可以在当前 AI 仓库的 `/Users/frank/wk/github/ai/ds4` 目录下直接运行 `./start_server.sh` 和 `./stop_server.sh`，它们会自动路由调用 `~/forbuild/ds4` 下的主逻辑。
 > 2. `start_server.sh` 启动时会自动切换工作目录 (`cd`) 到真实的源码仓库，以保证 Metal 渲染文件 (`metal/*.metal`) 被底层正常加载。
+> 3. 如需临时禁用 DSpark，可通过环境变量控制：`DISABLE_DSPARK=1 ./start_server.sh -d`。
 
 #### 手动启动完整命令（供自定义调试参考）：
 ```bash
 ./ds4-server \
   -m ds4flash.gguf \
+  --mtp gguf/DeepSeek-V4-Flash-DSpark-support-0731.gguf \
+  --dspark \
   --host 127.0.0.1 \
   --port 8400 \
   --ctx 100000 \
