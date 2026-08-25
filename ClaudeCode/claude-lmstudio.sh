@@ -52,6 +52,9 @@ export API_TIMEOUT_MS=3000000
 # 4. 自动增量同步会话与共享配置（使官方 Claude 与 LM Studio 会话互通、支持无缝 --resume）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SYNC_SCRIPT="$SCRIPT_DIR/sync_sessions.sh"
+if [ ! -f "$SYNC_SCRIPT" ]; then
+    SYNC_SCRIPT="$HOME/forbuild/lmstudio/sync_sessions.sh"
+fi
 
 if [ "${CLAUDE_LMSTUDIO_NO_SYNC:-0}" != "1" ] && [ -f "$SYNC_SCRIPT" ] && [ -x "$SYNC_SCRIPT" ]; then
     # 启动前同步官方会话到 LM Studio
