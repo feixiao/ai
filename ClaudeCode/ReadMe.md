@@ -1,5 +1,28 @@
 ## Use your LM Studio Models in Claude Code
 
+### 🚀 一键启动包装脚本 (`claude-lmstudio.sh`)
+
+项目提供了免配置、防 Keychain 冲突、自动隔离与双向会话同步的启动脚本：
+
+```bash
+# 进入目录直接启动 Claude Code 并将请求路由至 LM Studio
+./ClaudeCode/claude-lmstudio.sh
+
+# 支持透传任意 claude 命令与参数
+./ClaudeCode/claude-lmstudio.sh --resume
+./ClaudeCode/claude-lmstudio.sh -p "编写一个快速排序算法"
+```
+
+该脚本预设包含以下配置：
+- **默认端点**：`http://127.0.0.1:8000/v1` (可通过 `ANTHROPIC_BASE_URL` 环境变量覆盖)
+- **Sonnet 路由**：`qwopus3.6-27b-coder`
+- **Haiku 路由**：`mlx-qwopus3.5-9b-v3`
+- **Opus 路由**：`gemma-4-31b-it`
+- **子 Agent 路由**：`mlx-qwopus3.5-9b-v3`
+- **独立配置隔离**：`~/.lmstudio/claude_config`
+- **自动双向会话同步**：与官方 `~/.claude` 会话及 `CLAUDE.md`/`skills` 保持同步互通
+
+---
 
 #### 模型介绍
 + ANTHROPIC_MODEL 默认场景使用经济模型
