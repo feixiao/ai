@@ -48,6 +48,10 @@ export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
 export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1
 export CLAUDE_STREAM_IDLE_TIMEOUT_MS=600000
 
+# 开启自动上下文压缩（默认匹配 100k 黄金窗口，超出时自动触发 compact 防止 Prefill 过长）
+unset DISABLE_COMPACT
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-100000}"
+
 # 4. 自动增量同步会话与共享配置（使官方 Claude 与 ds4 会话互通、支持无缝 --resume）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SYNC_SCRIPT="$SCRIPT_DIR/sync_sessions.sh"
