@@ -7,11 +7,10 @@
 # ------------------------------------------------------------------------------
 # 1. qwopus3.5-9b-v3       ( 6.0 GB, 9B  ) -> 极轻量快速 / Haiku / Subagent
 # 2. mlx-qwopus3.5-9b-v3   ( 9.5 GB, 9B  ) -> MLX 快速推理 / Haiku / Subagent
-# 3. qwopus3.6-27b-coder   (16.1 GB, 27B ) -> 专用编码主力 / Sonnet / 默认主力
-# 4. qwen3.8-27b-mlx@4bit  (16.1 GB, 27B ) -> Qwen 27B 平衡版 / Sonnet
-# 5. qwen3.8-27b-mlx@8bit  (29.5 GB, 27B ) -> Qwen 27B 高精度版 / Opus
-# 6. gemma-4-26b-a4b-it    (15.6 GB, 26B ) -> Gemma MoE 高吞吐 / Sonnet / Haiku
-# 7. gemma-4-31b-it        (18.4 GB, 31B ) -> Gemma 31B Dense 强推理 / Opus
+# 3. qwen3.8-27b-mlx@4bit  (16.1 GB, 27B ) -> 专用编码主力 / Sonnet / 默认主力
+# 4. qwen3.8-27b-mlx@8bit  (29.5 GB, 27B ) -> Qwen 27B 高精度版 / Opus
+# 5. gemma-4-26b-a4b-it    (15.6 GB, 26B ) -> Gemma MoE 高吞吐 / Sonnet / Haiku
+# 6. gemma-4-31b-it        (18.4 GB, 31B ) -> Gemma 31B Dense 强推理 / Opus / Fable
 # ==============================================================================
 
 # 1. 独立配置目录，避免与官方 Claude Code 登录凭证（Keychain/OAuth）冲突
@@ -45,8 +44,8 @@ export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:1234}"
 # ==============================================================================
 # 预设模型策略切换（可通过环境变量 PRESET=xxx 或命令行参数灵活切换）
 # 可选 PRESET:
-#   - coder     (默认推荐: 主力编码=qwopus3.6-27b-coder, 架构推理=gemma-4-31b-it, 轻量Agent=mlx-qwopus3.5-9b-v3)
-#   - reasoning (深度推理: 架构/主力=gemma-4-31b-it, 代码=qwopus3.6-27b-coder)
+#   - coder     (默认推荐: 主力编码=qwen3.8-27b-mlx@4bit, 架构推理=gemma-4-31b-it, 轻量Agent=mlx-qwopus3.5-9b-v3)
+#   - reasoning (深度推理: 架构/主力=gemma-4-31b-it, 代码=qwen3.8-27b-mlx@4bit)
 #   - qwen      (Qwen全家桶: Sonnet=qwen3.8-27b-mlx@4bit, Opus=qwen3.8-27b-mlx@8bit, Haiku=qwopus3.5-9b-v3)
 #   - gemma     (Gemma全家桶: Sonnet=gemma-4-26b-a4b-it, Opus=gemma-4-31b-it, Haiku=gemma-4-26b-a4b-it)
 #   - single    (统一单模型模式: 将 Sonnet/Haiku/Opus/Subagent 全部重定向至单一模型，避免显存反复切换)
@@ -77,6 +76,7 @@ if [ -n "$LM_SINGLE_MODEL" ]; then
     # 单模型统一模式：当 LM Studio 本地仅加载单个模型时使用
     DEFAULT_MODEL="$LM_SINGLE_MODEL"
     OPUS_MODEL="$LM_SINGLE_MODEL"
+    FABLE_MODEL="$LM_SINGLE_MODEL"
     SONNET_MODEL="$LM_SINGLE_MODEL"
     HAIKU_MODEL="$LM_SINGLE_MODEL"
     SUBAGENT_MODEL="$LM_SINGLE_MODEL"
@@ -85,13 +85,15 @@ else
         reasoning)
             DEFAULT_MODEL="gemma-4-31b-it"
             OPUS_MODEL="gemma-4-31b-it"
-            SONNET_MODEL="qwopus3.6-27b-coder"
+            FABLE_MODEL="gemma-4-31b-it"
+            SONNET_MODEL="qwen3.8-27b-mlx@4bit"
             HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
             SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
             ;;
         qwen)
             DEFAULT_MODEL="qwen3.8-27b-mlx@4bit"
             OPUS_MODEL="qwen3.8-27b-mlx@8bit"
+            FABLE_MODEL="qwen3.8-27b-mlx@8bit"
             SONNET_MODEL="qwen3.8-27b-mlx@4bit"
             HAIKU_MODEL="qwopus3.5-9b-v3"
             SUBAGENT_MODEL="qwopus3.5-9b-v3"
@@ -99,15 +101,17 @@ else
         gemma)
             DEFAULT_MODEL="gemma-4-26b-a4b-it"
             OPUS_MODEL="gemma-4-31b-it"
+            FABLE_MODEL="gemma-4-31b-it"
             SONNET_MODEL="gemma-4-26b-a4b-it"
             HAIKU_MODEL="gemma-4-26b-a4b-it"
             SUBAGENT_MODEL="gemma-4-26b-a4b-it"
             ;;
         coder|*)
             # 默认推荐 Coder 组合：27B 编程主力 + 31B 架构推理 + 9B 极速 Agent
-            DEFAULT_MODEL="qwopus3.6-27b-coder"
+            DEFAULT_MODEL="qwen3.8-27b-mlx@4bit"
             OPUS_MODEL="gemma-4-31b-it"
-            SONNET_MODEL="qwopus3.6-27b-coder"
+            FABLE_MODEL="gemma-4-31b-it"
+            SONNET_MODEL="qwen3.8-27b-mlx@4bit"
             HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
             SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
             ;;
@@ -116,15 +120,34 @@ fi
 
 # 导出基础模型与各级路由
 export ANTHROPIC_MODEL="$DEFAULT_MODEL"
-export ANTHROPIC_CUSTOM_MODEL_OPTION="$DEFAULT_MODEL"
-export ANTHROPIC_CUSTOM_MODEL_OPTION_NAME="LM Studio Local Models"
-export ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION="LM Studio local inference backend"
+export ANTHROPIC_DEFAULT_MODEL="$DEFAULT_MODEL"
 
-# 全量将 Sonnet / Haiku / Opus / 子 Agent 路由重定向到本地模型
-export ANTHROPIC_DEFAULT_OPUS_MODEL="$OPUS_MODEL"
+# 清理冗余自定义模型选项，避免 /model 出现重复项目
+unset ANTHROPIC_CUSTOM_MODEL_OPTION
+unset ANTHROPIC_CUSTOM_MODEL_OPTION_NAME
+unset ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION
+
+# 全量将 Sonnet / Haiku / Opus / Fable / 子 Agent 路由重定向到本地模型并设置展示名称
 export ANTHROPIC_DEFAULT_SONNET_MODEL="$SONNET_MODEL"
+export ANTHROPIC_DEFAULT_SONNET_MODEL_NAME="$SONNET_MODEL"
+export ANTHROPIC_DEFAULT_SONNET_MODEL_DESCRIPTION="Sonnet tier (Primary coding)"
+
+export ANTHROPIC_DEFAULT_OPUS_MODEL="$OPUS_MODEL"
+export ANTHROPIC_DEFAULT_OPUS_MODEL_NAME="$OPUS_MODEL"
+export ANTHROPIC_DEFAULT_OPUS_MODEL_DESCRIPTION="Opus tier (Deep reasoning / Architecture)"
+
+export ANTHROPIC_DEFAULT_FABLE_MODEL="$FABLE_MODEL"
+export ANTHROPIC_DEFAULT_FABLE_MODEL_NAME="$FABLE_MODEL"
+export ANTHROPIC_DEFAULT_FABLE_MODEL_DESCRIPTION="Fable tier (Deep reasoning)"
+
 export ANTHROPIC_DEFAULT_HAIKU_MODEL="$HAIKU_MODEL"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME="$HAIKU_MODEL"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL_DESCRIPTION="Haiku tier (Fast subagents)"
+
 export CLAUDE_CODE_SUBAGENT_MODEL="$SUBAGENT_MODEL"
+
+# 禁用 1M 上下文后缀（避免本地推理引擎因 [1m] 后缀报错）
+export CLAUDE_CODE_DISABLE_1M_CONTEXT=1
 
 # 流量与流式超时及未知模型窗口优化
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1

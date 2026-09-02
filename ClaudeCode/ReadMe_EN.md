@@ -34,7 +34,7 @@ which claude
 ### 1.2 Install and Start LM Studio Local Server
 
 1. Download and install [LM Studio](https://lmstudio.ai/) (Apple Silicon Mac build recommended).
-2. Download desired models (such as `qwopus3.6-27b-coder`, `gemma-4-31b-it`, `mlx-qwopus3.5-9b-v3`).
+2. Download desired models (such as `qwen3.8-27b-mlx@4bit`, `gemma-4-31b-it`, `mlx-qwopus3.5-9b-v3`).
 3. Switch to the **Developer** tab (Local Server):
    - Click **Start Server**.
    - Default port is `1234` (`http://127.0.0.1:1234`).
@@ -78,7 +78,7 @@ which claude-lm
 ### 2.1 Basic Launch
 
 ```bash
-# Launch with default Coder preset (qwopus3.6-27b-coder + gemma-4-31b-it + mlx-qwopus3.5-9b-v3)
+# Launch with default Coder preset (qwen3.8-27b-mlx@4bit + gemma-4-31b-it + mlx-qwopus3.5-9b-v3)
 clm
 
 # Or use full command name
@@ -112,8 +112,8 @@ clm --preset gemma
 Route all roles (Sonnet/Opus/Haiku/Subagents) to a single model to avoid VRAM model swapping:
 
 ```bash
-# Route everything to qwopus3.6-27b-coder
-clm --single qwopus3.6-27b-coder
+# Route everything to qwen3.8-27b-mlx@4bit
+clm --single qwen3.8-27b-mlx@4bit
 
 # Route everything to gemma-4-31b-it
 clm --single gemma-4-31b-it
@@ -144,10 +144,9 @@ Recommended model allocations on Apple Silicon (M-series / Mac Studio):
 
 | Model Name | VRAM Footprint | Parameter Size | Recommended Role | Specialty / Use Case |
 | :--- | :--- | :--- | :--- | :--- |
-| **`qwopus3.6-27b-coder`** | 16.1 GB | 27B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`**<br>+ **Primary (`ANTHROPIC_MODEL`)** | Optimized for code generation and refactoring |
-| **`gemma-4-31b-it`** | 18.4 GB | 31B | **`ANTHROPIC_DEFAULT_OPUS_MODEL`** | Dense reasoning model for architectural design and complex logic |
+| **`qwen3.8-27b-mlx@4bit`** | 16.1 GB | 27B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`**<br>+ **Primary (`ANTHROPIC_MODEL`)** | Optimized for code generation and refactoring (4-bit balanced) |
+| **`gemma-4-31b-it`** | 18.4 GB | 31B | **`ANTHROPIC_DEFAULT_OPUS_MODEL`** / **Fable** | Dense reasoning model for architectural design and complex logic |
 | **`qwen3.8-27b-mlx@8bit`** | 29.5 GB | 27B | **`ANTHROPIC_DEFAULT_OPUS_MODEL`** (Optional) | High precision 8-bit Qwen model for math and reasoning |
-| **`qwen3.8-27b-mlx@4bit`** | 16.1 GB | 27B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`** (Optional) | 4-bit balanced edition with low memory usage |
 | **`gemma-4-26b-a4b-it`** | 15.6 GB | 26B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`** / **Haiku** | High throughput MoE model with fast inference |
 | **`mlx-qwopus3.5-9b-v3`** | 9.5 GB | 9B | **`ANTHROPIC_DEFAULT_HAIKU_MODEL`**<br>+ **`CLAUDE_CODE_SUBAGENT_MODEL`** | MLX-optimized 9B model for low-latency subagent tasks |
 | **`qwopus3.5-9b-v3`** | 6.0 GB | 9B | **`ANTHROPIC_DEFAULT_HAIKU_MODEL`**<br>+ **`CLAUDE_CODE_SUBAGENT_MODEL`** | Lightweight 6GB model with fast TTFT |
@@ -165,13 +164,16 @@ export ANTHROPIC_BASE_URL="http://127.0.0.1:1234/v1"
 export ANTHROPIC_API_KEY="lmstudio"
 
 # 2. Model role routing
-export ANTHROPIC_MODEL="qwopus3.6-27b-coder"
+export ANTHROPIC_MODEL="qwen3.8-27b-mlx@4bit"
+export ANTHROPIC_DEFAULT_MODEL="qwen3.8-27b-mlx@4bit"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="qwen3.8-27b-mlx@4bit"
 export ANTHROPIC_DEFAULT_OPUS_MODEL="gemma-4-31b-it"
-export ANTHROPIC_DEFAULT_SONNET_MODEL="qwopus3.6-27b-coder"
+export ANTHROPIC_DEFAULT_FABLE_MODEL="gemma-4-31b-it"
 export ANTHROPIC_DEFAULT_HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
 export CLAUDE_CODE_SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
 
-# 3. Connection and streaming timeout tuning
+# 3. Disable 1M suffix and connection/timeout tuning
+export CLAUDE_CODE_DISABLE_1M_CONTEXT=1
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
 export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1

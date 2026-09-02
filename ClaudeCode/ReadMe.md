@@ -34,7 +34,7 @@ which claude
 ### 1.2 安装并启动 LM Studio 本地服务
 
 1. 从 [LM Studio 官网](https://lmstudio.ai/) 下载并安装对应系统版本（推荐 Apple Silicon Mac 版本）。
-2. 在 LM Studio 中下载所需的模型（如 `qwopus3.6-27b-coder`、`gemma-4-31b-it`、`mlx-qwopus3.5-9b-v3` 等）。
+2. 在 LM Studio 中下载所需的模型（如 `qwen3.8-27b-mlx@4bit`、`gemma-4-31b-it`、`mlx-qwopus3.5-9b-v3` 等）。
 3. 切换至 **Developer** 标签页（本地服务器模式）：
    - 点击 **Start Server** 开启服务。
    - 默认监听端口为 `1234`（访问地址：`http://127.0.0.1:1234`）。
@@ -78,7 +78,7 @@ which claude-lm
 ### 2.1 基础启动
 
 ```bash
-# 1. 默认推荐模式启动 (Coder 预设: qwopus3.6-27b-coder + gemma-4-31b-it + mlx-qwopus3.5-9b-v3)
+# 1. 默认推荐模式启动 (Coder 预设: qwen3.8-27b-mlx@4bit + gemma-4-31b-it + mlx-qwopus3.5-9b-v3)
 clm
 
 # 或使用完整别名
@@ -112,8 +112,8 @@ clm --preset gemma
 当 LM Studio 本地仅加载单个模型时，使用 `--single` 将所有角色（Sonnet/Opus/Haiku/Subagent）统一路由至该模型，避免多模型切换导致的显存重载开销：
 
 ```bash
-# 全部角色统一使用 qwopus3.6-27b-coder
-clm --single qwopus3.6-27b-coder
+# 全部角色统一使用 qwen3.8-27b-mlx@4bit
+clm --single qwen3.8-27b-mlx@4bit
 
 # 全部角色统一使用 gemma-4-31b-it
 clm --single gemma-4-31b-it
@@ -144,10 +144,9 @@ clm -p "编写一个基于 FastAPI 的流式聊天后端接口"
 
 | 本地模型名称 | 显存占用 | 参数量 | 推荐路由角色 | 特点与适用场景 |
 | :--- | :--- | :--- | :--- | :--- |
-| **`qwopus3.6-27b-coder`** | 16.1 GB | 27B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`**<br>+ **默认主力模型 (`ANTHROPIC_MODEL`)** | 专为代码生成与重构优化，代码能力最强的主力选择 |
-| **`gemma-4-31b-it`** | 18.4 GB | 31B | **`ANTHROPIC_DEFAULT_OPUS_MODEL`** | Dense 强推理指令模型，适合复杂架构设计与全局规划 |
+| **`qwen3.8-27b-mlx@4bit`** | 16.1 GB | 27B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`**<br>+ **默认主力模型 (`ANTHROPIC_MODEL`)** | 专为代码生成与重构优化，4-bit 平衡版主力选择 |
+| **`gemma-4-31b-it`** | 18.4 GB | 31B | **`ANTHROPIC_DEFAULT_OPUS_MODEL`** / **Fable** | Dense 强推理指令模型，适合复杂架构设计与全局规划 |
 | **`qwen3.8-27b-mlx@8bit`** | 29.5 GB | 27B | **`ANTHROPIC_DEFAULT_OPUS_MODEL`** (可选) | 高精度 8-bit Qwen 模型，数学与逻辑推理能力突出 |
-| **`qwen3.8-27b-mlx@4bit`** | 16.1 GB | 27B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`** (可选) | 4-bit 平衡版，显存占用低，适合日常通用对话与开发 |
 | **`gemma-4-26b-a4b-it`** | 15.6 GB | 26B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`** / **Haiku** | MoE 高吞吐架构，在保持智能的同时生成速度极快 |
 | **`mlx-qwopus3.5-9b-v3`** | 9.5 GB | 9B | **`ANTHROPIC_DEFAULT_HAIKU_MODEL`**<br>+ **`CLAUDE_CODE_SUBAGENT_MODEL`** | MLX 优化版 9B，极低延迟，适合子代理与轻量辅助任务 |
 | **`qwopus3.5-9b-v3`** | 6.0 GB | 9B | **`ANTHROPIC_DEFAULT_HAIKU_MODEL`**<br>+ **`CLAUDE_CODE_SUBAGENT_MODEL`** | 极致轻量 6GB 显存，极快首字响应 |
@@ -164,14 +163,17 @@ export NO_PROXY="127.0.0.1,localhost,$NO_PROXY"
 export ANTHROPIC_BASE_URL="http://127.0.0.1:1234/v1"
 export ANTHROPIC_API_KEY="lmstudio"
 
-# 2. 全量重定向 Sonnet / Haiku / Opus / 子 Agent 角色
-export ANTHROPIC_MODEL="qwopus3.6-27b-coder"
+# 2. 全量重定向 Sonnet / Haiku / Opus / Fable / 子 Agent 角色
+export ANTHROPIC_MODEL="qwen3.8-27b-mlx@4bit"
+export ANTHROPIC_DEFAULT_MODEL="qwen3.8-27b-mlx@4bit"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="qwen3.8-27b-mlx@4bit"
 export ANTHROPIC_DEFAULT_OPUS_MODEL="gemma-4-31b-it"
-export ANTHROPIC_DEFAULT_SONNET_MODEL="qwopus3.6-27b-coder"
+export ANTHROPIC_DEFAULT_FABLE_MODEL="gemma-4-31b-it"
 export ANTHROPIC_DEFAULT_HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
 export CLAUDE_CODE_SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
 
-# 3. 流量与流式超时调优
+# 3. 禁用 1M 上下文后缀与流量/超时调优
+export CLAUDE_CODE_DISABLE_1M_CONTEXT=1
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
 export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1
