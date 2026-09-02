@@ -2,108 +2,98 @@
 
 ### 🚀 一键启动包装脚本 (`claude-lmstudio.sh`)
 
-项目提供了免配置、防 Keychain 冲突、自动隔离与双向会话同步的启动脚本：
+项目提供了参考 `claude-ds4` 架构的免配置、防 Keychain 冲突、自动配置隔离与双向会话同步的启动脚本：
 
 ```bash
-# 进入目录直接启动 Claude Code 并将请求路由至 LM Studio
-./ClaudeCode/claude-lmstudio.sh
+# 1. 默认推荐模式启动 (Coder 预设: qwopus3.6-27b-coder + gemma-4-31b-it + mlx-qwopus3.5-9b-v3)
+claude-lmstudio
+# 或简短命令
+claude-lm
+clm
 
-# 支持透传任意 claude 命令与参数
-./ClaudeCode/claude-lmstudio.sh --resume
-./ClaudeCode/claude-lmstudio.sh -p "编写一个快速排序算法"
+# 2. 支持通过 --preset 一键切换预设策略
+claude-lmstudio --preset coder      # 默认：编程主力 + 强架构推理 + 极速轻量 Agent
+claude-lmstudio --preset reasoning  # 深度推理：gemma-4-31b-it 深度架构与规划
+claude-lmstudio --preset qwen       # Qwen全家桶：qwen3.8-27b-mlx@4bit / 8bit
+claude-lmstudio --preset gemma      # Gemma全家桶：gemma-4-26b-a4b-it / 31b-it
+
+# 3. 统一单模型模式（当 LM Studio 仅加载单一模型时，避免多模型显存切换换页）
+claude-lmstudio --single qwopus3.6-27b-coder
+claude-lmstudio --single gemma-4-31b-it
+
+# 4. 透传任意官方 Claude Code 命令与参数
+claude-lmstudio --resume
+claude-lmstudio --resume <session-id>
+claude-lmstudio -p "编写一个基于 FastAPI 的流式聊天后端"
 ```
-
-该脚本预设包含以下配置：
-- **默认端点**：`http://127.0.0.1:8000/v1` (可通过 `ANTHROPIC_BASE_URL` 环境变量覆盖)
-- **Sonnet 路由**：`qwopus3.6-27b-coder`
-- **Haiku 路由**：`mlx-qwopus3.5-9b-v3`
-- **Opus 路由**：`gemma-4-31b-it`
-- **子 Agent 路由**：`mlx-qwopus3.5-9b-v3`
-- **独立配置隔离**：`~/.lmstudio/claude_config`
-- **自动双向会话同步**：与官方 `~/.claude` 会话及 `CLAUDE.md`/`skills` 保持同步互通
 
 ---
 
-#### 模型介绍
-+ ANTHROPIC_MODEL 默认场景使用经济模型
-+ ANTHROPIC_DEFAULT_OPUS_MODEL 最复杂任务（如架构设计）使用推理模型 
-+ ANTHROPIC_DEFAULT_SONNET_MODEL 日常编码使用经济模型 
-+ ANTHROPIC_DEFAULT_HAIKU_MODEL 简单任务使用经济模型
-+ CLAUDE_CODE_SUBAGENT_MODEL 子代理任务使用经济模型
+### 📦 本地模型库与角色分工推荐
 
-    ```shell
-    # 默认场景：Gemma 4 31B Dense (全能核心)
-    ANTHROPIC_MODEL=gemma-4-31b-it
+针对本地已下载的 7 款核心模型：
 
-    # 最复杂任务：Qwopus-35B (逻辑之神)
-    ANTHROPIC_DEFAULT_OPUS_MODEL=qwopus-3.5-35b-reasoning
+| 模型名称 | 显存/大小 | 参数量 | 推荐路由角色 | 特点与适用场景 |
+| :--- | :--- | :--- | :--- | :--- |
+| **`qwopus3.6-27b-coder`** | 16.1 GB | 27B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`** / **主力默认** | 专为代码生成与重构优化，代码能力最强的主力选择 |
+| **`gemma-4-31b-it`** | 18.4 GB | 31B | **`ANTHROPIC_DEFAULT_OPUS_MODEL`** | Dense 强推理指令模型，适合复杂架构设计与全局规划 |
+| **`qwen3.8-27b-mlx@8bit`** | 29.5 GB | 27B | **`ANTHROPIC_DEFAULT_OPUS_MODEL`** (可选) | 高精度 8-bit Qwen 模型，数学与逻辑推理能力突出 |
+| **`qwen3.8-27b-mlx@4bit`** | 16.1 GB | 27B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`** (可选) | 4-bit 平衡版，显存占用低，适合日常通用对话与开发 |
+| **`gemma-4-26b-a4b-it`** | 15.6 GB | 26B | **`ANTHROPIC_DEFAULT_SONNET_MODEL`** / **Haiku** | MoE 高吞吐架构，在保持智能的同时生成速度极快 |
+| **`mlx-qwopus3.5-9b-v3`** | 9.5 GB | 9B | **`ANTHROPIC_DEFAULT_HAIKU_MODEL`** / **Subagent** | MLX 优化版 9B，极低延迟，适合子代理与轻量辅助任务 |
+| **`qwopus3.5-9b-v3`** | 6.0 GB | 9B | **`ANTHROPIC_DEFAULT_HAIKU_MODEL`** / **Subagent** | 极致轻量 6GB 显存，极快首字响应 |
 
-    # 日常编码：Gemma 4 26B-A4B (极速与智能的平衡)
-    ANTHROPIC_DEFAULT_SONNET_MODEL=gemma-4-26b-a4b-it
+---
 
-    # 简单任务与子代理：同样使用 26B-A4B
-    # 既然显存够，没必要回退到 4B，直接用最好的 MoE 
-    ANTHROPIC_DEFAULT_HAIKU_MODEL=gemma-4-26b-a4b-it
-    CLAUDE_CODE_SUBAGENT_MODEL=gemma-4-26b-a4b-it
-    ```
+### ⚙️ 环境变量路由映射
 
-#### 设置claude code的模型路径
-```shell
-# 替换为你的模型路径
-# 写入环境变量
-export ANTHROPIC_BASE_URL=http://localhost:1234
-export ANTHROPIC_AUTH_TOKEN=lmstudio
+脚本内置全量路由重定向环境变量（对应 `ds4` 启动脚本同款规范）：
 
+```bash
+# LM Studio 本地服务接入点（默认 1234 端口）
+export ANTHROPIC_BASE_URL="http://127.0.0.1:1234/v1"
+export ANTHROPIC_API_KEY="lmstudio"
+
+# 全量将 Sonnet / Haiku / Opus / 子 Agent 路由重定向到本地模型
+export ANTHROPIC_MODEL="qwopus3.6-27b-coder"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="gemma-4-31b-it"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="qwopus3.6-27b-coder"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
+export CLAUDE_CODE_SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
+
+# 流量与流式超时调优
+export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
+export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1
+export CLAUDE_STREAM_IDLE_TIMEOUT_MS=600000
+export API_TIMEOUT_MS=3000000
+
+# 自动上下文压缩（100k 黄金窗口）
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS=100000
 ```
 
+---
 
+### 🔄 会话双向同步工具 (`sync_sessions.sh`)
 
+解决配置隔离后历史会话无法互通的问题：
 
-### 切换模型
-```shell
-claude --model openai/gpt-oss-20b
-claude --model qwopus3.5-27b-v3
+```bash
+cd ClaudeCode
+
+# 1. 默认将官方 ~/.claude 会话增量同步到 ~/.lmstudio/claude_config
+./sync_sessions.sh
+
+# 2. 双向同步（两边保持最新）
+./sync_sessions.sh -b
+
+# 3. 指定单个会话 UUID 迁移
+./sync_sessions.sh 2ce044f6-9934-4e69-b974-c6881e1764da
 ```
 
-### 参考配置
-```json
-{
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "permissions": {
-    "allow": [
-      "Bash(npm run lint)",
-      "Bash(npm run test *)",
-      "Read(~/.zshrc)"
-    ],
-    "deny": [
-      "Bash(curl *)",
-      "Read(./.env)",
-      "Read(./.env.*)",
-      "Read(./secrets/**)"
-    ]
-  },
-  "env": {
-    "CLAUDE_CODE_ENABLE_TELEMETRY": "1",
-    "OTEL_METRICS_EXPORTER": "otlp",
-    "ANTHROPIC_BASE_URL": "http://127.0.0.1:1234",
-    "ANTHROPIC_MODEL":"gemma-4-31b-it",  # 有点慢
-    "ANTHROPIC_DEFAULT_OPUS_MODEL":"qwopus3.5-27b-v3",
-    "ANTHROPIC_DEFAULT_SONNET_MODEL":"gemma-4-26b-a4b-it",
-    "ANTHROPIC_DEFAULT_HAIKU_MODEL":"gemma-4-26b-a4b-it",
-    "CLAUDE_CODE_SUBAGENT_MODEL":"gemma-4-26b-a4b-it",
-    "ANTHROPIC_AUTH_TOKEN": "local-model",
-    "API_TIMEOUT_MS": "3000000"
-  },
-  "companyAnnouncements": [
-  ]
-}
-```
+---
 
+### 📚 参考与扩展
 
-### GUI配置
-+ [cc-switcher](https://github.com/farion1231/cc-switcher)cc-switcher: A GUI tool to switch between different models in Claude Code.
-
-
-#### 参考资料
-+ [Use your LM Studio Models in Claude Code](https://lmstudio.ai/blog/claudecode)
-+ [《Claude Code 快速上手核心指南》](https://datawhalechina.github.io/easy-vibe/zh-cn/stage-3/core-skills/basics/)
+- [LM Studio 官方文档: Use your LM Studio Models in Claude Code](https://lmstudio.ai/blog/claudecode)
+- [ds4 (DwarfStar) 本地部署指南](../ds4/README.md)

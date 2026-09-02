@@ -1,6 +1,17 @@
-#!/bin/sh
+#!/bin/bash
 # ==============================================================================
 # Claude Code 接入本地 LM Studio 启动包装脚本
+# ==============================================================================
+#
+# 本地模型列表与角色分配（基于 Apple Silicon / Mac Studio 本地已下载模型）：
+# ------------------------------------------------------------------------------
+# 1. qwopus3.5-9b-v3       ( 6.0 GB, 9B  ) -> 极轻量快速 / Haiku / Subagent
+# 2. mlx-qwopus3.5-9b-v3   ( 9.5 GB, 9B  ) -> MLX 快速推理 / Haiku / Subagent
+# 3. qwopus3.6-27b-coder   (16.1 GB, 27B ) -> 专用编码主力 / Sonnet / 默认主力
+# 4. qwen3.8-27b-mlx@4bit  (16.1 GB, 27B ) -> Qwen 27B 平衡版 / Sonnet
+# 5. qwen3.8-27b-mlx@8bit  (29.5 GB, 27B ) -> Qwen 27B 高精度版 / Opus
+# 6. gemma-4-26b-a4b-it    (15.6 GB, 26B ) -> Gemma MoE 高吞吐 / Sonnet / Haiku
+# 7. gemma-4-31b-it        (18.4 GB, 31B ) -> Gemma 31B Dense 强推理 / Opus
 # ==============================================================================
 
 # 1. 独立配置目录，避免与官方 Claude Code 登录凭证（Keychain/OAuth）冲突
@@ -26,21 +37,94 @@ export NO_PROXY="127.0.0.1,localhost,$NO_PROXY"
 export no_proxy="127.0.0.1,localhost,$no_proxy"
 
 # 3. 基础端点与本地鉴权配置
+# LM Studio 默认 API 端口通常为 1234（也可配置为 8000）
 unset ANTHROPIC_AUTH_TOKEN
-export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-dummy-key}"
-export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:8000/v1}"
-export ANTHROPIC_MODEL="${ANTHROPIC_MODEL:-qwopus3.6-27b-coder}"
+export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-lmstudio}"
+export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:1234/v1}"
 
-# 自定义模型名称与展示信息
-export ANTHROPIC_CUSTOM_MODEL_OPTION="${ANTHROPIC_CUSTOM_MODEL_OPTION:-qwopus3.6-27b-coder}"
+# ==============================================================================
+# 预设模型策略切换（可通过环境变量 PRESET=xxx 或命令行参数灵活切换）
+# 可选 PRESET:
+#   - coder     (默认推荐: 主力编码=qwopus3.6-27b-coder, 架构推理=gemma-4-31b-it, 轻量Agent=mlx-qwopus3.5-9b-v3)
+#   - reasoning (深度推理: 架构/主力=gemma-4-31b-it, 代码=qwopus3.6-27b-coder)
+#   - qwen      (Qwen全家桶: Sonnet=qwen3.8-27b-mlx@4bit, Opus=qwen3.8-27b-mlx@8bit, Haiku=qwopus3.5-9b-v3)
+#   - gemma     (Gemma全家桶: Sonnet=gemma-4-26b-a4b-it, Opus=gemma-4-31b-it, Haiku=gemma-4-26b-a4b-it)
+#   - single    (统一单模型模式: 将 Sonnet/Haiku/Opus/Subagent 全部重定向至单一模型，避免显存反复切换)
+# ==============================================================================
+PRESET="${PRESET:-coder}"
+LM_SINGLE_MODEL="${LM_SINGLE_MODEL:-}"
+
+# 提取自定义参数，剩余参数透传给 claude 命令
+PASSTHROUGH_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --preset)
+            PRESET="$2"
+            shift 2
+            ;;
+        --single|--lm-model)
+            LM_SINGLE_MODEL="$2"
+            shift 2
+            ;;
+        *)
+            PASSTHROUGH_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+if [ -n "$LM_SINGLE_MODEL" ]; then
+    # 单模型统一模式：当 LM Studio 本地仅加载单个模型时使用
+    DEFAULT_MODEL="$LM_SINGLE_MODEL"
+    OPUS_MODEL="$LM_SINGLE_MODEL"
+    SONNET_MODEL="$LM_SINGLE_MODEL"
+    HAIKU_MODEL="$LM_SINGLE_MODEL"
+    SUBAGENT_MODEL="$LM_SINGLE_MODEL"
+else
+    case "$PRESET" in
+        reasoning)
+            DEFAULT_MODEL="gemma-4-31b-it"
+            OPUS_MODEL="gemma-4-31b-it"
+            SONNET_MODEL="qwopus3.6-27b-coder"
+            HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
+            SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
+            ;;
+        qwen)
+            DEFAULT_MODEL="qwen3.8-27b-mlx@4bit"
+            OPUS_MODEL="qwen3.8-27b-mlx@8bit"
+            SONNET_MODEL="qwen3.8-27b-mlx@4bit"
+            HAIKU_MODEL="qwopus3.5-9b-v3"
+            SUBAGENT_MODEL="qwopus3.5-9b-v3"
+            ;;
+        gemma)
+            DEFAULT_MODEL="gemma-4-26b-a4b-it"
+            OPUS_MODEL="gemma-4-31b-it"
+            SONNET_MODEL="gemma-4-26b-a4b-it"
+            HAIKU_MODEL="gemma-4-26b-a4b-it"
+            SUBAGENT_MODEL="gemma-4-26b-a4b-it"
+            ;;
+        coder|*)
+            # 默认推荐 Coder 组合：27B 编程主力 + 31B 架构推理 + 9B 极速 Agent
+            DEFAULT_MODEL="qwopus3.6-27b-coder"
+            OPUS_MODEL="gemma-4-31b-it"
+            SONNET_MODEL="qwopus3.6-27b-coder"
+            HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
+            SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
+            ;;
+    esac
+fi
+
+# 导出基础模型与各级路由
+export ANTHROPIC_MODEL="${ANTHROPIC_MODEL:-$DEFAULT_MODEL}"
+export ANTHROPIC_CUSTOM_MODEL_OPTION="${ANTHROPIC_CUSTOM_MODEL_OPTION:-$DEFAULT_MODEL}"
 export ANTHROPIC_CUSTOM_MODEL_OPTION_NAME="${ANTHROPIC_CUSTOM_MODEL_OPTION_NAME:-LM Studio Local Models}"
 export ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION="${ANTHROPIC_CUSTOM_MODEL_OPTION_DESCRIPTION:-LM Studio local inference backend}"
 
 # 全量将 Sonnet / Haiku / Opus / 子 Agent 路由重定向到本地模型
-export ANTHROPIC_DEFAULT_SONNET_MODEL="${ANTHROPIC_DEFAULT_SONNET_MODEL:-qwopus3.6-27b-coder}"
-export ANTHROPIC_DEFAULT_HAIKU_MODEL="${ANTHROPIC_DEFAULT_HAIKU_MODEL:-mlx-qwopus3.5-9b-v3}"
-export ANTHROPIC_DEFAULT_OPUS_MODEL="${ANTHROPIC_DEFAULT_OPUS_MODEL:-gemma-4-31b-it}"
-export CLAUDE_CODE_SUBAGENT_MODEL="${CLAUDE_CODE_SUBAGENT_MODEL:-mlx-qwopus3.5-9b-v3}"
+export ANTHROPIC_DEFAULT_OPUS_MODEL="${ANTHROPIC_DEFAULT_OPUS_MODEL:-$OPUS_MODEL}"
+export ANTHROPIC_DEFAULT_SONNET_MODEL="${ANTHROPIC_DEFAULT_SONNET_MODEL:-$SONNET_MODEL}"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="${ANTHROPIC_DEFAULT_HAIKU_MODEL:-$HAIKU_MODEL}"
+export CLAUDE_CODE_SUBAGENT_MODEL="${CLAUDE_CODE_SUBAGENT_MODEL:-$SUBAGENT_MODEL}"
 
 # 流量与流式超时及未知模型窗口优化
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
@@ -48,6 +132,10 @@ export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
 export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1
 export CLAUDE_STREAM_IDLE_TIMEOUT_MS=600000
 export API_TIMEOUT_MS=3000000
+
+# 上下文压缩与上下文上限配置（适配长上下文对话）
+unset DISABLE_COMPACT
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-100000}"
 
 # 4. 自动增量同步会话与共享配置（使官方 Claude 与 LM Studio 会话互通、支持无缝 --resume）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -74,4 +162,4 @@ if [ -z "$CLAUDE_BIN" ] || [ ! -x "$CLAUDE_BIN" ]; then
     exit 1
 fi
 
-"$CLAUDE_BIN" "$@"
+"$CLAUDE_BIN" "${PASSTHROUGH_ARGS[@]}"
