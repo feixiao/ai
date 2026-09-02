@@ -40,7 +40,7 @@ which claude
 
 ---
 
-### 1.3 一键安装 `clm` / `claude-lm` 到系统命令
+### 1.3 安装 `clm` / `claude-lm` 到系统命令
 
 将包装脚本及配套会话同步工具复制到系统的 `~/.local/bin` 目录中，即可在任意终端目录下直接调用：
 
@@ -206,8 +206,15 @@ export CLAUDE_CODE_MAX_CONTEXT_TOKENS=100000
 
 1. **报错：未找到 claude 可执行文件**
    - 执行 `which claude` 检查安装路径，若未安装请执行 `npm install -g @anthropic-ai/claude-code`。
-2. **连接超时或 Connection Refused**
+2. **报错：`zsh: no such file or directory: ...`（如旧脚本路径找不到）**
+   - 检查当前 Shell 环境中是否存在旧别名拦截：
+     ```bash
+     type -a claude-lm
+     type -a clm
+     ```
+   - 若输出显示 `aliased to ~/forbuild/.../claude-lmstudio.sh` 等失效路径，请打开 `~/.zshrc`（或 `~/.bashrc`）清理或更新对应的 `alias` 行，然后执行 `source ~/.zshrc` 重新加载。
+3. **连接超时或 Connection Refused**
    - 检查 LM Studio 的 **Local Server** 是否已启动，并确认监听端口是否为 `1234`。
    - 若 LM Studio 自定义了端口（例如 `8000`），可通过环境变量覆盖：`ANTHROPIC_BASE_URL="http://127.0.0.1:8000/v1" clm`。
-3. **模型推理显存不足或频繁换出**
+4. **模型推理显存不足或频繁换出**
    - 建议在 LM Studio 中只常驻加载 1 个主力模型，并启动时添加 `--single <model_name>` 参数。
