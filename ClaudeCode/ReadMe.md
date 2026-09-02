@@ -1,30 +1,30 @@
 ## Use your LM Studio Models in Claude Code
 
-### 🚀 一键启动包装脚本 (`claude-lmstudio.sh`)
+### 🚀 一键启动包装脚本 (`claude-lm.sh`)
 
 项目提供了参考 `claude-ds4` 架构的免配置、防 Keychain 冲突、自动配置隔离与双向会话同步的启动脚本：
 
 ```bash
 # 1. 默认推荐模式启动 (Coder 预设: qwopus3.6-27b-coder + gemma-4-31b-it + mlx-qwopus3.5-9b-v3)
-claude-lmstudio
-# 或简短命令
-claude-lm
 clm
+# 或
+claude-lm
+./claude-lm.sh
 
 # 2. 支持通过 --preset 一键切换预设策略
-claude-lmstudio --preset coder      # 默认：编程主力 + 强架构推理 + 极速轻量 Agent
-claude-lmstudio --preset reasoning  # 深度推理：gemma-4-31b-it 深度架构与规划
-claude-lmstudio --preset qwen       # Qwen全家桶：qwen3.8-27b-mlx@4bit / 8bit
-claude-lmstudio --preset gemma      # Gemma全家桶：gemma-4-26b-a4b-it / 31b-it
+clm --preset coder      # 默认：编程主力 + 强架构推理 + 极速轻量 Agent
+clm --preset reasoning  # 深度推理：gemma-4-31b-it 深度架构与规划
+clm --preset qwen       # Qwen全家桶：qwen3.8-27b-mlx@4bit / 8bit
+clm --preset gemma      # Gemma全家桶：gemma-4-26b-a4b-it / 31b-it
 
 # 3. 统一单模型模式（当 LM Studio 仅加载单一模型时，避免多模型显存切换换页）
-claude-lmstudio --single qwopus3.6-27b-coder
-claude-lmstudio --single gemma-4-31b-it
+clm --single qwopus3.6-27b-coder
+clm --single gemma-4-31b-it
 
 # 4. 透传任意官方 Claude Code 命令与参数
-claude-lmstudio --resume
-claude-lmstudio --resume <session-id>
-claude-lmstudio -p "编写一个基于 FastAPI 的流式聊天后端"
+clm --resume
+clm --resume <session-id>
+clm -p "编写一个基于 FastAPI 的流式聊天后端"
 ```
 
 ---
