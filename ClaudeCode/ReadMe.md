@@ -42,7 +42,7 @@ which claude
 
 ### 1.3 一键安装 `clm` / `claude-lm` 到系统命令
 
-将仓库中的包装脚本建立全局软链接，以便在任意终端目录下直接调用：
+将包装脚本及配套会话同步工具复制到系统的 `~/.local/bin` 目录中，即可在任意终端目录下直接调用：
 
 ```bash
 # 进入 ClaudeCode 目录
@@ -51,17 +51,23 @@ cd /Users/frank/wk/github/ai/ClaudeCode
 # 赋予执行权限
 chmod +x claude-lm.sh sync_sessions.sh
 
-# 部署至用户可执行命令目录 (~/.local/bin)
+# 1. 拷贝脚本到全局可执行命令目录 (~/.local/bin)
 mkdir -p ~/.local/bin
-ln -sf "$(pwd)/claude-lm.sh" ~/.local/bin/clm
-ln -sf "$(pwd)/claude-lm.sh" ~/.local/bin/claude-lm
+cp claude-lm.sh ~/.local/bin/clm
+cp claude-lm.sh ~/.local/bin/claude-lm
+cp sync_sessions.sh ~/.local/bin/sync_sessions.sh
 
-# 验证安装
+# 2. 确保全局可执行
+chmod +x ~/.local/bin/clm ~/.local/bin/claude-lm ~/.local/bin/sync_sessions.sh
+
+# 3. 验证安装
 which clm
 which claude-lm
 ```
 
-> **提示**：请确保 `~/.local/bin` 已加入您的系统 `PATH`（通常在 `~/.zshrc` 或 `~/.bashrc` 中包含 `export PATH="$HOME/.local/bin:$PATH"`）。
+> **提示**：
+> 1. 请确保 `~/.local/bin` 已加入系统 `PATH`（在 `~/.zshrc` 或 `~/.bashrc` 中包含 `export PATH="$HOME/.local/bin:$PATH"`）。
+> 2. 若您后续修改了仓库中的 `claude-lm.sh`，重新执行上述 `cp` 命令覆盖即可更新。
 
 ---
 

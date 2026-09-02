@@ -143,6 +143,12 @@ SYNC_SCRIPT="$SCRIPT_DIR/sync_sessions.sh"
 if [ ! -f "$SYNC_SCRIPT" ]; then
     SYNC_SCRIPT="$HOME/forbuild/lmstudio/sync_sessions.sh"
 fi
+if [ ! -f "$SYNC_SCRIPT" ]; then
+    SYNC_SCRIPT="$HOME/.lmstudio/sync_sessions.sh"
+fi
+if [ ! -f "$SYNC_SCRIPT" ]; then
+    SYNC_SCRIPT="$HOME/wk/github/ai/ClaudeCode/sync_sessions.sh"
+fi
 
 if [ "${CLAUDE_LMSTUDIO_NO_SYNC:-0}" != "1" ] && [ -f "$SYNC_SCRIPT" ] && [ -x "$SYNC_SCRIPT" ]; then
     # 启动前同步官方会话到 LM Studio
