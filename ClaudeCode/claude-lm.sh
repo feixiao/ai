@@ -40,7 +40,7 @@ export no_proxy="127.0.0.1,localhost,$no_proxy"
 # LM Studio 默认 API 端口通常为 1234（也可配置为 8000）
 unset ANTHROPIC_AUTH_TOKEN
 export ANTHROPIC_API_KEY="${ANTHROPIC_API_KEY:-lmstudio}"
-export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:1234/v1}"
+export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:1234}"
 
 # ==============================================================================
 # 预设模型策略切换（可通过环境变量 PRESET=xxx 或命令行参数灵活切换）
