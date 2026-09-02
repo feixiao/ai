@@ -141,7 +141,7 @@ export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-100000}
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SYNC_SCRIPT="$SCRIPT_DIR/sync_sessions.sh"
 if [ ! -f "$SYNC_SCRIPT" ]; then
-    SYNC_SCRIPT="$HOME/forbuild/lmstudio/sync_sessions.sh"
+    SYNC_SCRIPT="$HOME/.local/bin/sync_sessions.sh"
 fi
 if [ ! -f "$SYNC_SCRIPT" ]; then
     SYNC_SCRIPT="$HOME/.lmstudio/sync_sessions.sh"

@@ -1,3 +1,5 @@
+[English](./ReadMe_EN.md)
+
 # Use your LM Studio Models in Claude Code
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -40,7 +42,7 @@ which claude
 
 ---
 
-### 1.3 安装 `clm` / `claude-lm` 到系统命令
+### 1.3 安装 `clm` / `claude-lm` 到系统命令（推荐）
 
 将包装脚本及配套会话同步工具复制到系统的 `~/.local/bin` 目录中，即可在任意终端目录下直接调用：
 
@@ -204,17 +206,28 @@ export CLAUDE_CODE_MAX_CONTEXT_TOKENS=100000
 
 ## 6. 常见问题排查 (Troubleshooting)
 
-1. **报错：未找到 claude 可执行文件**
-   - 执行 `which claude` 检查安装路径，若未安装请执行 `npm install -g @anthropic-ai/claude-code`。
-2. **报错：`zsh: no such file or directory: ...`（如旧脚本路径找不到）**
-   - 检查当前 Shell 环境中是否存在旧别名拦截：
+### 6.1 报错：`zsh: no such file or directory: /Users/.../claude-lmstudio.sh`
+- **原因**：当前终端进程中加载了旧的 `alias`（指向了已移动或废弃的旧路径）。`source ~/.zshrc` 只会新增或覆盖配置，不会从当前终端内存中注销已存在的别名。
+- **解决方法**：
+  1. 在当前终端窗口执行清除命令：
      ```bash
-     type -a claude-lm
-     type -a clm
+     unalias claude-lm 2>/dev/null
+     unalias clm 2>/dev/null
      ```
-   - 若输出显示 `aliased to ~/forbuild/.../claude-lmstudio.sh` 等失效路径，请打开 `~/.zshrc`（或 `~/.bashrc`）清理或更新对应的 `alias` 行，然后执行 `source ~/.zshrc` 重新加载。
-3. **连接超时或 Connection Refused**
-   - 检查 LM Studio 的 **Local Server** 是否已启动，并确认监听端口是否为 `1234`。
-   - 若 LM Studio 自定义了端口（例如 `8000`），可通过环境变量覆盖：`ANTHROPIC_BASE_URL="http://127.0.0.1:8000/v1" clm`。
-4. **模型推理显存不足或频繁换出**
-   - 建议在 LM Studio 中只常驻加载 1 个主力模型，并启动时添加 `--single <model_name>` 参数。
+  2. 检查 `~/.zshrc` 中是否仍有旧的 `alias claude-lm=...` 定义，若有则删除或注释掉。
+  3. 确认 `~/.local/bin` 已在 PATH 中并生效：
+     ```bash
+     export PATH="$HOME/.local/bin:$PATH"
+     source ~/.zshrc
+     ```
+  4. 新开一个终端窗口或标签页，直接运行 `clm` 或 `claude-lm` 即可。
+
+### 6.2 报错：未找到 claude 可执行文件
+- 执行 `which claude` 检查安装路径，若未安装请执行 `npm install -g @anthropic-ai/claude-code` 或 `curl -fsSL https://claude.ai/install.sh | bash`。
+
+### 6.3 连接超时或 Connection Refused
+- 检查 LM Studio 的 **Local Server** 是否已启动，并确认监听端口是否为 `1234`。
+- 若 LM Studio 自定义了端口（例如 `8000`），可通过环境变量覆盖：`ANTHROPIC_BASE_URL="http://127.0.0.1:8000/v1" clm`。
+
+### 6.4 模型推理显存不足或频繁换出
+- 建议在 LM Studio 中只常驻加载 1 个主力模型，并启动时添加 `--single <model_name>` 参数统一所有角色。
