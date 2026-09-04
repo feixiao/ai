@@ -233,3 +233,13 @@ export CLAUDE_CODE_MAX_CONTEXT_TOKENS=100000
 
 ### 6.4 模型推理显存不足或频繁换出
 - 建议在 LM Studio 中只常驻加载 1 个主力模型，并启动时添加 `--single <model_name>` 参数统一所有角色。
+
+---
+
+## 7. 高质量 Skill 与插件推荐指南
+
+针对全栈工程师与个人投资者的特定工作流，本项目整理了权威来源、第一性原理推导及一键安装命令集：
+
+- 完整指南文档：[Claude Code 高质量 Skill 选型指南（全栈工程师与个人投资者）](./RECOMMENDED_SKILLS.md)
+- 包含工具：`document-skills` (Excel/PDF/Word/PPT)、`mattpocock-skills` (投资论点严苛质询与领域建模)、`ui-ux-pro-max` (顶级前端设计规范)、`superpowers` (工程方法论全家桶)、`mcp-builder` (行情与数据接入)、`planning-with-files` (持久化长期规划)。
+
