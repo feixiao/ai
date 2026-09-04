@@ -100,16 +100,16 @@
 claude plugin marketplace add anthropics/claude-plugins-official
 
 # 2. Anthropic 官方 Agent Skills 库 (包含 document-skills, example-skills 等)
-claude plugin marketplace add anthropics/skills --name anthropic-agent-skills
+claude plugin marketplace add anthropics/skills
 
 # 3. Matt Pocock 专家技能库中文源
-claude plugin marketplace add vinvcn/mattpocock-skills-zh-CN --name mattpocock
+claude plugin marketplace add vinvcn/mattpocock-skills-zh-CN
 
 # 4. 前端顶级设计与规范库 UI/UX Pro Max
-claude plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill --name ui-ux-pro-max-skill
+claude plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill
 
 # 5. 持久化文件任务规划插件
-claude plugin marketplace add OthmanAdi/planning-with-files --name planning-with-files
+claude plugin marketplace add OthmanAdi/planning-with-files
 ```
 
 ---
