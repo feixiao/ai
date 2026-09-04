@@ -92,7 +92,7 @@
 ### 2.4 进阶垂类专项补充库（按需即插即用）
 
 #### `alirezarezvani/claude-skills`（388+ 垂类专家技能军火库）
-- **权威来源**: `alirezarezvani/claude-skills`（开源庞大技能合集，按需精准装载）
+- **权威来源**: [`alirezarezvani/claude-skills`](https://github.com/alirezarezvani/claude-skills)（开源庞大技能合集，按需精准装载）
 - **定位与引入原则**: **坚决不做全量引入，避免上下文污染**；只在跨入深度行业垂直场景、现有基础通用工具出现能力瓶颈时作为“专项补丁”按需启用。
 - **何时补充（针对双重角色）**:
   1. **个人投资者 - 垂直赛道与前沿科技尽调时补充**:
@@ -104,6 +104,56 @@
      - `engineering/agent-workflow-designer` 与 `engineering/memory-engineering`: 多智能体复杂拓扑路由、长短期状态机及 Agent 上下文生命周期设计。
      - `engineering/slo-architect`、`chaos-engineering` 与 `performance-profiler`: 建立生产级 SLI/SLO 监控、故障注入/网络分区演练以及全栈性能瓶颈剖析。
      - `compliance-os` 与 `commercial/pricing-strategist`: 独立 SaaS 产品商业化出海（GDPR/SOC 2 证据链自查）与阶梯定价（Tiered Pricing/Freemium）转化模型设计。
+- **安装与引入方式**:
+  - **推荐方式（按需轻量引入，无上下文污染）**: 直接克隆该仓库到本地临时目录，仅将所需的单个技能文件夹软链或复制到项目或全局 skills 目录中：
+    ```bash
+    # 1. 克隆仓库至本地目录
+    git clone --depth 1 https://github.com/alirezarezvani/claude-skills.git ~/.claude/repos/claude-skills
+
+    # 2. 针对性软链所需技能到全局 ~/.claude/skills/（即插即用）
+    ln -s ~/.claude/repos/claude-skills/skills/finance/saas-metrics-coach ~/.claude/skills/saas-metrics-coach
+    ln -s ~/.claude/repos/claude-skills/skills/engineering/rag-architect ~/.claude/skills/rag-architect
+    ```
+  - **Marketplace 分领域插件包安装（按需装载对应专业包）**:
+    该仓库通过 `.claude-plugin/marketplace.json` 将 388+ 项技能按领域打包拆分为多个模块化插件包（Marketplace 名称统一为 `claude-code-skills`）。你可以根据自身任务需求，仅安装对应的领域包：
+
+    ```bash
+    # 步骤 0：首先注册该市场源
+    claude plugin marketplace add alirezarezvani/claude-skills
+
+    # ====== 1. 金融分析与投资决策包 (Finance & Capital) ======
+    claude plugin install finance-skills@claude-code-skills             # 基础财务与量化包（SaaS 估值、财报指标、选股框架）
+    claude plugin install business-investment-advisor@claude-code-skills # 商业投资决策与资本配置专业顾问
+
+    # ====== 2. 软件工程与进阶架构包 (Engineering & Architecture) ======
+    claude plugin install engineering-skills@claude-code-skills          # 32项通用核心工程能力（重构、规范、API设计）
+    claude plugin install engineering-advanced-skills@claude-code-skills # 37项高阶架构（RAG架构、Agent拓扑、内存工程、SLO/混沌工程）
+    claude plugin install pw@claude-code-skills                          # 生产级 Playwright E2E 自动化端到端测试套件
+
+    # ====== 3. 深度研究、文献与知识产权包 (Deep Research & Tech) ======
+    claude plugin install research-ops-skills@claude-code-skills         # 企业级跨领域研究操作体系 (Research Ops)
+    claude plugin install deep-research@claude-code-skills               # 针对高权重问题的规范多源元研究 (Meta-Research)
+    claude plugin install litreview@claude-code-skills                   # 学术前沿文献研读与综合评述
+    claude plugin install patent@claude-code-skills                      # 专利现有技术与知识产权格局分析 (IP Landscape)
+    claude plugin install pulse@claude-code-skills                       # 多源前沿动态与资讯实时追踪
+
+    # ====== 4. 商业变现、定价与出海合规包 (Commercial & Compliance) ======
+    claude plugin install commercial-skills@claude-code-skills          # 商业化变现策略、打包与增收模型
+    claude plugin install compliance-os@claude-code-skills              # 跨框架合规元编排（SOC 2 / GDPR 等）
+    claude plugin install compliance-team-eu-ai-act@claude-code-skills  # 欧盟 AI 法案 (EU AI Act) 合规专项
+    claude plugin install compliance-team-iso42001@claude-code-skills   # ISO 42001 人工智能管理体系专精
+    claude plugin install ra-qm-skills@claude-code-skills               # 医疗/健康科技法规事务与质量管理 (14 项专精)
+
+    # ====== 5. 产品设计与项目管理包 (Product & Project Management) ======
+    claude plugin install product-skills@claude-code-skills              # 13 项产品技能 + 22 个实用 Python 工具
+    claude plugin install pm-skills@claude-code-skills                   # 9 项项目管理技能 + 15 个实用 Python 工具
+    claude plugin install business-growth-skills@claude-code-skills      # 5 项业务增长与增长黑客模型
+    claude plugin install business-operations-skills@claude-code-skills  # 内部 BizOps 运营与效率优化包
+
+    # ====== 6. 高管与创始人战略顾问包 (C-Level & Executive) ======
+    claude plugin install c-level-skills@claude-code-skills              # 33 项高管顾问技能（CEO/CTO/CFO 顶层视角）
+    claude plugin install c-level-agents@claude-code-skills              # 创始人模式高管智能体团队协作
+    ```
 
 ---
 
@@ -128,6 +178,9 @@ claude plugin marketplace add nextlevelbuilder/ui-ux-pro-max-skill
 
 # 5. 持久化文件任务规划插件
 claude plugin marketplace add OthmanAdi/planning-with-files
+
+# 6. 进阶垂类专家技能军火库（包含 388+ 项技能的分包源）
+claude plugin marketplace add alirezarezvani/claude-skills
 ```
 
 ---
@@ -149,6 +202,15 @@ claude plugin install ralph-loop@claude-plugins-official         # 自动化循�
 
 # ====== 架构与长周期跟踪共同必备 ======
 claude plugin install planning-with-files@planning-with-files    # 跨会话长期规划与进度管理
+
+# ====== 进阶垂类专项补充包（选装，按需启用对应领域包） ======
+# claude plugin install finance-skills@claude-code-skills             # 财务与量化基础包
+# claude plugin install business-investment-advisor@claude-code-skills # 商业投资与资本配置顾问
+# claude plugin install engineering-skills@claude-code-skills          # 32项通用核心工程能力
+# claude plugin install engineering-advanced-skills@claude-code-skills # 37项高阶架构与多智能体系统
+# claude plugin install deep-research@claude-code-skills               # 硬科技深度调研与研报分析
+# claude plugin install patent@claude-code-skills                      # 专利与知识产权壁垒分析
+# claude plugin install compliance-os@claude-code-skills              # SaaS 出海合规 (GDPR/SOC2)
 ```
 
 ---
@@ -188,3 +250,79 @@ claude plugin install planning-with-files@planning-with-files    # 跨会话长�
    ```text
    /code-review:code-review 对本次提交的前后端代码进行安全性与逻辑严密性审查。
    ```
+
+---
+
+## 5. 技能自主选择、路由与动态启停管理（Meta-Skills & Router）
+
+随着安装的插件和技能数量增多，如果将所有技能内容全量塞入 Prompt，不仅会消耗大量上下文 Token，还会导致模型注意力稀释与技能指令冲突。因此，Claude Code 生态从底层机制到应用层设计了完备的**自主选择、分流路由与动态启停治理机制**。
+
+### 5.1 底层运行逻辑：渐进式自适应加载（Progressive Disclosure）
+
+Claude Code 的原生架构遵循“渐进式揭示”的第一性原理：
+1. **轻量化元数据索引常驻**：安装的所有 Skill 默认仅将其 YAML Frontmatter（即 `name`、`description` 和 `when_to_use` 规则，通常仅几行文字）加载到底层系统提示词的可用技能索引表中，上下文开销微乎其微；
+2. **意图匹配与自主调起**：当用户在会话中输入任务需求时，模型会自发进行语义匹配。一旦判定当前任务命中某项 Skill 的职责范围，模型会**主动调用内置的 `Skill` 内部工具**，动态将该技能的完整实操指南（`SKILL.md`）按需加载进上下文窗口并执行；
+3. **隔离执行**：部分特殊技能（如测试评估、代码精简）还可声明在独立子代理（Subagent）中运行，避免污染主会话上下文。
+
+---
+
+### 5.2 调度指挥与元技能（Meta-Skills / Routers）
+
+除了模型自发的意图识别，还可以引入专职的“元技能（Meta-Skill）”来对技能进行主动调度与决策编排：
+
+#### ① 官方核心元技能：`superpowers:using-superpowers`
+- **定位**：会话前置决策总控。
+- **运行逻辑**：作为全局守卫，强制 Agent 在回答任何问题或采取行动之前，先核对技能清单。它内置了强逻辑推导：
+  - 遇到“修复 Bug / 报错排查” $\rightarrow$ 强制先行拉起 `superpowers:systematic-debugging`；
+  - 遇到“实现新功能 / 架构设计” $\rightarrow$ 强制先行拉起 `superpowers:brainstorming`；
+  - 遇到“前端交互 / 视觉优化” $\rightarrow$ 自动转接 `ui-ux-pro-max`；
+  - 遇到“投资论点审查” $\rightarrow$ 自动拉起 `mattpocock-skills:grilling`。
+
+#### ② 社区智能路由元技能：`skill-router`
+- **定位**：面向多技能环境的轻量意图路由器。
+- **运行方式**：
+  - **建议模式（Suggest Mode）**：识别用户输入后，列出最匹配的 1~3 个候选 Skill 并解释原因，由用户确认后加载；
+  - **自动模式（Auto Mode）**：设置 `/skill-router on --auto` 后，由 Router 智能体静默判定最佳技能并在后台完成自动无缝调度。
+
+#### ③ 垂直任务级混合路由器：`research-orchestrator` 与 `agent-harness`
+- **权威来源**：[`alirezarezvani/claude-skills`](https://github.com/alirezarezvani/claude-skills)
+- **核心场景**：针对长链路研究任务，`research-orchestrator` 会根据问题深度动态按序调度 `pulse`（动态资讯）、`litreview`（学术论文）和 `patent`（专利壁垒），实现复杂任务链的自适应分流。
+
+---
+
+### 5.3 插件与技能的动态启停控制（用户级手动治理）
+
+当安装了大量专业领域插件包后，可以通过 Claude Code 提供的管理工具实现即开即关：
+
+#### ① 交互式终端可视化管理：`/plugin`
+在 Claude Code 终端中输入：
+```text
+/plugin
+```
+会启动一个终端 TUI 交互面板。支持通过键盘方向键、空格和回车键，随时对已安装插件进行 **Enable（启用）**、**Disable（禁用）** 与 **Uninstall（卸载）** 的无缝切换。
+
+#### ② CLI 命令行精准控制：
+```bash
+# 1. 列出当前所有已安装插件及其激活状态 (enabled / disabled)
+claude plugin list
+
+# 2. 临时禁用某一领域包（如在专注工程时关闭金融包，避免意图干扰）
+claude plugin disable finance-skills@claude-code-skills
+
+# 3. 重新启用指定插件包
+claude plugin enable finance-skills@claude-code-skills
+
+# 4. 彻底卸载不再使用的插件包
+claude plugin uninstall compliance-os@claude-code-skills
+```
+
+---
+
+### 5.4 双重角色管理最佳实践清单
+
+| 角色工作阶段 | 建议激活的核心插件组合 | 临时禁用的插件组合 | 收益 |
+| :--- | :--- | :--- | :--- |
+| **全栈研发与重构** | • `superpowers`<br>• `ui-ux-pro-max`<br>• `code-review`<br>• `engineering-skills` | • `finance-skills`<br>• `research-ops-skills` | 保证代码审查、调试与前端设计系统指令绝对精准，无金融语义干扰。 |
+| **投资尽调与估值建模** | • `document-skills`<br>• `mattpocock-skills`<br>• `finance-skills`<br>• `dataviz` | • `engineering-skills`<br>• `ui-ux-pro-max` | 强化财务模型推导、表格联动与红队逻辑质询，提高长文本财报处理速度。 |
+| **长期跨周期项目** | • `planning-with-files` | 无 | 无论研发还是投研，保持全局任务追踪文件常态化更新。 |
+
