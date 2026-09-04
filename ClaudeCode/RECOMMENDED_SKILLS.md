@@ -89,6 +89,24 @@
 
 ---
 
+### 2.4 进阶垂类专项补充库（按需即插即用）
+
+#### `alirezarezvani/claude-skills`（388+ 垂类专家技能军火库）
+- **权威来源**: `alirezarezvani/claude-skills`（开源庞大技能合集，按需精准装载）
+- **定位与引入原则**: **坚决不做全量引入，避免上下文污染**；只在跨入深度行业垂直场景、现有基础通用工具出现能力瓶颈时作为“专项补丁”按需启用。
+- **何时补充（针对双重角色）**:
+  1. **个人投资者 - 垂直赛道与前沿科技尽调时补充**:
+     - `finance/saas-metrics-coach`: 美股/港股 SaaS 及订阅制公司深度研报拆解（ARR、NRR 净留存率、CAC Payback、Rule of 40 专项指标计算与校验）。
+     - `finance/stock-analysis`: 自动构建包含同行估值乘数对比（P/E、EV/EBITDA）、护城河定性评估的标准机构级研究框架。
+     - `research/deep-research`、`research/litreview` 与 `research/patent`: 投资 AI 芯片、半导体新工艺或生物医药等硬科技时，跨学术文献与专利库进行技术壁垒与潜在诉讼风险交叉验证。
+  2. **全栈工程师 - AI 原生架构与生产级韧性演习时补充**:
+     - `engineering/rag-architect`: 工业级 RAG 架构选型（分块策略、混合检索 BM25 + 向量、Rerank 模型调优与召回评估）。
+     - `engineering/agent-workflow-designer` 与 `engineering/memory-engineering`: 多智能体复杂拓扑路由、长短期状态机及 Agent 上下文生命周期设计。
+     - `engineering/slo-architect`、`chaos-engineering` 与 `performance-profiler`: 建立生产级 SLI/SLO 监控、故障注入/网络分区演练以及全栈性能瓶颈剖析。
+     - `compliance-os` 与 `commercial/pricing-strategist`: 独立 SaaS 产品商业化出海（GDPR/SOC 2 证据链自查）与阶梯定价（Tiered Pricing/Freemium）转化模型设计。
+
+---
+
 ## 3. 安装与配置实操清单
 
 ### 步骤 1：注册官方与高质量第三方插件市场 (Marketplaces)
