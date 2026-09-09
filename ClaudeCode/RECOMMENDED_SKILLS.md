@@ -94,7 +94,7 @@
 - **权威来源**: `nextlevelbuilder/ui-ux-pro-max-skill`
 - **核心价值**: 协助 PM 快速定义信息架构 (IA) 与组件交互细节。在商业化场景下，输出符合心理学直觉的高转化落地页 (Landing Page) 布局、定价表对比卡片与用户激活引导步骤。
 
-#### ④ `claude-code-skills:commercial-skills`（SaaS 商业化阶梯定价与增收模型）
+#### ④ `claude-skills:commercial-skills`（SaaS 商业化阶梯定价与增收模型）
 - **权威来源**: `alirezarezvani/claude-skills` (`commercial-skills`)
 - **核心价值**: 为独立软件或 SaaS 功能提供专业的出海商业化打包指导：设计免费版 (Free)、专业版 (Pro) 与团队版 (Team) 的功能隔离栅栏 (Paywall)，构建科学的阶梯定价体系与增收转化飞轮。
 
@@ -127,54 +127,57 @@
      - `engineering/slo-architect`、`chaos-engineering` 与 `performance-profiler`: 建立生产级 SLI/SLO 监控、故障注入/网络分区演练以及全栈性能瓶颈剖析。
      - `compliance-os` 与 `commercial/pricing-strategist`: 独立 SaaS 产品商业化出海（GDPR/SOC 2 证据链自查）与阶梯定价（Tiered Pricing/Freemium）转化模型设计。
 - **安装与引入方式**:
-  - **推荐方式（按需轻量引入，无上下文污染）**: 直接克隆该仓库到本地临时目录，仅将所需的单个技能文件夹软链或复制到项目或全局 skills 目录中：
-    ```bash
-    # 1. 克隆仓库至本地目录
-    git clone --depth 1 https://github.com/alirezarezvani/claude-skills.git ~/.claude/repos/claude-skills
-
-    # 2. 针对性软链所需技能到全局 ~/.claude/skills/（即插即用）
-    ln -s ~/.claude/repos/claude-skills/skills/finance/saas-metrics-coach ~/.claude/skills/saas-metrics-coach
-    ln -s ~/.claude/repos/claude-skills/skills/engineering/rag-architect ~/.claude/skills/rag-architect
-    ```
-  - **Marketplace 分领域插件包安装（按需装载对应专业包）**:
-    该仓库通过 `.claude-plugin/marketplace.json` 将 388+ 项技能按领域打包拆分为多个模块化插件包（Marketplace 名称统一为 `claude-code-skills`）。你可以根据自身任务需求，仅安装对应的领域包：
+  - **标准官方插件包方式（推荐：通过 `claude plugin` 统一安装与管理）**:
+    该仓库支持通过 Claude Code 标准插件机制按领域分包安装（Marketplace 默认源注册名为 `claude-skills`）。你可以根据自身工作流需求，按需安装对应的专业领域包：
 
     ```bash
-    # 步骤 0：首先注册该市场源
+    # 步骤 0：注册该市场源并更新索引
     claude plugin marketplace add alirezarezvani/claude-skills
+    claude plugin marketplace update claude-skills
+
+    # 遇到未找到插件时，可随时搜索确认确切包名：
+    # claude plugin search <关键词>  (例如: claude plugin search product)
 
     # ====== 1. 金融分析与投资决策包 (Finance & Capital) ======
-    claude plugin install finance-skills@claude-code-skills             # 基础财务与量化包（SaaS 估值、财报指标、选股框架）
-    claude plugin install business-investment-advisor@claude-code-skills # 商业投资决策与资本配置专业顾问
+    claude plugin install finance-skills@claude-skills             # 基础财务与量化包（SaaS 估值、财报指标、选股框架）
+    claude plugin install business-investment-advisor@claude-skills # 商业投资决策与资本配置专业顾问
 
     # ====== 2. 软件工程与进阶架构包 (Engineering & Architecture) ======
-    claude plugin install engineering-skills@claude-code-skills          # 32项通用核心工程能力（重构、规范、API设计）
-    claude plugin install engineering-advanced-skills@claude-code-skills # 37项高阶架构（RAG架构、Agent拓扑、内存工程、SLO/混沌工程）
-    claude plugin install pw@claude-code-skills                          # 生产级 Playwright E2E 自动化端到端测试套件
+    claude plugin install engineering-skills@claude-skills          # 32项通用核心工程能力（重构、规范、API设计）
+    claude plugin install engineering-advanced-skills@claude-skills # 37项高阶架构（RAG架构、Agent拓扑、内存工程、SLO/混沌工程）
+    claude plugin install pw@claude-skills                          # 生产级 Playwright E2E 自动化端到端测试套件
 
     # ====== 3. 深度研究、文献与知识产权包 (Deep Research & Tech) ======
-    claude plugin install research-ops-skills@claude-code-skills         # 企业级跨领域研究操作体系 (Research Ops)
-    claude plugin install deep-research@claude-code-skills               # 针对高权重问题的规范多源元研究 (Meta-Research)
-    claude plugin install litreview@claude-code-skills                   # 学术前沿文献研读与综合评述
-    claude plugin install patent@claude-code-skills                      # 专利现有技术与知识产权格局分析 (IP Landscape)
-    claude plugin install pulse@claude-code-skills                       # 多源前沿动态与资讯实时追踪
+    claude plugin install research-ops-skills@claude-skills         # 企业级跨领域研究操作体系 (Research Ops)
+    claude plugin install deep-research@claude-skills               # 针对高权重问题的规范多源元研究 (Meta-Research)
+    claude plugin install litreview@claude-skills                   # 学术前沿文献研读与综合评述
+    claude plugin install patent@claude-skills                      # 专利现有技术与知识产权格局分析 (IP Landscape)
+    claude plugin install pulse@claude-skills                       # 多源前沿动态与资讯实时追踪
 
     # ====== 4. 商业变现、定价与出海合规包 (Commercial & Compliance) ======
-    claude plugin install commercial-skills@claude-code-skills          # 商业化变现策略、打包与增收模型
-    claude plugin install compliance-os@claude-code-skills              # 跨框架合规元编排（SOC 2 / GDPR 等）
-    claude plugin install compliance-team-eu-ai-act@claude-code-skills  # 欧盟 AI 法案 (EU AI Act) 合规专项
-    claude plugin install compliance-team-iso42001@claude-code-skills   # ISO 42001 人工智能管理体系专精
-    claude plugin install ra-qm-skills@claude-code-skills               # 医疗/健康科技法规事务与质量管理 (14 项专精)
+    claude plugin install commercial-skills@claude-skills          # 商业化变现策略、打包与增收模型
+    claude plugin install compliance-os@claude-skills              # 跨框架合规元编排（SOC 2 / GDPR 等）
+    claude plugin install compliance-team-eu-ai-act@claude-skills  # 欧盟 AI 法案 (EU AI Act) 合规专项
+    claude plugin install compliance-team-iso42001@claude-skills   # ISO 42001 人工智能管理体系专精
+    claude plugin install ra-qm-skills@claude-skills               # 医疗/健康科技法规事务与质量管理 (14 项专精)
 
     # ====== 5. 产品设计与项目管理包 (Product & Project Management) ======
-    claude plugin install product-skills@claude-code-skills              # 13 项产品技能 + 22 个实用 Python 工具
-    claude plugin install pm-skills@claude-code-skills                   # 9 项项目管理技能 + 15 个实用 Python 工具
-    claude plugin install business-growth-skills@claude-code-skills      # 5 项业务增长与增长黑客模型
-    claude plugin install business-operations-skills@claude-code-skills  # 内部 BizOps 运营与效率优化包
+    claude plugin install product-skills@claude-skills              # 13 项产品技能 + 22 个实用 Python 工具
+    claude plugin install pm-skills@claude-skills                   # 9 项项目管理技能 + 15 个实用 Python 工具
+    claude plugin install business-growth-skills@claude-skills      # 5 项业务增长与增长黑客模型
+    claude plugin install business-operations-skills@claude-skills  # 内部 BizOps 运营与效率优化包
 
     # ====== 6. 高管与创始人战略顾问包 (C-Level & Executive) ======
-    claude plugin install c-level-skills@claude-code-skills              # 33 项高管顾问技能（CEO/CTO/CFO 顶层视角）
-    claude plugin install c-level-agents@claude-code-skills              # 创始人模式高管智能体团队协作
+    claude plugin install c-level-skills@claude-skills              # 33 项高管顾问技能（CEO/CTO/CFO 顶层视角）
+    claude plugin install c-level-agents@claude-skills              # 创始人模式高管智能体团队协作
+    ```
+
+  - **轻量本地软链备选方案（仅需单个零散技能时可用）**:
+    若仅需某个孤立子技能且不想安装整个专业包，也可直接克隆仓库并软链单一子目录：
+    ```bash
+    git clone --depth 1 https://github.com/alirezarezvani/claude-skills.git ~/.claude/repos/claude-skills
+    ln -s ~/.claude/repos/claude-skills/skills/finance/saas-metrics-coach ~/.claude/skills/saas-metrics-coach
+    ln -s ~/.claude/repos/claude-skills/skills/engineering/rag-architect ~/.claude/skills/rag-architect
     ```
 
 ---
@@ -203,6 +206,7 @@ claude plugin marketplace add OthmanAdi/planning-with-files
 
 # 6. 进阶垂类专家技能军火库（包含 388+ 项技能的分包源）
 claude plugin marketplace add alirezarezvani/claude-skills
+claude plugin marketplace update claude-skills
 ```
 
 ---
@@ -225,14 +229,17 @@ claude plugin install ralph-loop@claude-plugins-official         # 自动化循�
 # ====== 架构与长周期跟踪共同必备 ======
 claude plugin install planning-with-files@planning-with-files    # 跨会话长期规划与进度管理
 
-# ====== 进阶垂类专项补充包（选装，按需启用对应领域包） ======
-# claude plugin install finance-skills@claude-code-skills             # 财务与量化基础包
-# claude plugin install business-investment-advisor@claude-code-skills # 商业投资与资本配置顾问
-# claude plugin install engineering-skills@claude-code-skills          # 32项通用核心工程能力
-# claude plugin install engineering-advanced-skills@claude-code-skills # 37项高阶架构与多智能体系统
-# claude plugin install deep-research@claude-code-skills               # 硬科技深度调研与研报分析
-# claude plugin install patent@claude-code-skills                      # 专利与知识产权壁垒分析
-# claude plugin install compliance-os@claude-code-skills              # SaaS 出海合规 (GDPR/SOC2)
+# ====== 进阶垂类专项补充包（选装，按需通过 claude plugin 启用对应领域包） ======
+# claude plugin install finance-skills@claude-skills             # 财务与量化基础包
+# claude plugin install business-investment-advisor@claude-skills # 商业投资与资本配置顾问
+# claude plugin install engineering-skills@claude-skills          # 32项通用核心工程能力
+# claude plugin install engineering-advanced-skills@claude-skills # 37项高阶架构与多智能体系统
+# claude plugin install product-skills@claude-skills              # 13项产品经理技能与实用工具
+# claude plugin install pm-skills@claude-skills                   # 9项项目管理专业技能
+# claude plugin install deep-research@claude-skills               # 硬科技深度调研与研报分析
+# claude plugin install patent@claude-skills                      # 专利与知识产权壁垒分析
+# claude plugin install commercial-skills@claude-skills          # SaaS商业化阶梯定价与增收模型
+# claude plugin install compliance-os@claude-skills              # SaaS 出海合规 (GDPR/SOC2)
 ```
 
 ---

@@ -15,7 +15,8 @@
 7. [MCP 集成：打通真实研发基础设施与最小权限原则](#7-mcp-集成打通真实研发基础设施与最小权限原则)
 8. [端到端实战：从需求 Interview 到全自动 PR 交付](#8-端到端实战从需求-interview-到全自动-pr-交付)
 9. [进阶模式与工程落地模板](#9-进阶模式与工程落地模板)
-10. [这周行动计划：5 天阶梯式落地指南](#10-这周行动计划5-天阶梯式落地指南)
+10. [Token 充足场景：大项目全自动化交付实战手册（零人工干预）](#10-token-充足场景大项目全自动化交付实战手册零人工干预)
+11. [这周行动计划：5 天阶梯式落地指南](#11-这周行动计划5-天阶梯式落地指南)
 
 ---
 
@@ -477,7 +478,259 @@ See @package.json for dependencies; See @docs/architecture.md for system design.
 
 ---
 
-## 10. 这周行动计划：5 天阶梯式落地指南
+## 10. Token 充足场景：大项目全自动化交付实战手册（零人工干预）
+
+> **场景定义**：当你拥有充裕的 Token 预算（例如使用 Tier 4/5 账号或企业级 API），并且目标是**“夜间交付/无人值守/全自动实现一整个系统级大项目”**时，你不能再采用交互式“问一句、答一句”的模式。
+> 此时最大的敌人不是 Token 成本，而是 **上下文污染（Context Pollution）、单 Agent 注意力退化（Attention Degradation）以及因缺乏确定性门禁导致的不可控试错**。
+
+### 10.1 顶尖架构设计：分层自循环流水线
+
+```text
+ ┌──────────────────────────────────────────────────────────────────┐
+ │  输入：PRD.md / requirements.txt / 架构意图规范                 │
+ └───────────────────────────────┬──────────────────────────────────┘
+                                 │
+                                 ▼
+ ┌──────────────────────────────────────────────────────────────────┐
+ │  阶段 1：架构与原子拆解（Planner Subagent）                     │
+ │  - 输出 docs/architecture.md & docs/tasks.json (依赖拓扑)        │
+ └───────────────────────────────┬──────────────────────────────────┘
+                                 │
+       ┌─────────────────────────┴─────────────────────────┐
+       ▼                                                   ▼
+ ┌───────────────────────────┐                       ┌───────────────────────────┐
+ │ 阶段 2A：模块 A 独立实施  │                       │ 阶段 2B：模块 B 独立实施  │
+ │ - 物理隔离：Git Worktree A│                       │ - 物理隔离：Git Worktree B│
+ │ - 角色：Implementer Agent │                       │ - 角色：Implementer Agent │
+ │ - 铁律：TDD 红绿重构闭环  │                       │ - 铁律：TDD 红绿重构闭环  │
+ │ - 门禁：PostToolUse 拦截  │                       │ - 门禁：PostToolUse 拦截  │
+ └─────────────┬─────────────┘                       └─────────────┬─────────────┘
+               │                                                   │
+               └─────────────────────────┬─────────────────────────┘
+                                         │
+                                         ▼
+ ┌──────────────────────────────────────────────────────────────────┐
+ │  阶段 3：多维度仲裁与交付（Reviewer & Security Subagent）        │
+ │  - 全局集成测试与契约验证                                        │
+ │  - 防“偷改断言”Diff 审查                                        │
+ │  - 自动提 PR / 推送分支 / 产出交付报告                           │
+ └──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 10.2 自动化脚手架配置文件全集
+
+#### 1. `.claude/settings.json`（全自动免提问与确定性安全门禁）
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(pnpm test*)",
+      "Bash(pnpm lint*)",
+      "Bash(pnpm typecheck)",
+      "Bash(pytest*)",
+      "Bash(ruff*)",
+      "Bash(uv run*)"
+    ],
+    "deny": [
+      "Bash(rm -rf /)",
+      "Bash(rm -rf *)",
+      "Bash(git push origin main --force)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "command": "python3 -c 'import sys, json; cmd=json.load(sys.stdin).get(\"command\", \"\"); forbidden=[\"rm -rf /\", \"> /dev/sda\", \"drop database\"]; sys.exit(1) if any(f in cmd.lower() for f in forbidden) else sys.exit(0)'"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "pnpm lint --fix && pnpm typecheck"
+      }
+    ]
+  }
+}
+```
+
+#### 2. `.claude/agents/planner.md`（高阶架构拆解专员）
+```markdown
+---
+name: planner
+description: 专门负责分析大型 PRD 并拆解系统架构、API 契约及严格拓扑依赖任务的架构师
+tools:
+  - Read
+  - Glob
+  - Grep
+  - Write
+---
+
+你是一名资深首席系统架构师。你的唯一职责是将复杂需求拆解为**确定、无歧义、具备机器可验证验收标准的原子任务清单**。
+
+### 工作流程：
+1. 完整阅读输入的 PRD 与现有工程目录结构。
+2. 产出 `docs/architecture.md`：
+   - 领域数据模型定义与字段类型。
+   - 核心 API 契约（输入、输出、状态码）。
+3. 产出 `docs/tasks.json`，格式必须为严格 JSON：
+   ```json
+   [
+     {
+       "id": "TASK-001",
+       "module": "auth",
+       "title": "实现 JWT 签发与刷新令牌逻辑",
+       "depends_on": [],
+       "verify_cmd": "pnpm test tests/unit/auth.test.ts",
+       "status": "pending"
+     }
+   ]
+   ```
+4. 确保每个任务粒度在 15-30 分钟编码时间内，禁止出现模糊描述。
+```
+
+#### 3. `.claude/agents/implementer.md`（TDD 落地与修复专员）
+```markdown
+---
+name: implementer
+description: 专注单一原子任务的代码实现、TDD 红绿循环与自修复子智能体
+tools:
+  - Read
+  - Write
+  - Edit
+  - Bash
+---
+
+你是一名专注极限编程（XP）的高级实施工程师。
+
+### 执行铁律：
+1. **测试驱动开发（TDD）**：
+   - 第一步：严格按照 `docs/architecture.md` 规范编写失败的单元测试（红灯阶段）。
+   - 第二步：编写刚好让测试通过的最小代码（绿灯阶段）。
+   - 第三步：重构代码，保持测试通过且无类型报错。
+2. **严禁弱化断言**：严禁通过删除断言或降低判断标准来“伪造绿灯”。
+3. **完成标准**：运行该任务指定的 `verify_cmd` 且退出码为 0。
+```
+
+---
+
+### 10.3 两种全自动执行操作实战
+
+#### 方式一：在 Claude Code 内部触发自主循环（Superpowers / Loop 模式）
+在进入项目工程后，直接对 Claude 输入以下**自主执行指令**：
+
+```text
+/loop "阅读 docs/tasks.json，按拓扑依赖顺序遍历处理任务：
+1. 找出当前第一个 status 为 'pending' 且 depends_on 均已完成的任务；
+2. 调度 implementer 子智能体在隔离上下文内完成该任务（严格遵循 TDD 红绿循环）；
+3. 自动运行该任务的 verify_cmd，如果失败，自主查看错误并修复，最多重试 3 次；
+4. 验证通过后，自动执行 git commit 提交，格式：'feat({module}): {title} [TASK-XXX]'；
+5. 更新 docs/tasks.json 中该任务的 status 为 'completed'；
+6. 自动检查剩余任务：若仍有 pending 任务，继续下一次循环；若全部完成，输出 'ALL_PROJECT_TASKS_COMPLETED' 并终止循环。"
+```
+
+#### 方式二：完全无头脚本调度（Headless Shell Pipeline —— 真正的“夜间全自动构建”）
+通过操作系统的 Python / Bash 脚本调用 `claude -p --dangerously-skip-permissions`，实现即使网络断开或多进程崩溃也能自动重试恢复的工业级自动化：
+
+```python
+#!/usr/bin/env python3
+"""
+scripts/auto_delivery.py: 大项目无头全自动化推进调度器
+运行前确保已设置环境变量: ANTHROPIC_API_KEY
+"""
+import subprocess
+import json
+import os
+import sys
+
+def run_claude(prompt: str) -> str:
+    print(f"\n[Claude Executing] >>>\n{prompt.strip()}\n")
+    proc = subprocess.run(
+        ["claude", "-p", "--dangerously-skip-permissions", prompt],
+        capture_output=True,
+        text=True
+    )
+    if proc.returncode != 0:
+        print(f"[Error] Claude 执行异常:\n{proc.stderr}")
+    return proc.stdout
+
+def main():
+    tasks_file = "docs/tasks.json"
+    
+    # 步骤 1：需求与架构拆解（若尚未生成）
+    if not os.path.exists(tasks_file):
+        print("=== [阶段 1] 启动架构与任务拆解 ===")
+        setup_prompt = """
+        请调用 planner 智能体：
+        1. 深入分析 PRD.md 需求；
+        2. 编写 docs/architecture.md；
+        3. 生成结构化原子任务文件 docs/tasks.json，每个任务必须有明确的 verify_cmd 和 depends_on。
+        """
+        run_claude(setup_prompt)
+
+    # 步骤 2：基于任务图循环推进
+    max_rounds = 50
+    round_count = 0
+    
+    while round_count < max_rounds:
+        round_count += 1
+        with open(tasks_file, "r") as f:
+            tasks = json.load(f)
+            
+        pending_tasks = [t for t in tasks if t.get("status") == "pending"]
+        if not pending_tasks:
+            print("\n🎉 所有任务均已标记完成！进入全局交付审查阶段。")
+            break
+            
+        print(f"\n=== [阶段 2] 执行自动化轮次 {round_count} (剩余未完成任务: {len(pending_tasks)}) ===")
+        
+        loop_prompt = """
+        阅读 docs/tasks.json：
+        1. 找到当前第一个依赖满足但 status 仍为 'pending' 的任务；
+        2. 调用 implementer 子智能体实现该任务，并跑通 verify_cmd；
+        3. 测试通过后进行 git commit；
+        4. 把 docs/tasks.json 中的该任务 status 更改为 'completed'；
+        5. 输出已完成任务的 ID 并退出。
+        """
+        run_claude(loop_prompt)
+
+    # 步骤 3：多维度全局审查与自动提 PR
+    print("\n=== [阶段 3] 综合质量与安全验收审查 ===")
+    review_prompt = """
+    请作为资深评审专员进行最终验收：
+    1. 运行全量测试套件、类型检查和 lint；
+    2. 使用 git diff 对比 main 分支，检查是否存在未测试的代码、硬编码秘钥或弱化断言；
+    3. 创建新分支 feat/auto-implementation 并将改动推送；
+    4. 产出最终交付总结文档 docs/DELIVERY_REPORT.md。
+    """
+    run_claude(review_prompt)
+    print("\n🚀 大项目全自动研发流水线交付完成！")
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+### 10.4 关键避坑与防翻车防护网
+
+1. **防“偷改测试”（Gaming the Tests）**：
+   - LLM 在遇到多次跑不通复杂测试时，会本能地倾向于直接修改测试用例（如将 `expect(x).toBe(10)` 改为 `expect(x).toBeDefined()`）。
+   - **对策**：在审查阶段必须加入 Git Diff 检查，任何对 `tests/` 目录中既有用例断言的放宽均判定为非法！
+2. **Git Worktree 物理隔离并行开发**：
+   - 如果你要同时推进多个完全解耦的独立子模块，必须让每个模块在不同的 Worktree（通过 `git worktree add`）独立执行，避免并发修改同一份工作区文件引起脏提交。
+3. **状态外部持久化（External State Persistence）**：
+   - 严禁将任务的完成状态记录在 Agent 对话记忆里。必须落盘在 `docs/tasks.json` 或 `PROJECT_STATE.md` 中。会话重启、压缩或崩溃后，随时都能读盘继续。
+
+---
+
+## 11. 这周行动计划：5 天阶梯式落地指南
 
 | 日程 | 主题 | 落地实操任务 | 预期收益 |
 |---|---|---|---|
