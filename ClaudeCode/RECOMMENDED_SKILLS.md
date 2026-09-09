@@ -1,9 +1,9 @@
-# Claude Code 高质量 Skill 选型与安装指南（全栈工程师与个人投资者篇）
+# Claude Code 高质量 Skill 选型与安装指南（全栈工程师、产品经理与个人投资者篇）
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Category: Claude Code Skills](https://img.shields.io/badge/Category-Claude_Code_Skills-blue.svg)](https://github.com/anthropics/claude-code)
 
-本文档针对**全栈工程师**与**个人投资者**的双重身份，从实际生产力与第一性原理出发，梳理最适合安装与配置的高质量 Skill / Plugin 工具链，并标注官方权威来源（Primary Sources）、核心应用场景与一键安装指令。
+本文档针对**全栈工程师**、**产品经理 (PM)** 与**个人投资者**的三重复合工作流，从实际生产力与第一性原理出发，梳理最适合安装与配置的高质量 Skill / Plugin 工具链，并标注官方权威来源（Primary Sources）、核心应用场景与一键安装指令。
 
 ---
 
@@ -12,6 +12,7 @@
 | 身份定位 | 核心工作流与痛点 | 所需核心能力 | 匹配的 Skill 工具类别 |
 | :--- | :--- | :--- | :--- |
 | **全栈工程师** | • 前端交互、设计系统与原型验证<br>• 后端接口设计、状态机与领域模型 (DDD)<br>• 代码审查、测试驱动开发 (TDD) 与根因排查<br>• 个人工具与私有数据源接入 (MCP) | • 极致 UI/UX 规范与微交互设计<br>• 严格的软件工程与反脆弱设计<br>• 自动化测试与循环自愈能力<br>• MCP 自定义 Server 构建能力 | • 前端与设计类 (`ui-ux-pro-max`, `frontend-design`)<br>• 研发规范与工程类 (`superpowers`, `code-review`, `code-simplifier`)<br>• 架构建模与测试类 (`mattpocock-skills`, `ralph-loop`)<br>• 协议与扩展类 (`mcp-builder`) |
+| **产品经理 (PM)** | • 工业级 PRD 产品需求规格说明书与 AC 验收标准<br>• 交互原型与用户旅程图 (User Journey Map)<br>• 伪需求辨析、需求砍伐与敏捷 MVP 范围削减<br>• 商业化变现策略、阶梯定价模型与转化漏斗设计 | • 严谨规范的 PRD/Word/PDF 规格输出能力<br>• 对抗性质询与业务逻辑压力测试 (防伪需求)<br>• 页面状态机与微交互原型验证<br>• SaaS 商业化增收与定价设计 | • 需求规范类 (`document-skills`: `docx`, `pdf`, `xlsx`)<br>• 体验与原型类 (`ui-ux-pro-max`, `web-artifacts-builder`)<br>• 需求审查类 (`mattpocock-skills:grilling`, `superpowers:brainstorming`)<br>• 路线图与商业类 (`planning-with-files`, `commercial-skills`) |
 | **个人投资者** | • 研报、公告与 10-K/年报关键数据提取<br>• 复杂财务估值模型 (DCF)、敏感性分析与联动表格<br>• 投资论点 (Thesis) 反脆弱性审查与压力测试<br>• 投资组合净值走势、持仓分布与资产配置图表呈现 | • 无损长篇 PDF 研报定位与表格抽取<br>• 严谨的电子表格公式推导与校验<br>• 红队思维与对抗性逻辑拷问 (Red Teaming)<br>• 专业级金融图表与深浅色数据可视化 | • 深度文档处理类 (`document-skills`: `xlsx`, `pdf`, `docx`, `pptx`)<br>• 逻辑推演与红队拷问类 (`mattpocock-skills:grilling`, `research`)<br>• 策略头脑风暴与规划类 (`superpowers:brainstorming`, `planning-with-files`)<br>• 金融图表与可视化类 (`dataviz`, `web-artifacts-builder`) |
 
 ---
@@ -79,17 +80,38 @@
 
 ---
 
-### 2.3 复合场景：规划与持久化追踪
+### 2.3 产品经理专精技能
+
+#### ① `document-skills:docx` & `pdf`（工业级 PRD 与规格说明书生成）
+- **权威来源**: Anthropic 官方技能库 (`anthropics/skills`)
+- **核心价值**: **告别结构松散的零碎需求文档**。自动输出符合大厂规范的标准 Word/PDF PRD 规格说明书。自带标准化模块：文档版本历史、需求背景、用户画像、核心业务逻辑流、页面交互状态转移表与 Given-When-Then 验收标准 (AC)，研发测试拿到即可开工。
+
+#### ② `mattpocock-skills:grilling`（PRD 严苛对抗质询 /“砍需求”神器）
+- **权威来源**: `mattpocock/mattpocock-skills`
+- **核心价值**: 在 PRD 评审或立项前，扮演极端尖锐的资深业务合伙人对你的功能规划进行对抗性拷问：*“这个功能真的有人用吗？用户当前的替代方案是什么？开发成本 2 周换来次日留存提升 0.5% 是否值得？”* 帮助 PM 在写代码前无情砍掉 80% 的伪需求。
+
+#### ③ `ui-ux-pro-max`（交互体验设计与高转化 Landing Page 布局）
+- **权威来源**: `nextlevelbuilder/ui-ux-pro-max-skill`
+- **核心价值**: 协助 PM 快速定义信息架构 (IA) 与组件交互细节。在商业化场景下，输出符合心理学直觉的高转化落地页 (Landing Page) 布局、定价表对比卡片与用户激活引导步骤。
+
+#### ④ `claude-code-skills:commercial-skills`（SaaS 商业化阶梯定价与增收模型）
+- **权威来源**: `alirezarezvani/claude-skills` (`commercial-skills`)
+- **核心价值**: 为独立软件或 SaaS 功能提供专业的出海商业化打包指导：设计免费版 (Free)、专业版 (Pro) 与团队版 (Team) 的功能隔离栅栏 (Paywall)，构建科学的阶梯定价体系与增收转化飞轮。
+
+---
+
+### 2.4 复合场景：规划与持久化追踪
 
 #### `planning-with-files`（基于文件的跨会话深度规划）
 - **权威来源**: `OthmanAdi/planning-with-files`
-- **双重价值**:
+- **三重价值**:
+  - **产品场景**: 跨会话持久化维护产品路线图 (Product Roadmap)、Feature Backlog 状态与版本迭代里程碑 (Milestones)。
   - **全栈场景**: 大型全栈系统（如重构认证体系、数据库分库分表）跨多天、跨多会话开发时，用持久化 Markdown 文件记录任务树与进度。
   - **投资场景**: 跟踪跨季度的标的研究笔记、估值模型更新历程与组合再平衡日志。
 
 ---
 
-### 2.4 进阶垂类专项补充库（按需即插即用）
+### 2.5 进阶垂类专项补充库（按需即插即用）
 
 #### `alirezarezvani/claude-skills`（388+ 垂类专家技能军火库）
 - **权威来源**: [`alirezarezvani/claude-skills`](https://github.com/alirezarezvani/claude-skills)（开源庞大技能合集，按需精准装载）
@@ -250,6 +272,29 @@ claude plugin install planning-with-files@planning-with-files    # 跨会话长�
    ```text
    /code-review:code-review 对本次提交的前后端代码进行安全性与逻辑严密性审查。
    ```
+
+---
+
+### 场景 C：产品经理 - 打造商业化 SaaS 核心功能的 PRD 与商业闭环
+1. **极端用例与边界头脑风暴**:
+   ```text
+   /superpowers:brainstorming 我们正在规划付费版“多租户团队协作”功能。请全方位推演极端用例：包括权限冲突、成员跨组织迁移、离职交接与计费席位溢出场景。
+   ```
+2. **严苛对抗质询（无情砍需求）**:
+   ```text
+   /mattpocock-skills:grilling 这是该功能的初步 Feature List：[输入功能列表]。请充当极端挑剔的业务合伙人对这些需求进行红队质询，逼问核心假设，砍掉性价比不高的非核心功能。
+   ```
+3. **输出工业级 PRD 规格文档**:
+   ```text
+   使用 document-skills:docx 导出标准 PRD 规格说明书 (PRD_Team_Workspace.docx)：
+   - 包含业务目标、用户画像、用户旅程图与页面状态机转移表。
+   - 附带每个功能的 Given-When-Then 研发验收标准 (Acceptance Criteria)。
+   ```
+4. **制定 SaaS 商业化阶梯定价策略**:
+   ```text
+   调用 commercial-skills 为该功能设计科学的商业化阶梯（Free vs Pro vs Enterprise），明确席位单价 (Per-seat)、用量配额限制 (Usage Limit) 与升级触发契机。
+   ```
+
 
 ---
 

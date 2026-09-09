@@ -1,10 +1,10 @@
-# Claude Code 高质量 Agent 专家角色选型与实战指南（全栈工程师与个人投资者篇）
+# Claude Code 高质量 Agent 专家角色选型与实战指南（全栈工程师、产品经理与个人投资者篇）
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Category: Claude Code Agents](https://img.shields.io/badge/Category-Claude_Code_Agents-blue.svg)](https://github.com/anthropics/claude-code)
 [![Source: agency-agents-zh](https://img.shields.io/badge/Source-agency--agents--zh-orange.svg)](https://github.com/jnMetaCode/agency-agents-zh)
 
-本文档针对**全栈工程师**与**个人投资者**的双重工作流，基于权威开源角色库 [**agency-agents-zh**](https://github.com/jnMetaCode/agency-agents-zh)（上游来自 [Agency Enterprise / agency-agents](https://github.com/agency-enterprise/agency-agents)），从第一性原理出发，梳理高价值的即插即用 AI 专家角色选型、防上下文污染工程实践及端到端实战调用范式。
+本文档针对**全栈工程师**、**产品经理 (PM)** 与**个人投资者**的三重复合工作流，基于权威开源角色库 [**agency-agents-zh**](https://github.com/jnMetaCode/agency-agents-zh)（上游来自 [Agency Enterprise / agency-agents](https://github.com/agency-enterprise/agency-agents)），从第一性原理出发，梳理高价值的即插即用 AI 专家角色选型、防上下文污染工程实践及端到端实战调用范式。
 
 ---
 
@@ -15,6 +15,7 @@
 | 身份定位 | 核心业务工作流与痛点 | 所需领域专长与思维模型 | 匹配的核心 Agent 专家角色 |
 | :--- | :--- | :--- | :--- |
 | **全栈工程师** | • 复杂系统分层解耦与防腐层设计<br>• 高质量全栈业务编码与设计系统落地<br>• 代码异味排查、安全漏洞挖掘与重构<br>• 慢查询调优、高并发设计与 CI/CD 流水线 | • 软件架构第一性原理（高内聚低耦合、DDD、SOLID）<br>• 顶级前端无障碍 (a11y) 与组件规范<br>• OWASP Top 10 安全红队防守思维<br>• 数据库执行计划 (EXPLAIN) 与运维自动化 | • 架构类：`engineering-software-architect`<br>• 研发类：`engineering-frontend-developer`, `engineering-backend-architect`<br>• 质量类：`engineering-code-reviewer`, `security-appsec-engineer`<br>• 运维类：`engineering-devops-automator`, `engineering-database-optimizer` |
+| **产品经理 (PM)** | • 真实用户痛点识别、伪需求过滤与 JTBD 建模<br>• 工业级 PRD 规范规格编写与验收标准 (AC) 定义<br>• 竞品功能矩阵、商业化转化漏斗与行为助推设计<br>• 敏捷 Sprint 需求砍伐、MVP 范围界定与排期 (RICE) | • 产品第一性原理（用户价值 = 新体验 - 旧体验 - 替换成本）<br>• 行为心理学与助推理论 (Fogg 行为模型、Hook 上瘾模型)<br>• 敏捷极限 MVP 范围削减思维 (MoSCoW/RICE)<br>• 用户体验旅程 (User Journey) 与信息架构 (IA) | • 需求定义：`product-manager`<br>• 趋势调研：`product-trend-researcher`<br>• 敏捷排期：`product-sprint-prioritizer`<br>• 反馈聚类：`product-feedback-synthesizer`<br>• 行为助推：`product-behavioral-nudge-engine`<br>• 交互架构：`design-ux-architect`, `design-ui-designer` |
 | **个人投资者** | • 上市公司商业模式与护城河定性评估<br>• 财报三表交叉核验、现金流质量审计<br>• 并购重组、合规隐患与法律风险排查<br>• 前沿产业趋势、技术壁垒与竞争格局研判 | • 商业第一性原理（单位经济学、飞轮效应、定价权）<br>• 审计师视角（盈余管理、减值准备、勾稽关系）<br>• 监管与法务合规抗风险审查<br>• 产业发展周期与技术扩散曲线分析 | • 财务类：`finance-financial-analyst`, `finance-cfo`<br>• 趋势类：`product-trend-researcher`<br>• 法务类：`legal-compliance-analyst`<br>• 行业类：`specialized-mcp-builder` (行情接入) |
 
 ---
@@ -73,6 +74,18 @@
 | **投资风险评估师** | `specialized/specialized-risk-assessor.md` | 最大回撤风险、政策监管黑天鹅、流动性挤兑与下行保护审查 |
 | **产业趋势研究员** | `product/product-trend-researcher.md` | 行业生命周期、技术扩散与渗透率测算、产业链上下游议价权分析 |
 | **合规与法律分析师** | `legal/legal-contract-reviewer.md` 等 | 监管政策合规风险、反垄断与海外跨境合规、潜在诉讼排查 |
+
+### 3.3 产品经理与体验设计必备角色（需求定义与转化增长）
+
+| 角色标识 (Agent ID) | 仓库真实相对路径 | 核心职能与适用场景 |
+| :--- | :--- | :--- |
+| **标准产品经理** | `product/product-manager.md` | 需求全生命周期管理、PRD 规范编写、验收标准 (AC) 定义与需求边界锁定 |
+| **产品趋势与竞品研究员** | `product/product-trend-researcher.md` | 市场调研、竞品功能对标矩阵、行业渗透率推演与差异化价值定位 |
+| **敏捷 Sprint 优先级排定师** | `product/product-sprint-prioritizer.md` | 运用 RICE/MoSCoW 框架进行严苛的“需求砍伐”、MVP 范围裁剪与版本排期 |
+| **用户反馈聚类综合师** | `product/product-feedback-synthesizer.md` | 汇总工单、社群与客户访谈反馈，剔除表面杂音，聚类提炼高价值痛点 (VOC) |
+| **行为助推与增长引擎** | `product/product-behavioral-nudge-engine.md` | 运用 Fogg/Hook 行为模型设计用户关键激活时刻 (Aha Moment)、留存与付费转化链路 |
+| **用户体验与交互架构师** | `design/design-ux-architect.md` | 信息架构 (IA) 梳理、核心操作流与异常状态机定义、降低用户认知负荷 |
+| **UI 界面与设计系统师** | `design/design-ui-designer.md` | 视觉规范落地、高保真组件布局指导、微交互细节把控 |
 
 ---
 
@@ -179,6 +192,31 @@ cp specialized/specialized-risk-assessor.md ~/.claude/agents/
 
 ---
 
+### 方案 B-3：产品经理专精组合（全局纯相对路径分发）
+
+若主要承担 **需求分析、用户调研反馈聚类、PRD 编写、转化漏斗设计与敏捷排期**，可安装产品经理专精组合：
+
+```bash
+cd agency-agents-zh
+mkdir -p ~/.claude/agents
+
+# 纯相对路径复制产品经理 6 大王牌角色：
+# 1. 标准产品经理 (PRD 规范与验收标准 AC 定义)
+cp product/product-manager.md ~/.claude/agents/
+# 2. 产品趋势与竞品研究员 (市场调研与竞品矩阵)
+cp product/product-trend-researcher.md ~/.claude/agents/
+# 3. 敏捷 Sprint 优先级排定师 (RICE/MoSCoW 砍需求与 MVP 界定)
+cp product/product-sprint-prioritizer.md ~/.claude/agents/
+# 4. 用户反馈聚类综合师 (工单/社群 VOC 痛点提炼)
+cp product/product-feedback-synthesizer.md ~/.claude/agents/
+# 5. 行为助推与增长引擎 (Fogg/Hook 转化留存设计)
+cp product/product-behavioral-nudge-engine.md ~/.claude/agents/
+# 6. 用户体验与交互架构师 (信息架构 IA 与核心交互流)
+cp design/design-ux-architect.md ~/.claude/agents/
+```
+
+---
+
 ### 方案 C：临时动态引用（免安装，零开销，纯相对路径）
 
 把 `agency-agents-zh` 当作一本**本地静态字典库**。平时不拷贝任何文件，在 Claude Code 会话中直接通过相对路径指定文件，令其加载规范：
@@ -189,7 +227,75 @@ cp specialized/specialized-risk-assessor.md ~/.claude/agents/
 
 ---
 
-## 5. 典型工作流端到端实战范式
+## 5. Agent 是如何启动与调用的？（底层原理与 4 种唤醒姿势）
+
+理解 Claude Code 的 Agent 启动机制，能帮助你最高效地调度专家，并杜绝无谓的上下文浪费。
+
+### 5.1 文件解析与自动注册机制
+
+Claude Code CLI 在初始化时，会自动扫描并加载两处路径下的 Markdown Agent 文件：
+1. **项目级 Agent（优先级最高）**：`./.claude/agents/*.md`（仅对当前仓库生效，团队可随 Git 共享）
+2. **用户全局级 Agent**：`~/.claude/agents/*.md`（对当前机器所有终端会话生效）
+
+每个 Agent 文件由 **YAML Frontmatter 元数据** 与 **正文提示词/SOP** 组成：
+```markdown
+---
+name: engineering-software-architect
+description: 资深软件架构师，精通领域驱动设计 (DDD)、系统分层解耦与技术选型
+model: sonnet  # 可选：指定模型（sonnet/opus/haiku），留空则继承当前会话模型
+tools: Read, Edit, Write, Bash  # 可选：限制该角色可用的工具集
+---
+
+# 思考模式 (Thinking Patterns) 与 SOP 规则正文...
+```
+只要将 `.md` 放入上述目录，Claude Code 在启动时就会自动将其注册为可用角色。
+
+---
+
+### 5.2 Agent 启动与调用的 4 种姿势
+
+#### 姿势 1：主模型意图匹配自动委派（隐式自动启动）
+Claude Code 具备原生的 **Subagent（子代理）架构**。主模型内置了 `Agent` 工具，当你在会话中提出一个复杂且专业的目标时，主模型会对比已注册 Agent 的 `description`：
+* **触发机制**：主模型识别到任务适合专职角色，自动调用内置工具 `Agent({ subagent_type: "engineering-software-architect", prompt: "..." })`。
+* **特点**：无需记住具体角色名称，主模型会自动寻找最合适的下属分发任务。
+
+#### 姿势 2：自然语言显式指定（最常用推荐，指名道姓唤醒）
+在对话输入框中直接点名所需角色，精准强制激活：
+* **架构场景**：“调用 `engineering-software-architect` 专家，帮我审查当前微服务解耦设计并输出重构方案。”
+* **投资场景**：“让 `finance-financial-analyst` 专家深入分析本财报的扣非净利润与真实经营现金流背离原因。”
+* **产品场景**：“切换到 `product-manager` 模式，帮我把上述功能点整理成带 AC 验收标准的规范 PRD。”
+
+#### 姿势 3：交互式命令查看与管理 (`/agents`)
+在 Claude Code 会话终端中直接输入斜杠命令：
+```text
+/agents
+```
+终端会列出当前已加载生效的全部 Agent 清单、对应模型与描述，可直接查看或选择进入交互。
+
+#### 姿势 4：多智能体工作流脚本驱动 (Workflow / Multi-Agent Orchestration)
+在复杂的大型自动化工程或批量审计中，可以通过工作流脚本显式声明式调度不同的 Subagent：
+```javascript
+// 多智能体流水线示例
+const archPlan = await agent("审查当前架构并输出设计方案", { 
+  agentType: "engineering-software-architect" 
+});
+
+const secAudit = await agent(`基于架构方案 ${archPlan} 进行代码级安全渗透审查`, { 
+  agentType: "security-appsec-engineer" 
+});
+```
+
+---
+
+### 5.3 运行时核心优势：独立上下文沙箱 (Context Sandbox)
+
+为什么强烈推荐通过 Agent 角色运行，而不是把所有长提示词都贴在主会话中？
+* **上下文完全隔离**：Subagent 在**独立的上下文沙箱子进程**中运行。假设安全审计员为了找漏洞先后读取了 30 个代码文件，产生了多达 50,000 Token 的密集排查过程——**这些庞大的中间推理过程完全不会污染主会话的上下文窗口！**
+* **只交付高纯度结论**：Subagent 执行完毕后，只将提炼后的最终成果物（如审计清单、重构代码或 PRD）回传给主会话。这使得你的主会话始终保持极低的 Token 占用，会话长效不卡顿。
+
+---
+
+## 6. 典型工作流端到端实战范式
 
 ### 场景 A：全栈工程师 - 从零设计与构建生产级 SaaS
 
@@ -227,6 +333,37 @@ cp specialized/specialized-risk-assessor.md ~/.claude/agents/
    ```text
    激活合规分析师 (legal-compliance-analyst) 模式：
    请根据该行业最新的监管合规指导意见，评估该公司在数据隐私收集、反不正当竞争以及海外跨境业务上面临的政策法律风险敞口。
+   ```
+
+---
+
+### 场景 C：产品经理 - 从 0 到 1 打造高转化 SaaS 核心闭环
+
+1. **用户反馈聚类与真实痛点挖掘**:
+   ```text
+   激活用户反馈聚类综合师 (product-feedback-synthesizer) 模式：
+   以下是过去一个月收集的 120 条用户工单和客户访谈记录：[粘贴反馈数据]。
+   请根据 JTBD (Jobs To Be Done) 框架，过滤掉表面的“功能诉求”伪需求，聚类出用户底层的 3 个核心未满足痛点，并评估各痛点的频次与商业影响权重。
+   ```
+2. **行为助推与转化激活漏斗设计**:
+   ```text
+   激活行为助推与增长引擎 (product-behavioral-nudge-engine) 模式：
+   针对上述痛点设计的“自动化周报导出”新功能，请运用 Fogg 行为模型 (B=MAP) 设计用户的首次激活体验 (Aha Moment)：
+   - 梳理降低认知与操作门槛 (Ability) 的渐进式引导步骤。
+   - 设计自然发生的触发契机 (Prompt)，提升免费版到付费版的转化意愿。
+   ```
+3. **工业级 PRD 规范规格输出**:
+   ```text
+   激活标准产品经理 (product-manager) 模式：
+   请根据上述设计，输出完整的工业级 PRD 产品需求规格说明书：
+   - 包含业务背景、目标用户画像、核心价值指标 (North Star Metric)。
+   - 绘制核心功能流程图与异常边界状态转移表。
+   - 为研发团队定义清晰、可量化、无歧义的验收标准 (Acceptance Criteria / Given-When-Then)。
+   ```
+4. **敏捷切分与 MVP 需求砍伐**:
+   ```text
+   激活敏捷 Sprint 优先级排定师 (product-sprint-prioritizer) 模式：
+   请对该 PRD 中的全部功能点应用 RICE 评分框架 (Reach, Impact, Confidence, Effort)，执行严格的 MVP 范围削减，划定 Must-have（第一期上线）与 Nice-to-have（后续迭代），确保两周内可交付上线验证。
    ```
 
 ---
