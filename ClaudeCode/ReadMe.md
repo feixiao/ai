@@ -245,115 +245,17 @@ export CLAUDE_CODE_MAX_CONTEXT_TOKENS=100000
 
 ---
 
-## 8. 开源即插即用 AI 专家角色库：agency-agents-zh
+## 8. 高质量 Agent 专家角色库推荐指南
 
-为了让 Claude Code 及本地大模型在软件工程与复杂专业场景中发挥出最大效能，推荐配合开源社区的高质量专家角色库：[**agency-agents-zh**](https://github.com/jnMetaCode/agency-agents-zh)（基于上游 [Agency Enterprise / agency-agents](https://github.com/agency-enterprise/agency-agents) 进行深度中文本土化与生态扩展）。
+针对复杂工程研发、架构设计、安全审计及商业投资分析，本项目基于开源社区的高质量专家角色库 [**agency-agents-zh**](https://github.com/jnMetaCode/agency-agents-zh)（包含 277 个结构化专家角色与 64 个中国生态原创角色），整理了严谨的选型与实战指南：
 
-### 8.1 什么是 agency-agents-zh？
+- 完整指南文档：[Claude Code 高质量 Agent 专家角色选型与实战指南（全栈工程师与个人投资者篇）](./RECOMMENDED_AGENTS.md)
+- 核心内容概览：
+  - **角色能力第一性原理**：全栈工程师 vs 个人投资者双重工作流的核心能力与思维模型推导。
+  - **反模式警示**：为什么严禁全量安装（防规则稀释 Rule Dilution、本地大模型显存防爆）。
+  - **高频黄金组合**：系统架构师、代码审查员、全栈/前端工程师、后端架构师、应用安全工程师、DevOps 自动化专家精选。
+  - **无污染工作流**：支持项目级按需引入、全局轻量组合、免安装动态临时引用三种纯相对路径姿势。
+  - **双场景实战范式**：全栈开发从零构建 SaaS 与个人投资者财报穿透/合规尽调端到端调用提示词。
 
-`agency-agents-zh` 是专为 AI 编码助手及自主 Agent 打造的**即插即用专家角色全家桶**：
-- **277 个结构化专家角色**：涵盖 20 个企业职能与专业细分领域，不仅包含工程研发、DevOps、架构设计，还延伸至产品、设计、法务、财务、营销、游戏开发、安全审计等全流程。
-- **64 个中国生态原创角色**：针对国内平台与业务场景深度定制，支持小红书/抖音/微信/B站运营、飞书/钉钉企业应用集成、工业 Qt 控制软件开发、跨境出海合规等。
-- **四维结构化规范（超越普通 Prompt）**：每个 Agent 角色内置严谨的工业级规范，而非脆弱的简单人设提示：
-  - **思考模式 (Thinking Patterns)**：引导大模型以特定领域第一性原理和严谨推演逻辑思考。
-  - **标准作业程序 (SOP)**：分步骤指导任务推进，确保工程与交付逻辑闭环。
-  - **操作准则 (Operating Rules)**：定义架构防劣化规范、代码边界约束、编码风格与安全红线。
-  - **交付物标准 (Deliverables)**：明确输出格式、代码骨架、测试覆盖标准或审查清单。
-
-### 8.2 与 Claude Code 的原生集成（千万不要全部安装！）
-
-> ⚠️ **重要原则：强烈反对全部安装（277 个角色全装是大忌）！**
-> 1. **上下文污染与规则稀释 (Rule Dilution)**：如果全局注入几百个角色，会导致模型在推理时注意力分散，系统提示词冲突或被稀释，反而降低代码生成质量。
-> 2. **本地大模型 (LM Studio / clm) 显存与窗口限制**：本地模型有效上下文较紧凑（通常在 8k~32k），加载过多角色会占用有效上下文，导致推理变慢甚至上下文截断。
-> 3. **工程最佳实践：项目级按需引入 (推荐) 或 挑选 3~5 个高频核心角色**。
-
-#### 准备工作：先浅克隆角色库到本地（秒级完成）
-
-```bash
-# 浅克隆角色库（仅拉取最新深度，速度极快且体积轻量）
-git clone --depth=1 https://github.com/jnMetaCode/agency-agents-zh.git
-```
-
-#### 方案 A：项目级按需引入（官方与工业界最推荐）
-
-在你的业务项目根目录下，直接通过相对路径把所需的 2~3 个角色拷贝进来即可。用完即走，项目隔离：
-
-```bash
-# 进入你当前的业务项目目录
-cd your-project
-
-# 创建该项目的专属 agent 目录
-mkdir -p .claude/agents
-
-# 直接使用相对路径按需复制所需专家（例如与 agency-agents-zh 同级时）：
-cp ../agency-agents-zh/engineering/engineering-software-architect.md .claude/agents/
-cp ../agency-agents-zh/engineering/engineering-frontend-developer.md .claude/agents/
-cp ../agency-agents-zh/security/security-appsec-engineer.md .claude/agents/
-
-# 提示：若是在临时目录下提取完角色，可随时清理克隆仓库保持清爽：rm -rf agency-agents-zh
-```
-
-#### 方案 B：全局轻量精简组合（直接进入目录，用纯相对路径分发）
-
-直接进入克隆后的 `agency-agents-zh` 目录，通过最简洁的相对路径分发 6 张高频王牌角色至 `~/.claude/agents/`：
-
-```bash
-cd agency-agents-zh
-mkdir -p ~/.claude/agents
-
-# 直接使用简洁的相对路径一键复制黄金组合：
-# 1. 系统架构师 (顶层把关与系统设计)
-cp engineering/engineering-software-architect.md ~/.claude/agents/
-# 2. 代码审查专家 (质量把控与重构)
-cp engineering/engineering-code-reviewer.md ~/.claude/agents/
-# 3. 前端开发专家 (业务功能开发)
-cp engineering/engineering-frontend-developer.md ~/.claude/agents/
-# 4. 后端架构师 (高并发与数据流设计)
-cp engineering/engineering-backend-architect.md ~/.claude/agents/
-# 5. 应用安全工程师 (漏洞挖掘与合规)
-cp security/security-appsec-engineer.md ~/.claude/agents/
-# 6. DevOps 自动化专家 (CI/CD 流水线)
-cp engineering/engineering-devops-automator.md ~/.claude/agents/
-```
-
-#### 方案 C：临时引用（免安装，零污染）
-
-平时完全不需要向配置目录复制任何文件，直接在 Claude Code 提问时指定相对路径让它读取对应的 `.md` 角色定义文件即可：
-```text
-> 请参考 ./agency-agents-zh/engineering/engineering-software-architect.md 中的角色规范与 SOP，帮我审查当前工程架构。
-```
-
----
-
-#### 附：全量安装脚本说明（仅建议作为本地角色离线资料库查阅，不推荐日常挂载）
-
-```bash
-cd agency-agents-zh
-# 仅供离线检索参考，不要轻易将全量执行脚本挂载到生产环境
-# ./scripts/install.sh --tool claude-code
-```
-
-### 8.3 角色目录精选索引
-
-> 注：`agency-agents-zh` 文件命名规范为 `<部门目录>/<部门>-<角色名>.md`（部分多层级子目录如 `game-development/<引擎>/<角色>.md`）。
-
-| 职能大类 | 仓库目录 | 核心代表文件路径（精确到文件名） | 适用典型场景 |
-| :--- | :--- | :--- | :--- |
-| **工程研发** | `engineering/` | `engineering-software-architect.md`<br>`engineering-frontend-developer.md`<br>`engineering-backend-architect.md`<br>`engineering-devops-automator.md`<br>`engineering-database-optimizer.md`<br>`engineering-code-reviewer.md` | 复杂系统架构、全栈重构、CI/CD 自动化流水线、SQL 慢查询调优、代码审查 |
-| **安全合规** | `security/` | `security-appsec-engineer.md`<br>`security-cloud-security-architect.md`<br>`security-penetration-tester.md` | 代码安全审计、OWASP 漏洞挖掘、威胁建模与权限安全基线检查 |
-| **测试质检** | `testing/` | `testing-performance-benchmarker.md`<br>`testing-reality-checker.md` | 压力与性能基准测试、交付可行性与质量验收 |
-| **产品与设计** | `product/`<br>`design/` | `product/product-manager.md`<br>`design/design-ui-designer.md`<br>`design/design-ux-architect.md` | 需求 PRD 编写、界面交互设计规范、Design System 落地 |
-| **专业垂直领域** | `game-development/`<br>`specialized/` | `game-development/unity/unity-architect.md`<br>`game-development/godot/godot-gameplay-scripter.md`<br>`specialized/specialized-mcp-builder.md` | 游戏引擎系统开发、3D 资产脚本、MCP (Model Context Protocol) 插件构建 |
-| **中国生态原创** | 各目录 `*-zh.md` / `original/` | `engineering-dingtalk-integration-developer.md` 等 | 国内平台生态对接、私域与内容矩阵增长、本土化企业协同开发 |
-
-### 8.4 实战调用与激活示例
-
-在 `clm` 或 `claude` 会话中，可直接以自然语言激活角色执行专项任务：
-
-```text
-> 激活软件架构师 (engineering-software-architect) 模式：请审查当前仓库的代码结构与接口解耦设计，输出高内聚低耦合的重构方案。
-> 激活应用安全工程师 (security-appsec-engineer) 模式：请对当前鉴权中间件与数据流转路径进行全面安全审计，找出潜在越权漏洞。
-> 激活前端专家 (engineering-frontend-developer) 模式：帮我根据现有设计系统重构组件，并补充完整的 a11y 无障碍支持与单元测试。
-```
 
 
