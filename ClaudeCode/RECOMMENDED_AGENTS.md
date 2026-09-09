@@ -65,11 +65,14 @@
 
 | 角色标识 (Agent ID) | 仓库真实相对路径 | 核心职能与适用场景 |
 | :--- | :--- | :--- |
+| **投资研究员** | `finance/finance-investment-researcher.md` | 行业生命周期、商业模式护城河、竞争格局定性分析与长期价值创造研判 |
 | **资深财务分析师** | `finance/finance-financial-analyst.md` | 财报三表穿透、自由现金流核算、资产负债表健康度检验与异常科目挖掘 |
-| **虚拟首席财务官 (CFO)** | `finance/finance-cfo.md` | 资本配置有效性评估、债务结构与偿债能力研判、股息与回购政策分析 |
+| **估值建模预测师** | `finance/finance-financial-forecaster.md` | DCF 折现模型假设推演、营收敏感性分析、多情景二元矩阵估值表构建 |
+| **财务舞弊审查员** | `finance/finance-fraud-detector.md` | 异常应收账款/存货暴雷预警、盈余操纵排查与收入确认真实性核验 |
+| **虚拟首席财务官 (CFO)** | `specialized/chief-financial-officer.md` | 资本配置有效性评估、债务偿付能力与回购/分红政策抗周期分析 |
+| **投资风险评估师** | `specialized/specialized-risk-assessor.md` | 最大回撤风险、政策监管黑天鹅、流动性挤兑与下行保护审查 |
 | **产业趋势研究员** | `product/product-trend-researcher.md` | 行业生命周期、技术扩散与渗透率测算、产业链上下游议价权分析 |
-| **合规与法律分析师** | `legal/legal-compliance-analyst.md` | 监管政策风险预警、反垄断/出海合规、潜在诉讼隐患与治理结构排查 |
-| **国内平台生态专家** | `engineering/engineering-dingtalk-integration-developer.md` 等 | 飞书/钉钉企业应用、微信生态等国内数字化生态集成分析 |
+| **合规与法律分析师** | `legal/legal-contract-reviewer.md` 等 | 监管政策合规风险、反垄断与海外跨境合规、潜在诉讼排查 |
 
 ---
 
@@ -87,35 +90,40 @@ git clone --depth=1 https://github.com/jnMetaCode/agency-agents-zh.git
 
 ### 方案 A：项目级按需引入（工业界最推荐，零全局污染）
 
-在具体的工程或研究项目根目录下，直接创建 `.claude/agents` 目录，按需拷贝当前任务直接需要的 2～3 个专家：
+在具体的工程或投研项目根目录下，直接创建 `.claude/agents` 目录，按需拷贝当前任务直接需要的 2～3 个专家：
 
 ```bash
-# 1. 进入当前的工作项目目录
+# 1. 进入当前的工作项目目录（如你的投研或工程目录）
 cd your-project
 
 # 2. 创建当前项目的 Claude Agent 目录
 mkdir -p .claude/agents
 
 # 3. 按需复制所需专家（以相对路径复制）
-# 示例：Web 全栈开发项目只需引入 3 个专家
+# 示例 1：Web 全栈开发项目按需引入
 cp ../agency-agents-zh/engineering/engineering-software-architect.md .claude/agents/
 cp ../agency-agents-zh/engineering/engineering-frontend-developer.md .claude/agents/
 cp ../agency-agents-zh/security/security-appsec-engineer.md .claude/agents/
+
+# 示例 2：个股深度投研项目按需引入
+cp ../agency-agents-zh/finance/finance-investment-researcher.md .claude/agents/
+cp ../agency-agents-zh/finance/finance-financial-analyst.md .claude/agents/
+cp ../agency-agents-zh/finance/finance-fraud-detector.md .claude/agents/
 
 # 提示：提取完文件后，若不需要保留原克隆仓库，可直接清理：rm -rf ../agency-agents-zh
 ```
 
 ---
 
-### 方案 B：全局轻量精简黄金组合（进入目录，纯相对路径分发）
+### 方案 B-1：程序员全栈必备黄金组合（全局纯相对路径分发）
 
-若习惯在任意终端窗口都能全局直接调用，推荐只将日常最高频的 6 个核心王牌角色放入 `~/.claude/agents/`：
+直接进入克隆后的 `agency-agents-zh` 目录，通过最简洁的相对路径分发 6 张工程高频王牌角色至 `~/.claude/agents/`：
 
 ```bash
 cd agency-agents-zh
 mkdir -p ~/.claude/agents
 
-# 使用纯相对路径复制程序员必备黄金组合：
+# 纯相对路径复制程序员必备组合：
 # 1. 软件架构师 (顶层把关与系统解耦)
 cp engineering/engineering-software-architect.md ~/.claude/agents/
 # 2. 代码审查员 (质量把控与防劣化)
@@ -132,12 +140,51 @@ cp engineering/engineering-devops-automator.md ~/.claude/agents/
 
 ---
 
+### 方案 B-2：个人投资者专精组合（全局纯相对路径分发）
+
+若主要使用 Claude Code 进行**研报分析、财报核验、DCF 估值建模与投资决策**，可安装投资专精组合：
+
+```bash
+cd agency-agents-zh
+mkdir -p ~/.claude/agents
+
+# 纯相对路径复制投资者必备 6 大王牌角色：
+# 1. 投资研究员 (商业模式与护城河)
+cp finance/finance-investment-researcher.md ~/.claude/agents/
+# 2. 资深财务分析师 (财报三表交叉核验)
+cp finance/finance-financial-analyst.md ~/.claude/agents/
+# 3. 估值建模预测师 (DCF 估值与敏感性分析)
+cp finance/finance-financial-forecaster.md ~/.claude/agents/
+# 4. 财务舞弊审查员 (存货/应收账款暴雷排查)
+cp finance/finance-fraud-detector.md ~/.claude/agents/
+# 5. 虚拟首席财务官 (CFO 资本配置与分红回购评估)
+cp specialized/chief-financial-officer.md ~/.claude/agents/
+# 6. 投资风险评估师 (最大回撤与下行风险审查)
+cp specialized/specialized-risk-assessor.md ~/.claude/agents/
+```
+
+> 💡 **投资配套必装 Skill 工具（大脑 + 双手）**：
+> 仅有角色模型还不够，投研还需搭配解析 PDF 财报与生成 Excel 模型的底层能力：
+> ```bash
+> # 1. 必装：官方文档工具（解析财报 PDF + 自动生成含公式的 .xlsx 估值模型）
+> npx @anthropic-ai/skills install document-skills
+> 
+> # 2. 必装：华尔街级投资论点严苛红队质询（防自嗨与认知盲点）
+> git clone https://github.com/mattpocock/skills.git ~/.claude/skills/mattpocock
+> 
+> # 3. 选装：专业财务分析与 SaaS 指标包（ARR/NRR 算力、同行估值乘数）
+> claude plugin marketplace add alirezarezvani/claude-skills
+> claude plugin install finance-skills@claude-code-skills
+> ```
+
+---
+
 ### 方案 C：临时动态引用（免安装，零开销，纯相对路径）
 
 把 `agency-agents-zh` 当作一本**本地静态字典库**。平时不拷贝任何文件，在 Claude Code 会话中直接通过相对路径指定文件，令其加载规范：
 
 ```text
-> 请参考 ./agency-agents-zh/engineering/engineering-software-architect.md 中的角色规范和 SOP，帮我审查当前模块设计。
+> 请参考 ./agency-agents-zh/finance/finance-financial-analyst.md 中的角色规范和 SOP，帮我审查当前财报指标。
 ```
 
 ---
