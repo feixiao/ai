@@ -368,8 +368,39 @@ const secAudit = await agent(`基于架构方案 ${archPlan} 进行代码级安�
 
 ---
 
-## 6. 维护与清理建议
+## 7. 已有全局 Agent 的治理与瘦身方案（防 Token 暴增与归档隔离）
 
-- **定期体检**：使用 `ls ~/.claude/agents/` 检查全局安装的角色文件，若超过 8 个，建议果断精简，将非常用角色移出。
+如果你的 `~/.claude/agents/`（或项目级 `.claude/agents/`）已经存放了大量 `.md` 角色文件，Claude Code 会在**每次启动和多轮工具调用时**，将所有角色的元数据全部拼装进 System Prompt。这在反向代理（如 Gemini / DeepSeek 中转）环境下会导致每次请求重复计费数万 Token。
+
+### 7.1 核心治理原则：移出常驻目录（归档隔离）
+
+**只要文件留在 `~/.claude/agents/` 中，它就会常驻占用 Token。治理的核心是将其移入普通目录。**
+
+#### 步骤 1：一键归档隔离
+```bash
+# 1. 创建本地归档目录（Claude Code 不会主动扫描此目录）
+mkdir -p ~/.claude/agents-archive
+
+# 2. 将全局常驻的角色文件全部移入归档目录
+mv ~/.claude/agents/*.md ~/.claude/agents-archive/ 2>/dev/null || true
+```
+
+#### 步骤 2：移出后的 3 种高效使用姿势（0 常驻 Token）
+1. **免安装单次 Prompt 动态加载（推荐）**：
+   日常 0 常驻 Token 损耗。仅在需要特定角色时，在当次会话中直接指定文件读取：
+   ```text
+   请阅读并遵循 ~/.claude/agents-archive/finance-financial-analyst.md 中的角色规范和思考路径，帮我分析这份财报。
+   ```
+2. **项目级按需复制（局部隔离）**：
+   仅为特定项目复制 1~2 个专属角色到该项目的 `.claude/agents/`，完结后直接删除，不污染全局其他项目。
+3. **极简常驻原则**：
+   全局 `~/.claude/agents/` 中最多保留 1~2 个每天每轮都必用的绝对核心角色（如 `engineering-code-reviewer.md`），其余一律归档。
+
+---
+
+## 8. 维护与清理建议
+
+- **定期体检**：使用 `ls ~/.claude/agents/` 检查全局安装的角色文件，若超过 3~5 个，建议果断精简，将非常用角色移至 `~/.claude/agents-archive/`。
 - **项目隔离优先**：优先在代码仓库的 `.claude/agents/` 存放针对性角色，项目完结或归档后随项目一并沉淀，不污染全局开发环境。
 - **与 Skill 配合增效**：Agent 角色提供**行业思维模型与作业流程 (How to think & execute)**，而 Claude Code Skills（如 `document-skills`、`superpowers`）提供**具体执行工具与协议 (Tools & Capabilities)**，二者结合可达成最佳工程实践。
+

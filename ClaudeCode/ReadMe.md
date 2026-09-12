@@ -257,5 +257,52 @@ export CLAUDE_CODE_MAX_CONTEXT_TOKENS=100000
   - **无污染工作流**：支持项目级按需引入、全局轻量组合、免安装动态临时引用三种纯相对路径姿势。
   - **双场景实战范式**：全栈开发从零构建 SaaS 与个人投资者财报穿透/合规尽调端到端调用提示词。
 
+---
+
+## 9. 反向代理与第三方模型 Token 防暴增治理指南
+
+当通过反向代理网关（如 One-API / New-API / 自定义代理）接入 **Gemini**、**DeepSeek** 或第三方中转 API 时，若发现 Token 消耗极快（仅 5~10 轮交互就消耗数十万甚至上百万 Tokens），其根本原因是 **Anthropic 原生 Prompt Caching（提示词缓存）在反代层失效**。
+
+### 9.1 根因深度剖析（第一性原理）
+
+1. **System Prompt 与元数据常驻膨胀**：
+   Claude Code 在每次发起请求时，都会将所有已启用的 **Skills 描述、Agent 角色元数据、Tools 声明、`CLAUDE.md` 及记忆** 全部拼装并注入到 System Prompt 中。一旦全局安装了多个大型插件包，单次请求的初始前缀即高达 **30,000 ~ 60,000+ Tokens**。
+2. **反向代理导致 Prompt Caching 完全失效**：
+   - **官方原生机制**：支持 Ephemeral Cache。对于前置固定的 System Prompt 和 Skills，后续轮次仅对增量部分计费（缓存命中率可达 90% 以上）。
+   - **反向代理现状**：大多数中转网关无法透传或适配 Anthropic 的 `cache_control` 断点机制。Claude Code 每执行一步工具调用（如读取一个文件、执行一条 Bash 命令），反代都会将 **“全量 System Prompt + 所有已启用技能描述 + 全部历史记录”** 当作全新输入重新发给后端模型并全额计费，导致多轮调用中 Token 消耗呈倍数级爆炸。
+
+---
+
+### 9.2 止血与降本最佳实践
+
+#### ① 技能插件按需启停（断舍离）
+严禁全局常驻开启大量未使用的插件包，根据当前工作流按需精简：
+
+```bash
+# 1. 查看当前所有已安装插件及状态
+claude plugin list
+
+# 2. 临时禁用当前任务无需使用的大型插件包（例如专注编码时禁用合规与金融包）
+claude plugin disable compliance-os@claude-skills
+claude plugin disable engineering-advanced-skills@claude-skills
+claude plugin disable finance-skills@claude-skills
+
+# 3. 彻底卸载长期不用的冗余插件
+claude plugin uninstall <plugin_name>
+```
+
+#### ② Agent 专家角色“动态按需加载”（杜绝常驻注册）
+- **反模式**：严禁将几十个角色 `.md` 文件全部丢入 `~/.claude/agents/` 或 `.claude/agents/`（这会导致每次交互都携带巨大的角色列表上下文）。
+- **推荐姿势（免安装动态引用）**：将角色库（如 `agency-agents-zh`）保留在本地，仅在需要时通过单次 Prompt 动态读取：
+  ```text
+  请阅读并遵循 agency-agents-zh/finance/finance-financial-analyst.md 中的规范与流程，帮我分析该公司最新的 10-K 财报。
+  ```
+  该方式日常会话 **0 Token 常驻开销**，仅在触发时精准消耗单次 Token。
+
+#### ③ 严格控制上下文生命周期（防滚雪球）
+- **主动压缩长会话**：多轮排错或复杂任务超过 10~15 轮交互后，输入 `/compact` 压缩上下文。
+- **任务切换及时清空**：完成一个独立的开发或分析任务后，务必输入 `/clear` 开启全新会话，阻断历史工具执行日志与中间产物的上下文滚雪球效应。
+
+
 
 
