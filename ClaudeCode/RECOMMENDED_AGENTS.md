@@ -91,6 +91,9 @@
 
 ## 4. 推荐部署姿势（三大无污染工作流）
 
+> ⚠️ **Token 消耗警示（特别是反向代理 / 本地大模型环境）**：
+> 凡是放入 `~/.claude/agents/` 的文件都会被自动拼装进每次请求的 System Prompt 中。如果你使用的是 **Gemini/DeepSeek 反向代理** 或 **本地大模型**，请**优先选择“方案 A（项目级隔离）”或“方案 B（归档库 + 动态引用）”**，以达到 **0 常驻 Token 损耗**。
+
 ### 准备工作：浅克隆仓库（秒级完成）
 
 无论采用何种方案，首先浅克隆一份角色库到本地（仅拉取最新深度，体积小且不占空间）：
@@ -103,7 +106,7 @@ git clone --depth=1 https://github.com/jnMetaCode/agency-agents-zh.git
 
 ### 方案 A：项目级按需引入（工业界最推荐，零全局污染）
 
-在具体的工程或投研项目根目录下，直接创建 `.claude/agents` 目录，按需拷贝当前任务直接需要的 2～3 个专家：
+在具体的工程或投研项目根目录下，直接创建 `.claude/agents` 目录，按需拷贝当前任务直接需要的 1～2 个专家（任务完结后随项目沉淀或清理）：
 
 ```bash
 # 1. 进入当前的工作项目目录（如你的投研或工程目录）
@@ -116,113 +119,67 @@ mkdir -p .claude/agents
 # 示例 1：Web 全栈开发项目按需引入
 cp ../agency-agents-zh/engineering/engineering-software-architect.md .claude/agents/
 cp ../agency-agents-zh/engineering/engineering-frontend-developer.md .claude/agents/
-cp ../agency-agents-zh/security/security-appsec-engineer.md .claude/agents/
 
 # 示例 2：个股深度投研项目按需引入
-cp ../agency-agents-zh/finance/finance-investment-researcher.md .claude/agents/
 cp ../agency-agents-zh/finance/finance-financial-analyst.md .claude/agents/
 cp ../agency-agents-zh/finance/finance-fraud-detector.md .claude/agents/
-
-# 提示：提取完文件后，若不需要保留原克隆仓库，可直接清理：rm -rf ../agency-agents-zh
 ```
 
 ---
 
-### 方案 B-1：程序员全栈必备黄金组合（全局纯相对路径分发）
+### 方案 B：本地归档库 + 动态按需加载（最适合反向代理，0 常驻 Token 损耗）
 
-直接进入克隆后的 `agency-agents-zh` 目录，通过最简洁的相对路径分发 6 张工程高频王牌角色至 `~/.claude/agents/`：
+将常用角色按领域分类分发到本地归档目录 `~/.claude/agents-archive/` 中（**Claude Code 不会主动扫描此目录，不占用初始 System Prompt**），需要时在 Prompt 中指名加载：
 
 ```bash
 cd agency-agents-zh
-mkdir -p ~/.claude/agents
+mkdir -p ~/.claude/agents-archive
 
-# 纯相对路径复制程序员必备组合：
-# 1. 软件架构师 (顶层把关与系统解耦)
-cp engineering/engineering-software-architect.md ~/.claude/agents/
-# 2. 代码审查员 (质量把控与防劣化)
-cp engineering/engineering-code-reviewer.md ~/.claude/agents/
-# 3. 前端开发专家 (业务功能与交互落地)
-cp engineering/engineering-frontend-developer.md ~/.claude/agents/
-# 4. 后端架构师 (高并发与数据流设计)
-cp engineering/engineering-backend-architect.md ~/.claude/agents/
-# 5. 应用安全工程师 (漏洞挖掘与合规)
-cp security/security-appsec-engineer.md ~/.claude/agents/
-# 6. DevOps 自动化专家 (CI/CD 交付流水线)
-cp engineering/engineering-devops-automator.md ~/.claude/agents/
+# ====== 1. 程序员全栈核心归档 ======
+cp engineering/engineering-software-architect.md ~/.claude/agents-archive/
+cp engineering/engineering-code-reviewer.md ~/.claude/agents-archive/
+cp engineering/engineering-frontend-developer.md ~/.claude/agents-archive/
+cp engineering/engineering-backend-architect.md ~/.claude/agents-archive/
+cp security/security-appsec-engineer.md ~/.claude/agents-archive/
+cp engineering/engineering-devops-automator.md ~/.claude/agents-archive/
+
+# ====== 2. 个人投资者核心归档 ======
+cp finance/finance-investment-researcher.md ~/.claude/agents-archive/
+cp finance/finance-financial-analyst.md ~/.claude/agents-archive/
+cp finance/finance-financial-forecaster.md ~/.claude/agents-archive/
+cp finance/finance-fraud-detector.md ~/.claude/agents-archive/
+cp specialized/chief-financial-officer.md ~/.claude/agents-archive/
+cp specialized/specialized-risk-assessor.md ~/.claude/agents-archive/
+
+# ====== 3. 产品经理核心归档 ======
+cp product/product-manager.md ~/.claude/agents-archive/
+cp product/product-trend-researcher.md ~/.claude/agents-archive/
+cp product/product-sprint-prioritizer.md ~/.claude/agents-archive/
+cp product/product-feedback-synthesizer.md ~/.claude/agents-archive/
+cp product/product-behavioral-nudge-engine.md ~/.claude/agents-archive/
+cp design/design-ux-architect.md ~/.claude/agents-archive/
 ```
 
----
-
-### 方案 B-2：个人投资者专精组合（全局纯相对路径分发）
-
-若主要使用 Claude Code 进行**研报分析、财报核验、DCF 估值建模与投资决策**，可安装投资专精组合：
-
-```bash
-cd agency-agents-zh
-mkdir -p ~/.claude/agents
-
-# 纯相对路径复制投资者必备 6 大王牌角色：
-# 1. 投资研究员 (商业模式与护城河)
-cp finance/finance-investment-researcher.md ~/.claude/agents/
-# 2. 资深财务分析师 (财报三表交叉核验)
-cp finance/finance-financial-analyst.md ~/.claude/agents/
-# 3. 估值建模预测师 (DCF 估值与敏感性分析)
-cp finance/finance-financial-forecaster.md ~/.claude/agents/
-# 4. 财务舞弊审查员 (存货/应收账款暴雷排查)
-cp finance/finance-fraud-detector.md ~/.claude/agents/
-# 5. 虚拟首席财务官 (CFO 资本配置与分红回购评估)
-cp specialized/chief-financial-officer.md ~/.claude/agents/
-# 6. 投资风险评估师 (最大回撤与下行风险审查)
-cp specialized/specialized-risk-assessor.md ~/.claude/agents/
-```
-
-> 💡 **投资配套必装 Skill 工具（大脑 + 双手）**：
-> 仅有角色模型还不够，投研还需搭配解析 PDF 财报与生成 Excel 模型的底层能力：
-> ```bash
-> # 1. 必装：官方文档工具（解析财报 PDF + 自动生成含公式的 .xlsx 估值模型）
-> npx @anthropic-ai/skills install document-skills
-> 
-> # 2. 必装：华尔街级投资论点严苛红队质询（防自嗨与认知盲点）
-> git clone https://github.com/mattpocock/skills.git ~/.claude/skills/mattpocock
-> 
-> # 3. 选装：专业财务分析与 SaaS 指标包（ARR/NRR 算力、同行估值乘数）
-> claude plugin marketplace add alirezarezvani/claude-skills
-> claude plugin install finance-skills@claude-code-skills
-> ```
-
----
-
-### 方案 B-3：产品经理专精组合（全局纯相对路径分发）
-
-若主要承担 **需求分析、用户调研反馈聚类、PRD 编写、转化漏斗设计与敏捷排期**，可安装产品经理专精组合：
-
-```bash
-cd agency-agents-zh
-mkdir -p ~/.claude/agents
-
-# 纯相对路径复制产品经理 6 大王牌角色：
-# 1. 标准产品经理 (PRD 规范与验收标准 AC 定义)
-cp product/product-manager.md ~/.claude/agents/
-# 2. 产品趋势与竞品研究员 (市场调研与竞品矩阵)
-cp product/product-trend-researcher.md ~/.claude/agents/
-# 3. 敏捷 Sprint 优先级排定师 (RICE/MoSCoW 砍需求与 MVP 界定)
-cp product/product-sprint-prioritizer.md ~/.claude/agents/
-# 4. 用户反馈聚类综合师 (工单/社群 VOC 痛点提炼)
-cp product/product-feedback-synthesizer.md ~/.claude/agents/
-# 5. 行为助推与增长引擎 (Fogg/Hook 转化留存设计)
-cp product/product-behavioral-nudge-engine.md ~/.claude/agents/
-# 6. 用户体验与交互架构师 (信息架构 IA 与核心交互流)
-cp design/design-ux-architect.md ~/.claude/agents/
-```
-
----
-
-### 方案 C：临时动态引用（免安装，零开销，纯相对路径）
-
-把 `agency-agents-zh` 当作一本**本地静态字典库**。平时不拷贝任何文件，在 Claude Code 会话中直接通过相对路径指定文件，令其加载规范：
-
+**使用方式（免安装动态指名加载）**：
 ```text
-> 请参考 ./agency-agents-zh/finance/finance-financial-analyst.md 中的角色规范和 SOP，帮我审查当前财报指标。
+> 请阅读并遵循 ~/.claude/agents-archive/finance-financial-analyst.md 中的角色规范和 SOP，帮我审查当前财报指标。
+```
+
+---
+
+### 方案 C：全局常驻注册（仅限 Anthropic 官方订阅且开启 Prompt Caching 用户）
+
+> ⚠️ **注意**：反向代理用户请勿使用此方案，否则每次工具调用都会全额重新计费。
+
+如果你使用的是 Anthropic 官方原生 API / Claude Pro 订阅（支持 Ephemeral Prompt Caching），可将极高频角色直接注册到 `~/.claude/agents/`：
+
+```bash
+cd agency-agents-zh
+mkdir -p ~/.claude/agents
+
+# 仅建议保留 1~2 个每日高频核心角色（例如代码审查员与架构师）
+cp engineering/engineering-code-reviewer.md ~/.claude/agents/
+cp engineering/engineering-software-architect.md ~/.claude/agents/
 ```
 
 ---
