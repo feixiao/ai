@@ -18,6 +18,8 @@ This repository is a hands-on AI engineering knowledge base and practice playgro
 - `ComfyUI/` & `media/`: Generative AI workflows (Wan2.2, Flux, Z-Image-Turbo, SadTalker, TTS), JSON workflow definitions, benchmark scripts, and Apple Silicon / Mac Studio deployment guides.
 - `intel/` & `ollama/`: Local inference setups, Intel Arc GPU (IPEX-LLM) configurations, and Ollama/ModelScope model guides.
 - `ClaudeCode/`: Configuration patterns and environment settings for connecting Claude Code with local models (LM Studio / Ollama).
+- `CodeBuddy/`: Skills and Agents migration, deployment scripts, and guides for Tencent CodeBuddy CLI.
+- `Antigravity/`: Skills and Agents migration, deployment scripts (`install.sh`), and CLI best practices for Google Antigravity (`agy` / Gemini).
 - `TensorFlowLite/`, `PyTorch/`, `spleeter/`: Deep learning experiments and audio source separation scripts.
 
 ## Environment & Common Commands
