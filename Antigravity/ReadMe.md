@@ -43,16 +43,43 @@
 
 ## 3. 快速安装
 
-### 3.1 一键安装（推荐）
+### 3.1 默认安装：极简模式（推荐）
 
-在仓库根目录直接执行：
+直接运行脚本即为**极简模式**，仅安装 **5 个最高频工程核心技能**（`brainstorming` + `systematic-debugging` + `test-driven-development` + `verification-before-completion` + `planning-with-files`），最大限度避免技能过多造成 System Prompt 上下文臃肿和模型注意力分散：
 
 ```bash
 cd Antigravity
 ./install.sh
 ```
 
-### 3.2 预演模式（Dry-Run）
+### 3.2 模块化按需安装
+
+根据你的工作流场景，自由组合安装技能包：
+
+```bash
+# 完整核心模式：安装完整工程规范 (14 个) + 规划 (2 个) + 多模态长文档 (4 个)
+./install.sh --core
+
+# 在极简模式基础上，叠加原生多模态长文档支持 (PDF/DOCX/XLSX/PPTX)
+./install.sh --docs
+
+# 叠加 UI/UX 前端设计系统技能包 (7 个)
+./install.sh --ui-ux
+
+# 叠加产品规划、项目管理与商业化专家技能包 (~18 个)
+./install.sh --biz
+
+# 叠加 Matt Pocock 技能集 (25 个)
+./install.sh --mattpocock
+
+# 全量模式：安装全部 80+ 个技能
+./install.sh --all
+
+# 清空旧技能与角色后干净重装
+./install.sh --clean
+```
+
+### 3.3 预演模式（Dry-Run）
 
 若想先查看将要迁移的文件清单，可运行：
 
@@ -60,7 +87,7 @@ cd Antigravity
 ./install.sh --dry-run
 ```
 
-脚本是**完全幂等**的：重跑会自动清理旧的同名技能与角色并覆盖，当 Claude Code 插件升级后，随时重跑 `./install.sh` 即可同步最新能力。
+脚本是**完全幂等**的：重跑会自动清理同名旧技能与角色并覆盖，当 Claude Code 插件升级后，随时重跑 `./install.sh` 即可同步最新能力。
 
 ---
 

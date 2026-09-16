@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Antigravity (agy) Skills & Agents 一键安装脚本
+# Antigravity (agy) Skills & Agents 一键安装与模块化管理脚本
 # ---------------------------------------------------------------
 # 从 Claude Code 已安装的插件缓存与全局 agents 目录中抽取内容，适配为
 # Antigravity / Gemini CLI 的目录与格式，安装到 ~/.gemini/ 下：
@@ -9,8 +9,16 @@
 #   ~/.gemini/agents/<name>.md
 #
 # 用法：
-#   ./install.sh              # 安装全部（工程 / 产品 / 设计 / 商业等系列）
-#   ./install.sh --dry-run    # 预演模式：只打印将要执行的动作
+#   ./install.sh                # 默认极简模式：仅安装最核心 5 个工程技能（推荐，零膨胀）
+#   ./install.sh --core         # 核心完整模式：完整工程规范 (14 个) + 规划 (2 个) + 文档 (4 个)
+#   ./install.sh --docs         # 叠加原生多模态长文档支持 (PDF/DOCX/XLSX/PPTX)
+#   ./install.sh --ui-ux        # 叠加 UI/UX 前端设计套件 (7 个)
+#   ./install.sh --biz          # 叠加产品/项目/商业化专家技能包 (~18 个)
+#   ./install.sh --mattpocock   # 叠加 Matt Pocock 技能集 (25 个)
+#   ./install.sh --all          # 全量模式：安装全部技能包 (80+ 个)
+#   ./install.sh --clean        # 清空目标目录后重新安装选定模块
+#   ./install.sh --clean-only   # 仅清理已安装的 skills 与 agents
+#   ./install.sh --dry-run      # 预演模式：只打印将要执行的动作
 #
 # 可用环境变量覆盖来源与目标：
 #   CLAUDE_CACHE    默认 ~/.claude/plugins/cache
@@ -22,13 +30,106 @@ set -euo pipefail
 CLAUDE_CACHE="${CLAUDE_CACHE:-$HOME/.claude/plugins/cache}"
 CLAUDE_AGENTS="${CLAUDE_AGENTS:-$HOME/.claude/agents}"
 DEST="${GEMINI_HOME:-$HOME/.gemini}"
+
 DRY_RUN=0
+CLEAN_MODE=0
+CLEAN_ONLY=0
+
+# 默认极简模式：仅安装最核心的 5 个工程技能
+INSTALL_SUPERPOWERS_FULL=0
+INSTALL_DOCS=0
+INSTALL_PLANNING=1
+INSTALL_UI_UX=0
+INSTALL_BIZ=0
+INSTALL_MATTPOCOCK=0
+INSTALL_ANTHROPIC_EXTRAS=0
+
+show_help() {
+  cat <<'EOF'
+Antigravity (agy) Skills & Agents 一键安装与模块化管理脚本
+---------------------------------------------------------------
+从 Claude Code 已安装的插件缓存与全局 agents 目录中抽取内容，适配为
+Antigravity / Gemini CLI 的目录与格式，安装到 ~/.gemini/ 下：
+
+  ~/.gemini/skills/<name>/SKILL.md
+  ~/.gemini/agents/<name>.md
+
+用法：
+  ./install.sh                # 默认极简模式：仅安装最核心 5 个工程技能（推荐，零 Prompt 膨胀）
+  ./install.sh --core         # 核心完整模式：工程规范 (14 个) + 规划 (2 个) + 文档 (4 个)
+  ./install.sh --docs         # 叠加多模态长文档支持 (PDF/DOCX/XLSX/PPTX)
+  ./install.sh --ui-ux        # 叠加 UI/UX 前端设计技能包 (7 个)
+  ./install.sh --biz          # 叠加产品/项目/商业化专家技能包 (~18 个)
+  ./install.sh --mattpocock   # 叠加 Matt Pocock 技能集 (25 个)
+  ./install.sh --all          # 全量模式：安装全部技能包 (80+ 个)
+  ./install.sh --clean        # 清空目标目录后重新安装选定模块
+  ./install.sh --clean-only   # 仅清理已安装的 skills 与 agents
+  ./install.sh --dry-run      # 预演模式：只打印将要执行的动作
+  -h, --help                  # 显示此帮助信息
+
+环境变量：
+  CLAUDE_CACHE    默认 ~/.claude/plugins/cache
+  CLAUDE_AGENTS   默认 ~/.claude/agents
+  GEMINI_HOME     默认 ~/.gemini
+EOF
+}
 
 for arg in "$@"; do
   case "$arg" in
-    --dry-run) DRY_RUN=1 ;;
-    -h|--help) sed -n '2,18p' "$0"; exit 0 ;;
-    *) echo "未知参数: $arg" >&2; exit 2 ;;
+    --dry-run)
+      DRY_RUN=1
+      ;;
+    --clean)
+      CLEAN_MODE=1
+      ;;
+    --clean-only)
+      CLEAN_MODE=1
+      CLEAN_ONLY=1
+      ;;
+    --minimal)
+      INSTALL_SUPERPOWERS_FULL=0
+      INSTALL_DOCS=0
+      INSTALL_PLANNING=1
+      INSTALL_UI_UX=0
+      INSTALL_BIZ=0
+      INSTALL_MATTPOCOCK=0
+      INSTALL_ANTHROPIC_EXTRAS=0
+      ;;
+    --core)
+      INSTALL_SUPERPOWERS_FULL=1
+      INSTALL_DOCS=1
+      INSTALL_PLANNING=1
+      ;;
+    --docs)
+      INSTALL_DOCS=1
+      ;;
+    --ui-ux)
+      INSTALL_UI_UX=1
+      ;;
+    --biz|--product)
+      INSTALL_BIZ=1
+      ;;
+    --mattpocock)
+      INSTALL_MATTPOCOCK=1
+      ;;
+    --all|--full)
+      INSTALL_SUPERPOWERS_FULL=1
+      INSTALL_DOCS=1
+      INSTALL_PLANNING=1
+      INSTALL_UI_UX=1
+      INSTALL_BIZ=1
+      INSTALL_MATTPOCOCK=1
+      INSTALL_ANTHROPIC_EXTRAS=1
+      ;;
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    *)
+      echo "未知参数: $arg" >&2
+      echo "使用 -h 或 --help 查看帮助" >&2
+      exit 2
+      ;;
   esac
 done
 
@@ -65,7 +166,7 @@ copy_skills_in() {
 }
 
 # ===============================================================
-# 1. 前置检查与目录初始化
+# 1. 前置检查与模块规划
 # ===============================================================
 info "检查环境与依赖..."
 command -v python3 >/dev/null 2>&1 || { warn "缺少 python3"; exit 1; }
@@ -78,7 +179,32 @@ fi
 
 info "来源插件缓存: $CLAUDE_CACHE"
 info "目标目录:     $DEST"
+
+if [ "$CLEAN_MODE" = "1" ]; then
+  info "清理现有技能与角色目录..."
+  run rm -rf "$DEST/skills" "$DEST/agents"
+  if [ "$CLEAN_ONLY" = "1" ]; then
+    info "已成功清理 $DEST/skills 与 $DEST/agents"
+    exit 0
+  fi
+fi
+
 run mkdir -p "$DEST/skills" "$DEST/agents"
+
+info "已选安装方案与模块："
+if [ "$INSTALL_SUPERPOWERS_FULL" = "1" ]; then
+  echo "  - 工程流程 (superpowers):              ✓ 完整工程规范 (14 个)"
+else
+  echo "  - 工程流程 (superpowers):              ✓ 极简核心 (调试/TDD/头脑风暴/验收 4 个)"
+fi
+echo "  - 跨会话设计规划 (planning-with-files):  ✓ 启用 (2 个)"
+echo "  - 原生多模态文档 (PDF/DOCX/XLSX/PPTX):  $([ "$INSTALL_DOCS" = "1" ] && echo "✓ 启用 (4 个)" || echo "- 未勾选 (可选 --docs)")"
+echo "  - 前端设计系统 (ui-ux-pro-max):          $([ "$INSTALL_UI_UX" = "1" ] && echo "✓ 启用 (7 个)" || echo "- 未勾选 (可选 --ui-ux)")"
+echo "  - 产品与商业化 (product/biz):            $([ "$INSTALL_BIZ" = "1" ] && echo "✓ 启用 (~18 个)" || echo "- 未勾选 (可选 --biz)")"
+echo "  - Matt Pocock 技能集:                   $([ "$INSTALL_MATTPOCOCK" = "1" ] && echo "✓ 启用 (25 个)" || echo "- 未勾选 (可选 --mattpocock)")"
+if [ "$INSTALL_ANTHROPIC_EXTRAS" = "1" ]; then
+  echo "  - Anthropic 扩展实验组件:               ✓ 启用"
+fi
 
 # ===============================================================
 # 2. 阶段一：安装与适配 Agents
@@ -104,40 +230,76 @@ fi
 # ===============================================================
 info "阶段 2/3: 抽取与安装 Skills -> $DEST/skills"
 
-# 3.1 document-skills (PDF/DOCX/XLSX/PPTX)
-DOCS="$(latest_version "$CLAUDE_CACHE/anthropic-agent-skills/document-skills" || true)"
-[ -n "${DOCS:-}" ] && copy_skills_in "${DOCS}skills"
-
-# 3.2 superpowers (核心工程流程: TDD, 调试, 规划等)
+# 3.1 superpowers (极简 4 个 或 完整 14 个)
 SP="$(latest_version "$CLAUDE_CACHE/claude-plugins-official/superpowers" || true)"
-[ -n "${SP:-}" ] && copy_skills_in "${SP}skills"
-
-# 3.3 mattpocock-skills (engineering & productivity)
-MP="$(latest_version "$CLAUDE_CACHE/mattpocock/mattpocock-skills" || true)"
-if [ -n "${MP:-}" ]; then
-  copy_skills_in "${MP}skills/engineering"
-  copy_skills_in "${MP}skills/productivity"
+if [ -n "${SP:-}" ]; then
+  if [ "$INSTALL_SUPERPOWERS_FULL" = "1" ]; then
+    copy_skills_in "${SP}skills"
+  else
+    for s in brainstorming systematic-debugging test-driven-development verification-before-completion; do
+      [ -d "${SP}skills/$s" ] && copy_skill_dir "${SP}skills/$s"
+    done
+  fi
 fi
 
-# 3.4 planning-with-files (跨会话持久化设计)
-PF="$(latest_version "$CLAUDE_CACHE/planning-with-files/planning-with-files" || true)"
-if [ -n "${PF:-}" ]; then
-  [ -d "${PF}skills/planning-with-files" ] && copy_skill_dir "${PF}skills/planning-with-files"
-  if [ -d "${PF}skills/i18n/planning-with-files-zh" ]; then
-    run rm -rf "$DEST/skills/planning-with-files-zh"
-    run cp -R "${PF}skills/i18n/planning-with-files-zh" "$DEST/skills/planning-with-files-zh"
+# 3.2 planning-with-files (跨会话持久化设计 2 个)
+if [ "$INSTALL_PLANNING" = "1" ]; then
+  PF="$(latest_version "$CLAUDE_CACHE/planning-with-files/planning-with-files" || true)"
+  if [ -n "${PF:-}" ]; then
+    [ -d "${PF}skills/planning-with-files" ] && copy_skill_dir "${PF}skills/planning-with-files"
+    if [ -d "${PF}skills/i18n/planning-with-files-zh" ]; then
+      copy_skill_dir "${PF}skills/i18n/planning-with-files-zh"
+    fi
+  fi
+fi
+
+# 3.3 document-skills (精确安装 4 大原生多模态核心文档技能: PDF/DOCX/XLSX/PPTX)
+if [ "$INSTALL_DOCS" = "1" ]; then
+  DOCS="$(latest_version "$CLAUDE_CACHE/anthropic-agent-skills/document-skills" || true)"
+  if [ -n "${DOCS:-}" ]; then
+    for doc_skill in pdf docx xlsx pptx; do
+      [ -d "${DOCS}skills/$doc_skill" ] && copy_skill_dir "${DOCS}skills/$doc_skill"
+    done
+  fi
+fi
+
+# 3.4 anthropic-agent-skills 额外套件 (仅在 --all 时启用)
+if [ "$INSTALL_ANTHROPIC_EXTRAS" = "1" ]; then
+  DOCS="$(latest_version "$CLAUDE_CACHE/anthropic-agent-skills/document-skills" || true)"
+  if [ -n "${DOCS:-}" ]; then
+    for s in "${DOCS}skills"/*/; do
+      [ -d "$s" ] || continue
+      name="$(basename "$s")"
+      case "$name" in
+        pdf|docx|xlsx|pptx) ;; # 已在文档中处理
+        *) copy_skill_dir "$s" ;;
+      esac
+    done
   fi
 fi
 
 # 3.5 ui-ux-pro-max 前端与界面设计系统
-UX="$(latest_version "$CLAUDE_CACHE/ui-ux-pro-max-skill/ui-ux-pro-max" || true)"
-[ -n "${UX:-}" ] && copy_skills_in "${UX}.claude/skills"
+if [ "$INSTALL_UI_UX" = "1" ]; then
+  UX="$(latest_version "$CLAUDE_CACHE/ui-ux-pro-max-skill/ui-ux-pro-max" || true)"
+  [ -n "${UX:-}" ] && copy_skills_in "${UX}.claude/skills"
+fi
 
 # 3.6 垂类专家技能包：产品 / 项目管理 / 商业化
-for pkg in product-skills pm-skills commercial-skills; do
-  V="$(latest_version "$CLAUDE_CACHE/claude-code-skills/$pkg" || true)"
-  [ -n "${V:-}" ] && copy_skills_in "${V}skills"
-done
+if [ "$INSTALL_BIZ" = "1" ]; then
+  for pkg in product-skills pm-skills commercial-skills; do
+    V="$(latest_version "$CLAUDE_CACHE/claude-code-skills/$pkg" || true)"
+    [ -n "${V:-}" ] && copy_skills_in "${V}skills"
+  done
+fi
+
+# 3.7 mattpocock-skills (engineering & productivity)
+if [ "$INSTALL_MATTPOCOCK" = "1" ]; then
+  MP="$(latest_version "$CLAUDE_CACHE/mattpocock/mattpocock-skills" || true)"
+  if [ -n "${MP:-}" ]; then
+    copy_skills_in "${MP}skills/engineering"
+    copy_skills_in "${MP}skills/productivity"
+  fi
+fi
 
 # ===============================================================
 # 4. 阶段三：格式适配与环境变量改写 (Frontmatter & Path Rewriting)
@@ -233,6 +395,19 @@ if [ "$DRY_RUN" = "0" ]; then
   skills_count=$(find "$DEST/skills" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
   agents_count=$(find "$DEST/agents" -mindepth 1 -maxdepth 1 -type f -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
   echo "  - 实际部署: $skills_count 个 Skills, $agents_count 个 Agents"
+fi
+
+if [ "$INSTALL_SUPERPOWERS_FULL" = "0" ] && [ "$INSTALL_DOCS" = "0" ] && [ "$INSTALL_UI_UX" = "0" ] && [ "$INSTALL_BIZ" = "0" ] && [ "$INSTALL_MATTPOCOCK" = "0" ]; then
+  echo ""
+  echo "提示：当前为【默认极简模式】(仅 5 个高频工程核心技能)，实现最轻量的 Prompt 开销。"
+  echo "若需其他模块，可自由叠加参数："
+  echo "  ./install.sh --core         # 切换为完整工程+多模态文档核心包 (20 个)"
+  echo "  ./install.sh --docs         # 叠加 PDF/DOCX/XLSX/PPTX 多模态文档支持 (4 个)"
+  echo "  ./install.sh --ui-ux        # 叠加 UI/UX 前端设计技能 (7 个)"
+  echo "  ./install.sh --biz          # 叠加产品/项目管理/商业化技能 (~18 个)"
+  echo "  ./install.sh --mattpocock   # 叠加 Matt Pocock 技能集 (25 个)"
+  echo "  ./install.sh --all          # 全量安装全部技能 (80+ 个)"
+  echo "  ./install.sh --clean        # 清空旧目录后重新安装"
 fi
 echo ""
 echo "常用验证命令："
