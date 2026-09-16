@@ -35,13 +35,13 @@ DRY_RUN=0
 CLEAN_MODE=0
 CLEAN_ONLY=0
 
-# 默认极简模式：仅安装最核心工程技能包（推荐，零 Prompt 膨胀）
+# 默认极简工程模式：工程规范核心 + 文件规划 + Matt Pocock 技能集 (约 32 个高纯度研发套件)
 INSTALL_SUPERPOWERS_FULL=0
 INSTALL_DOCS=0
 INSTALL_PLANNING=1
 INSTALL_UI_UX=0
 INSTALL_BIZ=0
-INSTALL_MATTPOCOCK=0
+INSTALL_MATTPOCOCK=1
 INSTALL_ANTHROPIC_EXTRAS=0
 
 show_help() {
@@ -55,8 +55,9 @@ Antigravity / Gemini CLI 的目录与格式，安装到 ~/.gemini/ 下：
   ~/.gemini/agents/<name>.md
 
 用法：
-  ./install.sh                # 默认极简模式：仅安装最核心工程技能（推荐，零 Prompt 膨胀）
-  ./install.sh --all          # 全量生态模式：安装全部技能包 (80+ 个，按需开启)
+  ./install.sh                # 默认工程模式：安装核心工程规范 + 规划 + Matt Pocock 套件 (~32 个)
+  ./install.sh --minimal      # 超精简模式：仅保留 7 个最基础工程规范技能
+  ./install.sh --all          # 全量生态模式：安装全部技能包 (80+ 个，叠加文档/UI-UX/商业化)
   ./install.sh --core         # 核心完整模式：工程规范 (14 个) + 规划 (2 个) + 文档 (4 个)
   ./install.sh --docs         # 叠加多模态长文档支持 (PDF/DOCX/XLSX/PPTX)
   ./install.sh --ui-ux        # 叠加 UI/UX 前端设计技能包 (7 个)

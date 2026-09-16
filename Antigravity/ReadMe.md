@@ -43,9 +43,9 @@
 
 ## 3. 快速安装
 
-### 3.1 默认安装：极简模式（推荐，零 Prompt 膨胀）
+### 3.1 默认安装：高纯度工程模式（推荐，零商业冗余）
 
-直接运行脚本即为**极简安装模式**，仅安装 **核心工程与规划技能**（`using-superpowers` + `brainstorming` + `systematic-debugging` + `test-driven-development` + `verification-before-completion` + `planning-with-files`）与 **6 大核心角色**，最大限度降低上下文开销并保持专注：
+直接运行脚本即为**高纯度工程研发模式**，仅安装 **核心工程与规范技能**（`superpowers` + `planning-with-files`）+ **Matt Pocock 开发者技能集**（共约 **32 个高价值研发技能**，包含 `/tdd`、`/code-review`、`/grill-me`、`/codebase-design` 等）与 **6 大核心角色**，兼顾高生产力与低 Prompt 膨胀：
 
 ```bash
 cd Antigravity
