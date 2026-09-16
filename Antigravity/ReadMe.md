@@ -43,22 +43,22 @@
 
 ## 3. 快速安装
 
-### 3.1 默认安装：全量模式（与 CodeBuddy 体验对齐，推荐）
+### 3.1 默认安装：极简模式（推荐，零 Prompt 膨胀）
 
-直接运行脚本即为**全量安装模式**，一键部署完整工程规范、原生多模态长文档、UI/UX 设计、商业化与 Matt Pocock 专家技能体系（共 **80+ 个 Skills 与 6 大 Agents**），与 `CodeBuddy` 生态体验无缝对齐：
+直接运行脚本即为**极简安装模式**，仅安装 **核心工程与规划技能**（`using-superpowers` + `brainstorming` + `systematic-debugging` + `test-driven-development` + `verification-before-completion` + `planning-with-files`）与 **6 大核心角色**，最大限度降低上下文开销并保持专注：
 
 ```bash
 cd Antigravity
 ./install.sh
 ```
 
-### 3.2 模块化与按需安装
+### 3.2 模块化按需与全量安装
 
-根据你的工作流场景，可自由选择特定模式或极简安装：
+根据你的工作流场景，可按需叠加特定模块，或开启全量模式：
 
 ```bash
-# 极简核心模式：仅安装最核心 5 个工程技能 (调试/TDD/头脑风暴/验收/文件规划)
-./install.sh --minimal
+# 全量生态模式：一键安装全部 80+ 个技能包（文档、UI-UX、商业化等）
+./install.sh --all
 
 # 完整核心模式：工程规范 (14 个) + 规划 (2 个) + 多模态长文档 (4 个)
 ./install.sh --core
