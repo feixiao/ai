@@ -35,14 +35,14 @@ DRY_RUN=0
 CLEAN_MODE=0
 CLEAN_ONLY=0
 
-# 默认极简模式：仅安装最核心的 5 个工程技能
-INSTALL_SUPERPOWERS_FULL=0
-INSTALL_DOCS=0
+# 默认全量模式：安装全部完整生态技能包 (80+ 个)，体验与 CodeBuddy 对齐
+INSTALL_SUPERPOWERS_FULL=1
+INSTALL_DOCS=1
 INSTALL_PLANNING=1
-INSTALL_UI_UX=0
-INSTALL_BIZ=0
-INSTALL_MATTPOCOCK=0
-INSTALL_ANTHROPIC_EXTRAS=0
+INSTALL_UI_UX=1
+INSTALL_BIZ=1
+INSTALL_MATTPOCOCK=1
+INSTALL_ANTHROPIC_EXTRAS=1
 
 show_help() {
   cat <<'EOF'
@@ -55,13 +55,14 @@ Antigravity / Gemini CLI 的目录与格式，安装到 ~/.gemini/ 下：
   ~/.gemini/agents/<name>.md
 
 用法：
-  ./install.sh                # 默认极简模式：仅安装最核心 5 个工程技能（推荐，零 Prompt 膨胀）
+  ./install.sh                # 默认全量模式：安装全部技能包与角色 (80+ Skills, 全生态对齐)
+  ./install.sh --minimal      # 极简核心模式：仅安装最核心 5 个工程技能（调试/TDD/头脑风暴/验收/规划）
   ./install.sh --core         # 核心完整模式：工程规范 (14 个) + 规划 (2 个) + 文档 (4 个)
-  ./install.sh --docs         # 叠加多模态长文档支持 (PDF/DOCX/XLSX/PPTX)
-  ./install.sh --ui-ux        # 叠加 UI/UX 前端设计技能包 (7 个)
-  ./install.sh --biz          # 叠加产品/项目/商业化专家技能包 (~18 个)
-  ./install.sh --mattpocock   # 叠加 Matt Pocock 技能集 (25 个)
-  ./install.sh --all          # 全量模式：安装全部技能包 (80+ 个)
+  ./install.sh --docs         # 仅叠加多模态长文档支持 (PDF/DOCX/XLSX/PPTX)
+  ./install.sh --ui-ux        # 仅叠加 UI/UX 前端设计技能包 (7 个)
+  ./install.sh --biz          # 仅叠加产品/项目/商业化专家技能包 (~18 个)
+  ./install.sh --mattpocock   # 仅叠加 Matt Pocock 技能集 (25 个)
+  ./install.sh --all          # 全量模式：显式安装全部技能包 (80+ 个)
   ./install.sh --clean        # 清空目标目录后重新安装选定模块
   ./install.sh --clean-only   # 仅清理已安装的 skills 与 agents
   ./install.sh --dry-run      # 预演模式：只打印将要执行的动作
@@ -99,6 +100,10 @@ for arg in "$@"; do
       INSTALL_SUPERPOWERS_FULL=1
       INSTALL_DOCS=1
       INSTALL_PLANNING=1
+      INSTALL_UI_UX=0
+      INSTALL_BIZ=0
+      INSTALL_MATTPOCOCK=0
+      INSTALL_ANTHROPIC_EXTRAS=0
       ;;
     --docs)
       INSTALL_DOCS=1
@@ -192,11 +197,11 @@ fi
 run mkdir -p "$DEST/skills" "$DEST/agents" "$DEST/config"
 
 # Antigravity (agy) 全局扫描路径位于 ~/.gemini/config/，建立软链接确保自动加载生效
-if [ ! -e "$DEST/config/skills" ]; then
-  run ln -s "$DEST/skills" "$DEST/config/skills"
+if [ -L "$DEST/config/skills" ] || [ ! -e "$DEST/config/skills" ]; then
+  run ln -sfn "$DEST/skills" "$DEST/config/skills"
 fi
-if [ ! -e "$DEST/config/agents" ]; then
-  run ln -s "$DEST/agents" "$DEST/config/agents"
+if [ -L "$DEST/config/agents" ] || [ ! -e "$DEST/config/agents" ]; then
+  run ln -sfn "$DEST/agents" "$DEST/config/agents"
 fi
 
 info "已选安装方案与模块："
@@ -271,19 +276,23 @@ if [ "$INSTALL_DOCS" = "1" ]; then
   fi
 fi
 
-# 3.4 anthropic-agent-skills 额外套件 (仅在 --all 时启用)
+# 3.4 anthropic-agent-skills 额外套件与示例技能 (mcp-builder / skill-creator / theme-factory 等)
 if [ "$INSTALL_ANTHROPIC_EXTRAS" = "1" ]; then
-  DOCS="$(latest_version "$CLAUDE_CACHE/anthropic-agent-skills/document-skills" || true)"
-  if [ -n "${DOCS:-}" ]; then
-    for s in "${DOCS}skills"/*/; do
-      [ -d "$s" ] || continue
-      name="$(basename "$s")"
-      case "$name" in
-        pdf|docx|xlsx|pptx) ;; # 已在文档中处理
-        *) copy_skill_dir "$s" ;;
-      esac
-    done
-  fi
+  for pkg in document-skills example-skills; do
+    PKG_PATH="$(latest_version "$CLAUDE_CACHE/anthropic-agent-skills/$pkg" || true)"
+    if [ -n "${PKG_PATH:-}" ] && [ -d "${PKG_PATH}skills" ]; then
+      for s in "${PKG_PATH}skills"/*/; do
+        [ -d "$s" ] || continue
+        name="$(basename "$s")"
+        case "$name" in
+          pdf|docx|xlsx|pptx)
+            [ "$INSTALL_DOCS" = "1" ] || copy_skill_dir "$s"
+            ;;
+          *) copy_skill_dir "$s" ;;
+        esac
+      done
+    fi
+  done
 fi
 
 # 3.5 ui-ux-pro-max 前端与界面设计系统
@@ -348,16 +357,17 @@ if os.path.exists(agents_dir):
                     continue
                 if re.match(r"^name:", line):
                     has_name = True
-                    val = line.split(":", 1)[1].strip().strip("\"'")
-                    clean = re.sub(r"[^A-Za-z0-9_-]", "-", val).strip("-")
-                    new_lines.append(f"name: {clean or stem}")
+                    # 规范化 name 为文件标识符（如 design-ux-architect）
+                    clean_stem = re.sub(r"[^A-Za-z0-9_-]", "-", stem).strip("-")
+                    new_lines.append(f"name: {clean_stem}")
                     continue
                 if re.match(r"^model:", line):
                     new_lines.append("model: inherit")
                     continue
                 new_lines.append(line)
             if not has_name:
-                new_lines.insert(0, f"name: {stem}")
+                clean_stem = re.sub(r"[^A-Za-z0-9_-]", "-", stem).strip("-")
+                new_lines.insert(0, f"name: {clean_stem}")
             out = "---\n" + "\n".join(new_lines) + "\n---\n" + body
 
         if not dry_run and out != text:

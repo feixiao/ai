@@ -43,37 +43,37 @@
 
 ## 3. 快速安装
 
-### 3.1 默认安装：极简模式（推荐）
+### 3.1 默认安装：全量模式（与 CodeBuddy 体验对齐，推荐）
 
-直接运行脚本即为**极简模式**，仅安装 **5 个最高频工程核心技能**（`brainstorming` + `systematic-debugging` + `test-driven-development` + `verification-before-completion` + `planning-with-files`），最大限度避免技能过多造成 System Prompt 上下文臃肿和模型注意力分散：
+直接运行脚本即为**全量安装模式**，一键部署完整工程规范、原生多模态长文档、UI/UX 设计、商业化与 Matt Pocock 专家技能体系（共 **80+ 个 Skills 与 6 大 Agents**），与 `CodeBuddy` 生态体验无缝对齐：
 
 ```bash
 cd Antigravity
 ./install.sh
 ```
 
-### 3.2 模块化按需安装
+### 3.2 模块化与按需安装
 
-根据你的工作流场景，自由组合安装技能包：
+根据你的工作流场景，可自由选择特定模式或极简安装：
 
 ```bash
-# 完整核心模式：安装完整工程规范 (14 个) + 规划 (2 个) + 多模态长文档 (4 个)
+# 极简核心模式：仅安装最核心 5 个工程技能 (调试/TDD/头脑风暴/验收/文件规划)
+./install.sh --minimal
+
+# 完整核心模式：工程规范 (14 个) + 规划 (2 个) + 多模态长文档 (4 个)
 ./install.sh --core
 
-# 在极简模式基础上，叠加原生多模态长文档支持 (PDF/DOCX/XLSX/PPTX)
+# 仅叠加原生多模态长文档支持 (PDF/DOCX/XLSX/PPTX)
 ./install.sh --docs
 
-# 叠加 UI/UX 前端设计系统技能包 (7 个)
+# 仅叠加 UI/UX 前端设计系统技能包 (7 个)
 ./install.sh --ui-ux
 
-# 叠加产品规划、项目管理与商业化专家技能包 (~18 个)
+# 仅叠加产品规划、项目管理与商业化专家技能包 (~18 个)
 ./install.sh --biz
 
-# 叠加 Matt Pocock 技能集 (25 个)
+# 仅叠加 Matt Pocock 技能集 (25 个)
 ./install.sh --mattpocock
-
-# 全量模式：安装全部 80+ 个技能
-./install.sh --all
 
 # 清空旧技能与角色后干净重装
 ./install.sh --clean
