@@ -182,14 +182,22 @@ info "目标目录:     $DEST"
 
 if [ "$CLEAN_MODE" = "1" ]; then
   info "清理现有技能与角色目录..."
-  run rm -rf "$DEST/skills" "$DEST/agents"
+  run rm -rf "$DEST/skills" "$DEST/agents" "$DEST/config/skills" "$DEST/config/agents"
   if [ "$CLEAN_ONLY" = "1" ]; then
     info "已成功清理 $DEST/skills 与 $DEST/agents"
     exit 0
   fi
 fi
 
-run mkdir -p "$DEST/skills" "$DEST/agents"
+run mkdir -p "$DEST/skills" "$DEST/agents" "$DEST/config"
+
+# Antigravity (agy) 全局扫描路径位于 ~/.gemini/config/，建立软链接确保自动加载生效
+if [ ! -e "$DEST/config/skills" ]; then
+  run ln -s "$DEST/skills" "$DEST/config/skills"
+fi
+if [ ! -e "$DEST/config/agents" ]; then
+  run ln -s "$DEST/agents" "$DEST/config/agents"
+fi
 
 info "已选安装方案与模块："
 if [ "$INSTALL_SUPERPOWERS_FULL" = "1" ]; then

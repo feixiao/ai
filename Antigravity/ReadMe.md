@@ -18,9 +18,9 @@
 | **原生上下文吞吐** | 200K (超长按需扩展) | 128K ~ 200K | **1M ~ 2M+ 超大上下文** (原生吞吐整个代码库) |
 | **多模态理解** | 图像、基础文档结构 | 基础代码解析 | **全原生多模态** (文本、音视频、图表、复杂 PDF/DOCX) |
 | **推理与逻辑风格** | 极其严谨、代码极简、防过度工程 | 国内研发规范对齐、团队协同 | **深度推理 (High Reasoning) + 极速响应** |
-| **配置目录** | `~/.claude/` | `~/.codebuddy/` | `~/.gemini/` |
-| **技能存放路径** | `~/.claude/skills/` | `~/.codebuddy/skills/` | `~/.gemini/skills/` |
-| **角色存放路径** | `~/.claude/agents/` | `~/.codebuddy/agents/` | `~/.gemini/agents/` |
+| **配置目录** | `~/.claude/` | `~/.codebuddy/` | `~/.gemini/config/` (主配置) / `~/.gemini/` |
+| **技能存放路径** | `~/.claude/skills/` | `~/.codebuddy/skills/` | `~/.gemini/config/skills/` (软链至 `~/.gemini/skills/`) |
+| **角色存放路径** | `~/.claude/agents/` | `~/.codebuddy/agents/` | `~/.gemini/agents/` (同步软链 `~/.gemini/config/agents/`) |
 | **MCP 工具协议** | 原生 STDIO / HTTP MCP | 原生 MCP | **原生 STDIO / HTTP MCP (`settings.json`)** |
 | **核心优势场景** | 精细化 TDD、架构重构、安全代码审查 | 国内大模型适配、企业私有化部署 | **超大代码库全局拓扑分析、快速原型探索、经济吞吐** |
 
