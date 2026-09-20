@@ -15,7 +15,7 @@ CodeBuddy 与 Claude Code 的 Skill 格式基本同源，但有四处必须注�
 | :--- | :--- | :--- |
 | 用户级目录 | `~/.claude/skills/<name>/SKILL.md` | `~/.codebuddy/skills/<name>/SKILL.md` |
 | 项目级目录 | `.claude/skills/` | `.codebuddy/skills/`（项目级优先于用户级） |
-| 安装方式 | `claude plugin marketplace add ...` | 无等价 marketplace 命令，需**把插件里的 `skills/*` 目录复制/软链**到上述目录（本仓库提供 `install.sh`） |
+| 安装方式 | `claude plugin marketplace add ...` | 用 `/plugin` 添加 marketplace，再由本仓库的 `install.sh` 把插件里的 `skills/*` 复制/软链到上述目录 |
 | 路径占位符 | `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` | `${CODEBUDDY_SKILL_DIR}`（另有 `${CODEBUDDY_PLUGIN_ROOT}`，但**用户级 skill 中不会被替换**） |
 | Frontmatter Hooks | 插件来源自动注册 | 需 `~/.codebuddy/settings.json` 中 `"allowUntrustedFrontmatterHooks": true` 才注册 |
 
@@ -139,16 +139,27 @@ chmod +x install.sh
 ```
 
 脚本会依次完成：
-1. 复制 `~/.claude/agents/*.md` → `~/.codebuddy/agents/`；
-2. 复制各插件 `skills/*` → `~/.codebuddy/skills/`；
-3. 复制 `code-review` / `ralph-loop` command → `~/.codebuddy/commands/`（含 ralph-loop 的 `scripts/` 与 `hooks/`）；
+1. 复制 `~/.claude/agents/*.md` → `~/.codebuddy/agents/`（外加官方 `code-simplifier` agent）；
+2. 扫描 `~/.codebuddy/plugins/marketplaces/`，按档位清单把 Skill 复制 → `~/.codebuddy/skills/`；
+3. 复制 `code-review` / `ralph-loop` 等 command → `~/.codebuddy/commands/`（含 ralph-loop 的 `scripts/` 与 `hooks/`）；
 4. 归一化 agent 的 `name` 字段、移除 `emoji` / `color`、把 Claude 模型别名改为 `inherit`；
-5. 把 `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` / `~/.claude/skills` 改写为 CodeBuddy 等价路径。
+5. 把 `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` / `${CODEBUDDY_PLUGIN_ROOT}` / `~/.claude/skills` 改写为 CodeBuddy 等价路径。
+
+清单里点了名但在 marketplace 下找不到的 Skill / Command，脚本结束时**会显式列出告警**，不会静默少装。本机 minimal 档会命中三个：`grilling`、`domain-modeling`、`planning-with-files`——它们来自 CodeBuddy marketplace 未收录的上游，加 `--fetch` 即可从 git 直下：
+
+```bash
+./install.sh --fetch
+```
+
+`--fetch` 默认关闭（不联网、不需要 git），上游登记表在 `install.sh` 的 `FETCH_SOURCES`。注意原上游 `mattpocock/mattpocock-skills` 已不存在，前两个取自镜像仓库 `FeatherHunter/dsh-mattpocock-skills-deck`。
 
 可用环境变量覆盖来源与目的地：
 
 ```bash
-CLAUDE_CACHE=/path/to/cache CLAUDE_AGENTS=/path/to/agents CODEBUDDY_HOME=$HOME/.codebuddy ./install.sh
+CB_MARKETPLACES=$HOME/.codebuddy/plugins/marketplaces \
+CLAUDE_AGENTS=$HOME/.claude/agents \
+CODEBUDDY_HOME=$HOME/.codebuddy \
+./install.sh
 ```
 
 ### 步骤 2：可选——启用 Skill 的 Frontmatter Hooks
@@ -289,12 +300,12 @@ CodeBuddy 提供 `skillOverrides` 设置，可在**不修改 SKILL.md** 的前�
 ## 6. 维护与清理建议
 
 - **定期体检**：`ls ~/.codebuddy/skills/` 超过约 20 个时，建议用 `skillOverrides` 精简非常用项。
-- **重新同步**：Claude Code 侧升级插件后，重跑 `./install.sh` 即可覆盖更新（脚本对同名目录先 `rm -rf` 再复制）。
+- **重新同步**：marketplace 侧新增或升级插件后，重跑 `./install.sh` 即可覆盖更新（脚本对同名目录先 `rm -rf` 再复制）。
 - **占位符巡检**：升级后可检查是否残留未改写的插件路径：
   ```bash
-  grep -rl 'CLAUDE_PLUGIN_ROOT' ~/.codebuddy/skills
+  grep -rl 'CLAUDE_PLUGIN_ROOT\|CODEBUDDY_PLUGIN_ROOT' ~/.codebuddy/skills
   ```
-  正常情况下仅 `planning-with-files` 的 `${CLAUDE_PLUGIN_ROOT:-...}` 兜底表达式与 `ui-ux-pro-max/scripts/tests/` 下的开发测试文件会命中，二者均不影响运行。
+  正常情况下应无命中——这几个占位符只对插件来源的 skill 生效，留在用户级目录里会让脚本路径拿到字面量。
 
 ---
 

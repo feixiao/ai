@@ -11,16 +11,16 @@
 
 ## 1. 前置条件
 
-脚本从 **Claude Code 已安装的插件缓存与全局 agents 目录**中抽取内容，因此需要先具备 Claude Code 环境：
+脚本从 **CodeBuddy 已添加的 marketplace 目录**与 **Claude Code 全局 agents 目录**中抽取内容：
 
 | 依赖 | 默认路径 | 说明 |
 | :--- | :--- | :--- |
-| 插件缓存 | `~/.claude/plugins/cache/` | 由 `claude plugin install ...` 产生 |
-| 全局 agents | `~/.claude/agents/` | agency-agents-zh 角色文件 |
+| CodeBuddy marketplace | `~/.codebuddy/plugins/marketplaces/` | Skill 与 Command 的来源，由 `/plugin` 添加 marketplace 后产生 |
+| 全局 agents | `~/.claude/agents/` | agency-agents-zh 角色文件（仍来自 Claude Code 侧） |
 | CodeBuddy CLI | `codebuddy` | 需能正常启动会话 |
 | Python 3 | `python3` | 用于 frontmatter 归一化与占位符改写 |
 
-若尚未在 Claude Code 侧安装对应插件，参见 [`../ClaudeCode/RECOMMENDED_SKILLS.md`](../ClaudeCode/RECOMMENDED_SKILLS.md) 的「步骤 1 / 步骤 2」完成插件注册与安装后，再回到本目录执行脚本。
+脚本会扫描 marketplace 下两种布局的 Skill：`…/<plugin>/skills/<name>/SKILL.md`（插件打包多个 skill）与 `…/<name>/SKILL.md`（插件根目录自身即 skill）。清单里点了名但扫描不到的 Skill / Command，会在结束时显式列出告警，不会静默跳过。
 
 ---
 
@@ -109,9 +109,9 @@ Agent 用 glob pattern 匹配（不是逐个列名），因此上游新增 `engi
 | 阶段 | 动作 |
 | :--- | :--- |
 | **1. Agents** | 复制 `~/.claude/agents/*.md`，把 `name` 归一化为文件名主干，移除 Claude 专属的 `emoji` / `color`，把 `model: opus` 之类别名改为 `inherit`；额外补入官方 `code-simplifier` agent（按档位的 `PROFILE_AGENTS` pattern 过滤） |
-| **2. Skills** | 从 `document-skills`、`superpowers`、`mattpocock-skills`（仅 `engineering` / `productivity`）、`planning-with-files`（英文 + 中文）、`ui-ux-pro-max`、`product-skills`、`pm-skills`、`commercial-skills` 中复制 `skills/*` 目录（默认档按 `load_profile()` 的清单过滤，只保留清单内目录） |
-| **3. Commands** | 复制 `code-review` 与 `ralph-loop` 的 command 文件，并带上 ralph-loop 的 `scripts/` 与 `hooks/`（按 `PROFILE_COMMANDS` 过滤；`ralph-loop` 不在档内时连资源目录一起不装） |
-| **4. 适配** | 把 `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` / `~/.claude/skills` 改写为 CodeBuddy 等价路径（`${CODEBUDDY_SKILL_DIR}`、`~/.codebuddy/skills`） |
+| **2. Skills** | 扫描 `~/.codebuddy/plugins/marketplaces/` 下所有 marketplace，按 `load_profile()` 的清单按名抽取 Skill 目录（默认档只装清单内项；`--full` 装扫描到的全部） |
+| **3. Commands** | 按名在 marketplace 的 `commands/` 里找 `code-review`、`ralph-loop`、`cancel-ralph`、`help`，并带上 ralph-loop 的 `scripts/` 与 `hooks/`（按 `PROFILE_COMMANDS` 过滤；`ralph-loop` 不在档内时连资源目录一起不装） |
+| **4. 适配** | 把 `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` / `${CODEBUDDY_PLUGIN_ROOT}` / `~/.claude/skills` 改写为 CodeBuddy 等价路径（`${CODEBUDDY_SKILL_DIR}`、`~/.codebuddy/skills`）。前两者在用户级 skill 中不会再被替换，留着字面量会让脚本路径失效，必须改写 |
 
 脚本**幂等**：重跑会先 `rm -rf` 同名目录再复制，因此 Claude Code 侧插件升级后重跑即可同步。默认不会删除清单外的旧内容——要从宽档回退到窄档，用 `./install.sh --profile=invest --prune`，它会清掉三类目标下不在该档清单内的内容：`~/.codebuddy/skills/<dir>/`（目录）、`~/.codebuddy/agents/*.md`、`~/.codebuddy/commands/*.md`，以及 `ralph-loop` 不在档内时的 `commands/ralph-loop/` 资源目录。你自己手动放的文件同样会被删。`--profile=full --prune` 是 no-op。`agents/` 下非 `.md` 的目录不处理。
 
@@ -122,13 +122,15 @@ Agent 用 glob pattern 匹配（不是逐个列名），因此上游新增 `engi
 ./install.sh --profile=eng      # 换档：minimal|eng|pm|invest|full（也支持 --profile eng）
 ./install.sh --full             # 等价于 --profile=full
 ./install.sh --prune            # 删除不在当前档清单内的 Skill / Agent / Command（full 档为 no-op）
+./install.sh --fetch            # marketplace 里找不到的 Skill，改从上游 git 直下（需 git，默认关闭）
 ./install.sh --list             # 打印当前档的 Skill / Agent / Command 清单后退出
 ./install.sh --dry-run          # 空跑
 ./install.sh -h                 # 打印用法
 
-CLAUDE_CACHE=/path/to/cache \   # 默认 ~/.claude/plugins/cache
-CLAUDE_AGENTS=/path/to/agents \ # 默认 ~/.claude/agents
-CODEBUDDY_HOME=$HOME/.codebuddy \
+CB_MARKETPLACES=$HOME/.codebuddy/plugins/marketplaces \  # Skill / Command 来源
+CLAUDE_AGENTS=$HOME/.claude/agents \                     # Agent 来源
+CODEBUDDY_HOME=$HOME/.codebuddy \                        # 安装目标
+SKILL_FETCH_DIR=$HOME/.cache/codebuddy-skills \          # --fetch 的 clone 缓存目录
 ./install.sh
 ```
 
@@ -160,7 +162,14 @@ grep -rn 'CLAUDE_PLUGIN_ROOT' ~/.codebuddy/skills
 ### 5.4 `planning-with-files` 的 hooks 没生效
 非内置来源的 Skill frontmatter hooks 默认不注册。在 `~/.codebuddy/settings.json` 加入 `"allowUntrustedFrontmatterHooks": true` 后重启会话。
 
-### 5.5 装的 Skill 太多，感觉模型注意力被稀释
+### 5.5 清单里点了名的 Skill 没装上
+
+脚本结束时若有 `[!] 清单中有 N 个 Skill … 找不到` 的告警，说明这些 Skill 在你本机的 marketplace 里没有。两条路：
+
+1. 登记过上游的用 `--fetch` 直下（需要 `git`，仓库缓存在 `~/.cache/codebuddy-skills/`，重跑会复用）。上游登记表写在 `install.sh` 的 `FETCH_SOURCES` 里，目前收录 `grilling`、`domain-modeling`、`planning-with-files`——注意原上游 `mattpocock/mattpocock-skills` 已不存在，前两个取自镜像仓库。
+2. 没登记过的手动放：`~/.codebuddy/skills/<name>/SKILL.md`。
+
+### 5.6 装的 Skill 太多，感觉模型注意力被稀释
 用 `skillOverrides` 按角色裁剪，详见 [`RECOMMENDED_SKILLS.md` § 4.3](./RECOMMENDED_SKILLS.md)。示例：
 
 ```json

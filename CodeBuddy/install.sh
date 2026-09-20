@@ -2,8 +2,8 @@
 #
 # CodeBuddy Skills / Agents / Commands 一键安装脚本
 # ---------------------------------------------------------------
-# 从 Claude Code 已安装的插件缓存与全局 agents 目录中抽取内容，适配为
-# CodeBuddy 的目录与格式，安装到 ~/.codebuddy/ 下：
+# 从 CodeBuddy 已添加的 marketplace 与 Claude Code 全局 agents 目录中抽取内容，
+# 适配为 CodeBuddy 的目录与格式，安装到 ~/.codebuddy/ 下：
 #
 #   ~/.codebuddy/skills/<name>/SKILL.md
 #   ~/.codebuddy/agents/<name>.md
@@ -14,21 +14,25 @@
 #   ./install.sh --profile=eng|pm|invest # 按角色安装该角色的 Skill 清单
 #   ./install.sh --full                 # 等价于 --profile=full，装全部来源的 Skill
 #   ./install.sh --prune                # 删除目标目录里不在当前 profile 清单内的 Skill
+#   ./install.sh --fetch                # 清单里 marketplace 没有的 Skill，改从上游 git 仓库直下
 #   ./install.sh --dry-run              # 只打印将要执行的动作
 #
 # 可用环境变量覆盖来源与目标：
-#   CLAUDE_CACHE    默认 ~/.claude/plugins/cache
-#   CLAUDE_AGENTS   默认 ~/.claude/agents
-#   CODEBUDDY_HOME  默认 ~/.codebuddy
+#   CB_MARKETPLACES   默认 ~/.codebuddy/plugins/marketplaces
+#   CLAUDE_AGENTS     默认 ~/.claude/agents
+#   CODEBUDDY_HOME    默认 ~/.codebuddy
+#   SKILL_FETCH_DIR   默认 ~/.cache/codebuddy-skills（--fetch 的 clone 缓存目录）
 #
 set -euo pipefail
 
-CLAUDE_CACHE="${CLAUDE_CACHE:-$HOME/.claude/plugins/cache}"
+CB_MARKETPLACES="${CB_MARKETPLACES:-$HOME/.codebuddy/plugins/marketplaces}"
 CLAUDE_AGENTS="${CLAUDE_AGENTS:-$HOME/.claude/agents}"
 DEST="${CODEBUDDY_HOME:-$HOME/.codebuddy}"
+SKILL_FETCH_DIR="${SKILL_FETCH_DIR:-$HOME/.cache/codebuddy-skills}"
 DRY_RUN=0
 FULL=0
 PRUNE=0
+FETCH=0
 PROFILE=minimal
 PROFILE_SKILLS=()
 
@@ -101,14 +105,16 @@ usage() {
   ./install.sh --profile eng            同上，等号与空格两种写法都支持
   ./install.sh --full                   等价于 --profile=full
   ./install.sh --prune                  删除目标目录里不在当前档清单内的 Skill / Agent / Command
+  ./install.sh --fetch                  清单里 marketplace 找不到的 Skill，改从上游 git 直下（需 git）
   ./install.sh --list                   打印当前 profile 的 Skill 清单后退出
   ./install.sh --dry-run                只打印将要执行的动作，不写盘
   ./install.sh -h|--help                打印本帮助
 
 环境变量：
-  CLAUDE_CACHE    默认 ~/.claude/plugins/cache
-  CLAUDE_AGENTS   默认 ~/.claude/agents
-  CODEBUDDY_HOME  默认 ~/.codebuddy
+  CB_MARKETPLACES   默认 ~/.codebuddy/plugins/marketplaces
+  CLAUDE_AGENTS     默认 ~/.claude/agents
+  CODEBUDDY_HOME    默认 ~/.codebuddy
+  SKILL_FETCH_DIR   默认 ~/.cache/codebuddy-skills（--fetch 的 clone 缓存目录）
 USAGE
 }
 
@@ -118,6 +124,7 @@ while [ $# -gt 0 ]; do
     --dry-run)     DRY_RUN=1 ;;
     --full)        PROFILE=full ;;
     --prune)       PRUNE=1 ;;
+    --fetch)       FETCH=1 ;;
     --list)        LIST_ONLY=1 ;;
     --profile=*)   PROFILE="${1#--profile=}" ;;
     --profile)
@@ -152,12 +159,94 @@ run() {
   if [ "$DRY_RUN" = "1" ]; then echo "  [dry-run] $*"; else "$@"; fi
 }
 
-# 取插件目录下最新的版本目录（形如 <plugin>/<version>/）
-latest_version() { ls -d "$1"/*/ 2>/dev/null | sort -V | tail -1; }
+# ---- CodeBuddy marketplace 源定位 ----
+# 支持两种布局（<mkt> = ~/.codebuddy/plugins/marketplaces/<marketplace>）：
+#   <mkt>/<plugins|external_plugins>/<plugin>/skills/<name>/SKILL.md   插件打包多个 skill
+#   <mkt>/<plugins|external_plugins>/<name>/SKILL.md                   插件根目录自身即 skill
+# codebuddy-plugins-official 排在前面，同名 skill 优先取官方源。
+list_all_skill_sources() { # 每行输出 "<name>\t<srcdir>"
+  local mkt d
+  for mkt in "$CB_MARKETPLACES/codebuddy-plugins-official" "$CB_MARKETPLACES"/*/; do
+    [ -d "$mkt" ] || continue
+    for d in "$mkt"/*/*/skills/*/; do
+      if [ -f "${d}SKILL.md" ]; then printf '%s\t%s\n' "$(basename "$d")" "${d%/}"; fi
+    done
+    for d in "$mkt"/*/*/ "$mkt"/*/; do
+      if [ -f "${d}SKILL.md" ]; then printf '%s\t%s\n' "$(basename "$d")" "${d%/}"; fi
+    done
+  done
+}
+
+# 只扫一次盘建索引，后续按名字查表（逐个 skill 遍历 marketplace 太慢）
+SKILL_INDEX="$(mktemp -t cb-skill-index)"
+trap 'rm -f "$SKILL_INDEX"' EXIT
+list_all_skill_sources > "$SKILL_INDEX"
+
+find_skill_source() { # $1 = skill 名；命中则输出源目录，未命中输出空
+  awk -F'\t' -v n="$1" '$1 == n { print $2; exit }' "$SKILL_INDEX"
+}
+
+find_agent_file() { # $1 = agent 名（不含 .md）；命中则输出 .md 路径
+  local f
+  for f in "$CB_MARKETPLACES/codebuddy-plugins-official"/*/*/agents/"$1".md \
+           "$CB_MARKETPLACES"/*/*/agents/"$1".md; do
+    if [ -f "$f" ]; then printf '%s\n' "$f"; return 0; fi
+  done
+  return 1
+}
+
+find_command_file() { # $1 = command 名（不含 .md）；命中则输出 .md 路径
+  local f
+  for f in "$CB_MARKETPLACES/codebuddy-plugins-official"/*/*/commands/"$1".md \
+           "$CB_MARKETPLACES"/*/*/commands/"$1".md; do
+    if [ -f "$f" ]; then printf '%s\n' "$f"; return 0; fi
+  done
+  return 1
+}
+
+# ---- marketplace 里没有的 skill，走上游 git 直下（仅 --fetch 启用，需要 git） ----
+# 格式："<skill 名>|<git 仓库>|<仓库内相对路径>"
+# 注意：mattpocock/mattpocock-skills 已不存在，grilling / domain-modeling 取自其镜像仓库。
+FETCH_SOURCES=(
+  "grilling|https://github.com/FeatherHunter/dsh-mattpocock-skills-deck|package/bundled-skills/grilling"
+  "domain-modeling|https://github.com/FeatherHunter/dsh-mattpocock-skills-deck|package/bundled-skills/domain-modeling"
+  "planning-with-files|https://github.com/OthmanAdi/planning-with-files|.codebuddy/skills/planning-with-files"
+)
+
+fetch_skill() { # $1 = skill 名；命中并就绪则输出本地目录，未命中输出空
+  local name="$1" entry rest repo sub workdir
+  for entry in "${FETCH_SOURCES[@]}"; do
+    [ "${entry%%|*}" = "$name" ] || continue
+    rest="${entry#*|}"
+    repo="${rest%%|*}"
+    sub="${rest#*|}"
+    workdir="$SKILL_FETCH_DIR/$(basename "$repo" .git)"
+    if [ "$DRY_RUN" = "1" ]; then
+      # 走 stderr，避免被 $(fetch_skill ...) 捕获后混进后面的 cp -R 行
+      echo "  [dry-run] git clone --depth 1 ${repo} ${workdir}（取 ${sub}）" >&2
+      printf '%s\n' "$workdir/$sub"
+      return 0
+    fi
+    if [ ! -d "$workdir/.git" ]; then
+      run mkdir -p "$SKILL_FETCH_DIR"
+      run rm -rf "$workdir"
+      if ! run git clone --depth 1 -q "$repo" "$workdir"; then
+        warn "clone 失败：$repo"
+        return 1
+      fi
+    fi
+    if [ -f "$workdir/$sub/SKILL.md" ]; then printf '%s\n' "$workdir/$sub"; return 0; fi
+    warn "${name}：${repo} 中未找到 ${sub}/SKILL.md"
+    return 1
+  done
+  return 1
+}
 
 SKIPPED=0 # 各阶段跳过计数，供结尾统计
 SKIP_AGENTS=0
 SKIP_CMDS=0
+MISSING_SKILLS=() # 清单里有、但 marketplace 中找不到的 skill
+MISSING_CMDS=()
 
 want_skill() { # $1 = skill 目录名；全量档一律放行
   [ "$FULL" = "1" ] && return 0
@@ -199,19 +288,14 @@ copy_skill_dir() { # $1 = 源 skill 目录
   run cp -R "$src" "$DEST/skills/$name"
 }
 
-copy_skills_in() { # $1 = 含若干 skill 子目录的父目录
-  local p
-  for p in "$1"/*/; do
-    [ -d "$p" ] || continue
-    copy_skill_dir "$p"
-  done
-}
-
 require_dir() {
   [ -d "$1" ] || { warn "缺少目录：$1（跳过）"; return 1; }
 }
 
-info "来源： $CLAUDE_CACHE"
+if [ ! -d "$CB_MARKETPLACES" ]; then
+  warn "缺少 marketplace 目录：${CB_MARKETPLACES}（Skill / Command 阶段将全部落空）"
+fi
+info "来源： $CB_MARKETPLACES"
 info "目标： $DEST"
 if [ "$FULL" = "1" ]; then
   info "档位： 全量（profile=full）"
@@ -236,87 +320,70 @@ if require_dir "$CLAUDE_AGENTS"; then
   done
 fi
 
-CS_VER="$(latest_version "$CLAUDE_CACHE/claude-plugins-official/code-simplifier" || true)"
-if [ -n "${CS_VER:-}" ] && [ -f "${CS_VER}agents/code-simplifier.md" ]; then
-  if want_agent code-simplifier; then
-    run cp "${CS_VER}agents/code-simplifier.md" "$DEST/agents/code-simplifier.md"
+# code-simplifier 是官方插件自带的 agent，不在 ~/.claude/agents 下，单独从 marketplace 取
+if want_agent code-simplifier; then
+  CS="$(find_agent_file code-simplifier || true)"
+  if [ -n "${CS:-}" ]; then
+    run cp "$CS" "$DEST/agents/code-simplifier.md"
   else
+    warn "marketplace 中未找到 agent：code-simplifier（跳过）"
     SKIP_AGENTS=$((SKIP_AGENTS + 1))
   fi
+else
+  SKIP_AGENTS=$((SKIP_AGENTS + 1))
 fi
 
 # =====================================================================
-# 2. Skills —— 按插件来源分批复制
+# 2. Skills —— 按 profile 清单从 marketplace 抽取
 # =====================================================================
 info "安装 Skills -> $DEST/skills"
 
-# 2.1 Anthropic 官方文档三剑客（xlsx / pdf / docx / pptx / mcp-builder 等）
-DS="$(latest_version "$CLAUDE_CACHE/anthropic-agent-skills/document-skills" || true)"
-[ -n "${DS:-}" ] && copy_skills_in "${DS}skills"
-
-# 2.2 superpowers 工程方法论全家桶（TDD / 根因调试 / worktree / 头脑风暴 等）
-SP="$(latest_version "$CLAUDE_CACHE/claude-plugins-official/superpowers" || true)"
-[ -n "${SP:-}" ] && copy_skills_in "${SP}skills"
-
-# 2.3 mattpocock-skills —— 只取 engineering / productivity 两个稳定目录
-MP="$(latest_version "$CLAUDE_CACHE/mattpocock/mattpocock-skills" || true)"
-if [ -n "${MP:-}" ]; then
-  copy_skills_in "${MP}skills/engineering"
-  copy_skills_in "${MP}skills/productivity"
+if [ "$FULL" = "1" ]; then
+  # 全量档：装 marketplace 里能找到的全部 skill，同名只取第一个来源
+  while IFS=$'\t' read -r name src; do
+    [ -n "$name" ] || continue
+    copy_skill_dir "$src"
+  done < <(awk -F'\t' '!seen[$1]++' "$SKILL_INDEX")
+else
+  for name in "${PROFILE_SKILLS[@]}"; do
+    src="$(find_skill_source "$name")"
+    # marketplace 里没有、且开了 --fetch 的，退回上游 git 直下
+    if [ -z "$src" ] && [ "$FETCH" = "1" ]; then
+      src="$(fetch_skill "$name" || true)"
+    fi
+    if [ -z "$src" ]; then
+      MISSING_SKILLS+=("$name")
+      continue
+    fi
+    copy_skill_dir "$src"
+  done
 fi
-
-# 2.4 planning-with-files 持久化跨会话规划（英文主版 + 中文版）
-PF="$(latest_version "$CLAUDE_CACHE/planning-with-files/planning-with-files" || true)"
-if [ -n "${PF:-}" ]; then
-  [ -d "${PF}skills/planning-with-files" ] && copy_skill_dir "${PF}skills/planning-with-files"
-  # 中文版随英文主版一起走，不单列进清单
-  if [ -d "${PF}skills/i18n/planning-with-files-zh" ] && want_skill planning-with-files; then
-    run rm -rf "$DEST/skills/planning-with-files-zh"
-    run cp -R "${PF}skills/i18n/planning-with-files-zh" "$DEST/skills/planning-with-files-zh"
-  fi
-fi
-
-# 2.5 ui-ux-pro-max 前端设计系统
-UX="$(latest_version "$CLAUDE_CACHE/ui-ux-pro-max-skill/ui-ux-pro-max" || true)"
-[ -n "${UX:-}" ] && copy_skills_in "${UX}.claude/skills"
-
-# 2.6 alirezarezvani/claude-skills 垂类专家包：产品 / 项目管理 / 商业化
-for pkg in product-skills pm-skills commercial-skills; do
-  V="$(latest_version "$CLAUDE_CACHE/claude-code-skills/$pkg" || true)"
-  [ -n "${V:-}" ] && copy_skills_in "${V}skills"
-done
 
 # =====================================================================
 # 3. Commands —— code-review / ralph-loop（含配套脚本）
 # =====================================================================
 info "安装 Commands -> $DEST/commands"
 
-CR="$(latest_version "$CLAUDE_CACHE/claude-plugins-official/code-review" || true)"
-if [ -n "${CR:-}" ] && [ -f "${CR}commands/code-review.md" ]; then
-  if want_command code-review; then
-    run cp "${CR}commands/code-review.md" "$DEST/commands/code-review.md"
-  else
+RL_ROOT="" # ralph-loop 插件根目录，供后面拷 scripts/ 与 hooks/
+for name in code-review ralph-loop cancel-ralph help; do
+  if ! want_command "$name"; then
     SKIP_CMDS=$((SKIP_CMDS + 1))
+    continue
   fi
-fi
+  f="$(find_command_file "$name" || true)"
+  if [ -z "$f" ]; then
+    MISSING_CMDS+=("$name")
+    continue
+  fi
+  run cp "$f" "$DEST/commands/$(basename "$f")"
+  if [ "$name" = ralph-loop ]; then RL_ROOT="$(dirname "$(dirname "$f")")"; fi
+done
 
-RL="$(latest_version "$CLAUDE_CACHE/claude-plugins-official/ralph-loop" || true)"
-if [ -n "${RL:-}" ] && [ -d "${RL}commands" ]; then
-  for f in "${RL}commands"/*.md; do
-    [ -f "$f" ] || continue
-    name="$(basename "$f" .md)"
-    if ! want_command "$name"; then
-      SKIP_CMDS=$((SKIP_CMDS + 1))
-      continue
-    fi
-    run cp "$f" "$DEST/commands/$(basename "$f")"
-  done
-  # ralph-loop 依赖 scripts/setup-ralph-loop.sh 与 hooks/stop-hook.sh
-  if want_command ralph-loop; then
-    run mkdir -p "$DEST/commands/ralph-loop"
-    [ -d "${RL}scripts" ] && run cp -R "${RL}scripts" "$DEST/commands/ralph-loop/"
-    [ -d "${RL}hooks" ]   && run cp -R "${RL}hooks"   "$DEST/commands/ralph-loop/"
-  fi
+# ralph-loop 依赖 scripts/setup-ralph-loop.sh 与 hooks/stop-hook.sh
+if [ -n "$RL_ROOT" ]; then
+  run mkdir -p "$DEST/commands/ralph-loop"
+  [ -d "$RL_ROOT/scripts" ] && run cp -R "$RL_ROOT/scripts" "$DEST/commands/ralph-loop/"
+  [ -d "$RL_ROOT/hooks" ]   && run cp -R "$RL_ROOT/hooks"   "$DEST/commands/ralph-loop/"
 fi
 
 # =====================================================================
@@ -367,6 +434,8 @@ for md in sorted((dest / "skills").rglob("*.md")):
             t = t.replace(pat, SKILL_DIR)
     t = t.replace("${CLAUDE_PLUGIN_ROOT}", SKILL_DIR)
     t = t.replace("${CLAUDE_SKILL_DIR}", SKILL_DIR)
+    # 该占位符只对插件来源的 skill 生效；复制到用户级目录后会保留字面量，故一并改写
+    t = t.replace("${CODEBUDDY_PLUGIN_ROOT}", SKILL_DIR)
     t = t.replace("${CLAUDE_SESSION_ID}", "${CODEBUDDY_SESSION_ID}")
     t = t.replace("$HOME/.claude/skills", "$HOME/.codebuddy/skills")
     t = t.replace("~/.claude/skills", "~/.codebuddy/skills")
@@ -431,6 +500,16 @@ if [ "$DRY_RUN" = "0" ]; then
   info "完成：$n_skills 个 Skill / $n_agents 个 Agent / $n_cmds 个 Command"
   if [ "$FULL" = "0" ] && [ $((SKIPPED + SKIP_AGENTS + SKIP_CMDS)) -gt 0 ]; then
     echo "  profile=${PROFILE}：跳过 $SKIPPED 个 Skill / $SKIP_AGENTS 个 Agent / $SKIP_CMDS 个 Command。换档用 --profile=...，清理用 --prune。"
+  fi
+  # 清单里点了名但 marketplace 里没有的，必须显式报出来——否则会静默少装
+  if [ "${#MISSING_SKILLS[@]}" -gt 0 ]; then
+    warn "清单中有 ${#MISSING_SKILLS[@]} 个 Skill 在 $CB_MARKETPLACES 下找不到：$(printf '%s ' "${MISSING_SKILLS[@]}")"
+    if [ "$FETCH" = "0" ]; then
+      echo "    其中登记过上游的可用 --fetch 直下（需 git）；未登记的需手动放入 ~/.codebuddy/skills/<name>/SKILL.md"
+    fi
+  fi
+  if [ "${#MISSING_CMDS[@]}" -gt 0 ]; then
+    warn "清单中有 ${#MISSING_CMDS[@]} 个 Command 在 $CB_MARKETPLACES 下找不到：$(printf '%s ' "${MISSING_CMDS[@]}")"
   fi
   echo
   echo "  在 CodeBuddy 会话中用 /skills 与 /agents 查看已加载内容（需重启会话）。"
