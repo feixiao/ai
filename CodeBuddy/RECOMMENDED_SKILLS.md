@@ -130,8 +130,12 @@ chmod +x install.sh
 # 先空跑确认动作
 ./install.sh --dry-run
 
-# 实际安装（默认写入 ~/.codebuddy/）
+# 实际安装（默认 profile=minimal：12 个核心 Skill，写入 ~/.codebuddy/）
 ./install.sh
+
+# 按角色换档：./install.sh --profile=eng|pm|invest|full
+# 换到窄档并清掉旧 Skill：./install.sh --profile=invest --prune
+# 打印某档清单：./install.sh --profile=eng --list
 ```
 
 脚本会依次完成：
@@ -175,7 +179,7 @@ CLAUDE_CACHE=/path/to/cache CLAUDE_AGENTS=/path/to/agents CODEBUDDY_HOME=$HOME/.
 2. 命中职责范围时模型主动调用 `Skill` 工具，按需把完整 `SKILL.md` 载入上下文；
 3. 声明 `context: fork` 的 Skill 可在独立 subagent 上下文中执行，避免污染主会话。
 
-> ⚠️ **本次共安装 101 个 Skill**。索引本身开销不大，但如果发现模型注意力被稀释，建议按 4.3 的表做角色化裁剪。
+> ⚠️ **`--profile=full` 共 101 个 Skill**；默认 `minimal` 档只装 12 个。装前先按角色选档（`--profile=eng|pm|invest`），比装完再裁剪更省事；装完仍可用 4.3 的 `skillOverrides` 做细粒度启停。
 
 ### 4.2 三种触发姿势
 

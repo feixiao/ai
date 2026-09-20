@@ -158,7 +158,16 @@ cp ~/.codebuddy/agents/security-appsec-engineer.md        .codebuddy/agents/
 
 ### 方案 B：用户级全局组合（本脚本默认）
 
-`./install.sh` 会把 18 个角色写入 `~/.codebuddy/agents/`，对本机所有会话生效。适合三重复合角色高频切换的个人工作流。
+`./install.sh`（默认 `profile=minimal`）会把 18 个角色写入 `~/.codebuddy/agents/`，对本机所有会话生效。适合三重复合角色高频切换的个人工作流。
+
+只想装某一类角色时用 profile 裁剪，Agent 按前缀匹配：
+
+```bash
+./install.sh --profile=eng      # engineering-* / security-* / design-* / code-simplifier
+./install.sh --profile=invest   # finance-* / specialized-* / product-trend-researcher
+./install.sh --profile=pm       # product-* / design-* / engineering-frontend-developer
+./install.sh --profile=eng --prune   # 顺带清掉上一档留下的其他角色
+```
 
 ### 方案 C：临时动态引用（免安装，零开销）
 

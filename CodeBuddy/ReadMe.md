@@ -33,9 +33,26 @@ chmod +x install.sh
 # 1) 先空跑，确认将要执行的动作
 ./install.sh --dry-run
 
-# 2) 实际安装（默认写入 ~/.codebuddy/）
+# 2) 实际安装（默认 profile=minimal：12 个核心 Skill，写入 ~/.codebuddy/）
 ./install.sh
+
+# 按角色换档：eng / pm / invest / full
+./install.sh --profile=eng
 ```
+
+各档清单写在 `install.sh` 的 `load_profile()` 里，用 `./install.sh --profile=eng --list` 打印。四档定位：
+
+| profile | Skill | Agent（pattern） | Command |
+| :--- | :--- | :--- | :--- |
+| `minimal`（默认） | 12：文档三剑客 + 核心工程方法 + 质询 + 设计 + 规划 | 全部（`*`） | `code-review` |
+| `eng` | 27：superpowers 全家桶、建模质询、前端设计 7 项、MCP、规划 | `engineering-*`、`security-*`、`design-*`、`code-simplifier` | `code-review`、`ralph-loop`、`cancel-ralph`、`help` |
+| `pm` | 35：文档 + 质询 + product / pm / commercial 三包 | `product-*`、`design-*`、`engineering-frontend-developer` | `code-review` |
+| `invest` | 12：文档三剑客 + 红队质询 + 可视化 | `finance-*`、`specialized-*`、`product-trend-researcher` | `code-review` |
+| `full` | 不筛选 | 不筛选 | 不筛选 |
+
+Agent 用 glob pattern 匹配（不是逐个列名），因此上游新增 `engineering-xxx.md` 会自动归入 `eng` 档。
+
+中文版 `planning-with-files-zh` 随英文主版一起装，不单列进清单。
 
 重启 CodeBuddy 会话后验证：
 
@@ -59,7 +76,7 @@ chmod +x install.sh
 
 ```
 ~/.codebuddy/
-├── skills/                # 101 个 Skill，每个目录一个 SKILL.md（可含 scripts/、references/）
+├── skills/                # full 档 101 个 Skill（默认 minimal 档只装 12 项），每个目录一个 SKILL.md（可含 scripts/、references/）
 │   ├── xlsx/  pdf/  docx/  pptx/          # 官方文档三剑客 + PPT
 │   ├── mcp-builder/  web-artifacts-builder/  frontend-design/
 │   ├── brainstorming/  systematic-debugging/  test-driven-development/   # superpowers 全家桶（14 项）
@@ -67,7 +84,7 @@ chmod +x install.sh
 │   ├── ui-ux-pro-max/  design/  design-system/  ui-styling/  ...         # 前端设计（7 项）
 │   ├── product-skills/  ...   pm-skills/  ...   commercial-skills/  ...  # 产品 / 项目管理 / 商业化
 │   └── planning-with-files/  planning-with-files-zh/                     # 跨会话持久化规划
-├── agents/                # 18 个 Agent，每个一个 .md
+├── agents/                # full 档 18 个 Agent，每个一个 .md（默认 minimal 档全装，eng/pm/invest 档按前缀裁剪）
 │   ├── engineering-software-architect.md   engineering-code-reviewer.md
 │   ├── engineering-frontend-developer.md   engineering-backend-architect.md
 │   ├── security-appsec-engineer.md         engineering-devops-automator.md
@@ -77,7 +94,7 @@ chmod +x install.sh
 │   ├── product-manager.md                  product-sprint-prioritizer.md
 │   ├── product-feedback-synthesizer.md     product-behavioral-nudge-engine.md
 │   ├── design-ux-architect.md              code-simplifier.md
-└── commands/              # 4 个 Command
+└── commands/              # 4 个 Command（full / eng 档全装，minimal / pm / invest 档只留 code-review）
     ├── code-review.md
     ├── ralph-loop.md   cancel-ralph.md   help.md
     └── ralph-loop/             # ralph-loop 依赖的脚本与 hooks
@@ -91,16 +108,21 @@ chmod +x install.sh
 
 | 阶段 | 动作 |
 | :--- | :--- |
-| **1. Agents** | 复制 `~/.claude/agents/*.md`，把 `name` 归一化为文件名主干，移除 Claude 专属的 `emoji` / `color`，把 `model: opus` 之类别名改为 `inherit`；额外补入官方 `code-simplifier` agent |
-| **2. Skills** | 从 `document-skills`、`superpowers`、`mattpocock-skills`（仅 `engineering` / `productivity`）、`planning-with-files`（英文 + 中文）、`ui-ux-pro-max`、`product-skills`、`pm-skills`、`commercial-skills` 中复制 `skills/*` 目录 |
-| **3. Commands** | 复制 `code-review` 与 `ralph-loop` 的 command 文件，并带上 ralph-loop 的 `scripts/` 与 `hooks/` |
+| **1. Agents** | 复制 `~/.claude/agents/*.md`，把 `name` 归一化为文件名主干，移除 Claude 专属的 `emoji` / `color`，把 `model: opus` 之类别名改为 `inherit`；额外补入官方 `code-simplifier` agent（按档位的 `PROFILE_AGENTS` pattern 过滤） |
+| **2. Skills** | 从 `document-skills`、`superpowers`、`mattpocock-skills`（仅 `engineering` / `productivity`）、`planning-with-files`（英文 + 中文）、`ui-ux-pro-max`、`product-skills`、`pm-skills`、`commercial-skills` 中复制 `skills/*` 目录（默认档按 `load_profile()` 的清单过滤，只保留清单内目录） |
+| **3. Commands** | 复制 `code-review` 与 `ralph-loop` 的 command 文件，并带上 ralph-loop 的 `scripts/` 与 `hooks/`（按 `PROFILE_COMMANDS` 过滤；`ralph-loop` 不在档内时连资源目录一起不装） |
 | **4. 适配** | 把 `${CLAUDE_PLUGIN_ROOT}` / `${CLAUDE_SKILL_DIR}` / `~/.claude/skills` 改写为 CodeBuddy 等价路径（`${CODEBUDDY_SKILL_DIR}`、`~/.codebuddy/skills`） |
 
-脚本**幂等**：重跑会先 `rm -rf` 同名目录再复制，因此 Claude Code 侧插件升级后重跑即可同步。
+脚本**幂等**：重跑会先 `rm -rf` 同名目录再复制，因此 Claude Code 侧插件升级后重跑即可同步。默认不会删除清单外的旧内容——要从宽档回退到窄档，用 `./install.sh --profile=invest --prune`，它会清掉三类目标下不在该档清单内的内容：`~/.codebuddy/skills/<dir>/`（目录）、`~/.codebuddy/agents/*.md`、`~/.codebuddy/commands/*.md`，以及 `ralph-loop` 不在档内时的 `commands/ralph-loop/` 资源目录。你自己手动放的文件同样会被删。`--profile=full --prune` 是 no-op。`agents/` 下非 `.md` 的目录不处理。
 
 ### 可用参数与环境变量
 
 ```bash
+./install.sh                    # 默认 profile=minimal：只装该档清单内的 Skill
+./install.sh --profile=eng      # 换档：minimal|eng|pm|invest|full（也支持 --profile eng）
+./install.sh --full             # 等价于 --profile=full
+./install.sh --prune            # 删除不在当前档清单内的 Skill / Agent / Command（full 档为 no-op）
+./install.sh --list             # 打印当前档的 Skill / Agent / Command 清单后退出
 ./install.sh --dry-run          # 空跑
 ./install.sh -h                 # 打印用法
 
