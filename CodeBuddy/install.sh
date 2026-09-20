@@ -153,7 +153,8 @@ if [ "$LIST_ONLY" = "1" ]; then
 fi
 
 info() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
-warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*"; }
+# 走 stderr：函数里 warn 之后常被 $(...) 捕获返回值，混进 stdout 会被当成路径传给 cp
+warn() { printf '\033[1;33m[!]\033[0m %s\n' "$*" >&2; }
 
 run() {
   if [ "$DRY_RUN" = "1" ]; then echo "  [dry-run] $*"; else "$@"; fi
@@ -227,7 +228,8 @@ fetch_skill() { # $1 = skill 名；命中并就绪则输出本地目录，未命
       printf '%s\n' "$workdir/$sub"
       return 0
     fi
-    if [ ! -d "$workdir/.git" ]; then
+    # 已就位就不重复 clone（手工放好的、或 clone 老失败改用别的方式捞下来的都能直接用）
+    if [ ! -f "$workdir/$sub/SKILL.md" ]; then
       run mkdir -p "$SKILL_FETCH_DIR"
       run rm -rf "$workdir"
       if ! run git clone --depth 1 -q "$repo" "$workdir"; then
