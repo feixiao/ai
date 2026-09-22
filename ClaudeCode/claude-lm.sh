@@ -5,12 +5,8 @@
 #
 # 本地模型列表与角色分配（基于 Apple Silicon / Mac Studio 本地已下载模型）：
 # ------------------------------------------------------------------------------
-# 1. qwopus3.5-9b-v3       ( 6.0 GB, 9B  ) -> 极轻量快速 / Haiku / Subagent
-# 2. mlx-qwopus3.5-9b-v3   ( 9.5 GB, 9B  ) -> MLX 快速推理 / Haiku / Subagent
-# 3. qwen3.8-27b-mlx@4bit  (16.1 GB, 27B ) -> 专用编码主力 / Sonnet / 默认主力
-# 4. qwen3.8-27b-mlx@8bit  (29.5 GB, 27B ) -> Qwen 27B 高精度版 / Opus
-# 5. gemma-4-26b-a4b-it    (15.6 GB, 26B ) -> Gemma MoE 高吞吐 / Sonnet / Haiku
-# 6. gemma-4-31b-it        (18.4 GB, 31B ) -> Gemma 31B Dense 强推理 / Opus / Fable
+# 1. qwen3.8-27b-splash     (17.4 GB, 27B ) -> 专用编码主力 / Sonnet / 默认主力
+# 2. qwen3.6-35b-a3b-splash (21.0 GB, 35B ) -> MoE 高速推理 / Haiku / Subagent / 架构推理
 # ==============================================================================
 
 # 1. 独立配置目录，避免与官方 Claude Code 登录凭证（Keychain/OAuth）冲突
@@ -31,6 +27,17 @@ if [ ! -f "$CLAUDE_CONFIG_DIR/.claude.json" ]; then
 EOF
 fi
 
+if [ ! -f "$CLAUDE_CONFIG_DIR/settings.json" ]; then
+    cat << 'EOF' > "$CLAUDE_CONFIG_DIR/settings.json"
+{
+  "model": "sonnet",
+  "autoCompactEnabled": true,
+  "autoCompactWindow": 100000,
+  "skipDangerousModePermissionPrompt": true
+}
+EOF
+fi
+
 # 2. 避免代理干扰本地 127.0.0.1 通信
 export NO_PROXY="127.0.0.1,localhost,$NO_PROXY"
 export no_proxy="127.0.0.1,localhost,$no_proxy"
@@ -44,11 +51,10 @@ export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:1234}"
 # ==============================================================================
 # 预设模型策略切换（可通过环境变量 PRESET=xxx 或命令行参数灵活切换）
 # 可选 PRESET:
-#   - coder     (默认推荐: 主力编码=qwen3.8-27b-mlx@4bit, 架构推理=gemma-4-31b-it, 轻量Agent=mlx-qwopus3.5-9b-v3)
-#   - reasoning (深度推理: 架构/主力=gemma-4-31b-it, 代码=qwen3.8-27b-mlx@4bit)
-#   - qwen      (Qwen全家桶: Sonnet=qwen3.8-27b-mlx@4bit, Opus=qwen3.8-27b-mlx@8bit, Haiku=qwopus3.5-9b-v3)
-#   - gemma     (Gemma全家桶: Sonnet=gemma-4-26b-a4b-it, Opus=gemma-4-31b-it, Haiku=gemma-4-26b-a4b-it)
-#   - single    (统一单模型模式: 将 Sonnet/Haiku/Opus/Subagent 全部重定向至单一模型，避免显存反复切换)
+#   - coder / dual (默认推荐: 主力编码=qwen3.8-27b-splash, 快速Agent/架构推理=qwen3.6-35b-a3b-splash)
+#   - 27b          (全量使用 qwen3.8-27b-splash: 专用代码主力)
+#   - 35b          (全量使用 qwen3.6-35b-a3b-splash: 35B MoE 极速吞吐)
+#   - single       (统一单模型模式: 将 Sonnet/Haiku/Opus/Subagent 全部重定向至单一模型)
 # ==============================================================================
 PRESET="${PRESET:-coder}"
 LM_SINGLE_MODEL="${LM_SINGLE_MODEL:-}"
@@ -64,6 +70,18 @@ while [[ $# -gt 0 ]]; do
         --single|--lm-model)
             LM_SINGLE_MODEL="$2"
             shift 2
+            ;;
+        --27b)
+            PRESET="27b"
+            shift
+            ;;
+        --35b)
+            PRESET="35b"
+            shift
+            ;;
+        --dual|--hybrid)
+            PRESET="dual"
+            shift
             ;;
         *)
             PASSTHROUGH_ARGS+=("$1")
@@ -82,38 +100,30 @@ if [ -n "$LM_SINGLE_MODEL" ]; then
     SUBAGENT_MODEL="$LM_SINGLE_MODEL"
 else
     case "$PRESET" in
-        reasoning)
-            DEFAULT_MODEL="gemma-4-31b-it"
-            OPUS_MODEL="gemma-4-31b-it"
-            FABLE_MODEL="gemma-4-31b-it"
-            SONNET_MODEL="qwen3.8-27b-mlx@4bit"
-            HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
-            SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
+        27b|qwen27b|qwen3.8)
+            DEFAULT_MODEL="qwen3.8-27b-splash"
+            OPUS_MODEL="qwen3.8-27b-splash"
+            FABLE_MODEL="qwen3.8-27b-splash"
+            SONNET_MODEL="qwen3.8-27b-splash"
+            HAIKU_MODEL="qwen3.8-27b-splash"
+            SUBAGENT_MODEL="qwen3.8-27b-splash"
             ;;
-        qwen)
-            DEFAULT_MODEL="qwen3.8-27b-mlx@4bit"
-            OPUS_MODEL="qwen3.8-27b-mlx@8bit"
-            FABLE_MODEL="qwen3.8-27b-mlx@8bit"
-            SONNET_MODEL="qwen3.8-27b-mlx@4bit"
-            HAIKU_MODEL="qwopus3.5-9b-v3"
-            SUBAGENT_MODEL="qwopus3.5-9b-v3"
+        35b|qwen35b|qwen3.6)
+            DEFAULT_MODEL="qwen3.6-35b-a3b-splash"
+            OPUS_MODEL="qwen3.6-35b-a3b-splash"
+            FABLE_MODEL="qwen3.6-35b-a3b-splash"
+            SONNET_MODEL="qwen3.6-35b-a3b-splash"
+            HAIKU_MODEL="qwen3.6-35b-a3b-splash"
+            SUBAGENT_MODEL="qwen3.6-35b-a3b-splash"
             ;;
-        gemma)
-            DEFAULT_MODEL="gemma-4-26b-a4b-it"
-            OPUS_MODEL="gemma-4-31b-it"
-            FABLE_MODEL="gemma-4-31b-it"
-            SONNET_MODEL="gemma-4-26b-a4b-it"
-            HAIKU_MODEL="gemma-4-26b-a4b-it"
-            SUBAGENT_MODEL="gemma-4-26b-a4b-it"
-            ;;
-        coder|*)
-            # 默认推荐 Coder 组合：27B 编程主力 + 31B 架构推理 + 9B 极速 Agent
-            DEFAULT_MODEL="qwen3.8-27b-mlx@4bit"
-            OPUS_MODEL="gemma-4-31b-it"
-            FABLE_MODEL="gemma-4-31b-it"
-            SONNET_MODEL="qwen3.8-27b-mlx@4bit"
-            HAIKU_MODEL="mlx-qwopus3.5-9b-v3"
-            SUBAGENT_MODEL="mlx-qwopus3.5-9b-v3"
+        coder|dual|hybrid|*)
+            # 默认推荐组合：27B 编程主力 (Sonnet) + 35B MoE 架构推理 (Opus) 与极速 Agent (Haiku)
+            DEFAULT_MODEL="qwen3.8-27b-splash"
+            OPUS_MODEL="qwen3.6-35b-a3b-splash"
+            FABLE_MODEL="qwen3.6-35b-a3b-splash"
+            SONNET_MODEL="qwen3.8-27b-splash"
+            HAIKU_MODEL="qwen3.6-35b-a3b-splash"
+            SUBAGENT_MODEL="qwen3.6-35b-a3b-splash"
             ;;
     esac
 fi
@@ -149,16 +159,23 @@ export CLAUDE_CODE_SUBAGENT_MODEL="$SUBAGENT_MODEL"
 # 禁用 1M 上下文后缀（避免本地推理引擎因 [1m] 后缀报错）
 export CLAUDE_CODE_DISABLE_1M_CONTEXT=1
 
-# 流量与流式超时及未知模型窗口优化
+# 流量与流式超时优化
 export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
 export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
-export CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT=1
 export CLAUDE_STREAM_IDLE_TIMEOUT_MS=600000
 export API_TIMEOUT_MS=3000000
 
-# 上下文压缩与上下文上限配置（适配长上下文对话）
-unset DISABLE_COMPACT
+# 上下文控制在 100k 以内并自动压缩配置
+# 1. 设定最大上下文窗口与自动压缩触发窗口为 100k
 export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-100000}"
+export CLAUDE_CODE_AUTO_COMPACT_WINDOW="${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-100000}"
+
+# 2. 启用未知模型的窗口强制约束（确保本地模型在接近 100k 时主动触发自动压缩，而不是被动等待 API 报错）
+unset CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT
+
+# 3. 确保压缩功能全量启用（防被外部环境意外禁用）
+unset DISABLE_COMPACT
+unset DISABLE_AUTO_COMPACT
 
 # 4. 自动增量同步会话与共享配置（使官方 Claude 与 LM Studio 会话互通、支持无缝 --resume）
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -181,7 +198,7 @@ if [ "${CLAUDE_LMSTUDIO_NO_SYNC:-0}" != "1" ] && [ -f "$SYNC_SCRIPT" ] && [ -x "
 fi
 
 # 5. 查找实际安装的 claude 二进制路径
-CLAUDE_BIN="$HOME/.local/bin/claude"
+CLAUDE_BIN="${CLAUDE_BIN:-$HOME/.local/bin/claude}"
 if [ ! -f "$CLAUDE_BIN" ]; then
     CLAUDE_BIN="$(which claude 2>/dev/null)"
 fi
