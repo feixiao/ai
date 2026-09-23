@@ -32,7 +32,7 @@ if [ ! -f "$CLAUDE_CONFIG_DIR/settings.json" ]; then
 {
   "model": "sonnet",
   "autoCompactEnabled": true,
-  "autoCompactWindow": 100000,
+  "autoCompactWindow": 200000,
   "skipDangerousModePermissionPrompt": true
 }
 EOF
@@ -167,8 +167,8 @@ export API_TIMEOUT_MS=3000000
 
 # 上下文控制在 100k 以内并自动压缩配置
 # 1. 设定最大上下文窗口与自动压缩触发窗口为 100k
-export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-100000}"
-export CLAUDE_CODE_AUTO_COMPACT_WINDOW="${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-100000}"
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-200000}"
+export CLAUDE_CODE_AUTO_COMPACT_WINDOW="${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-200000}"
 
 # 2. 启用未知模型的窗口强制约束（确保本地模型在接近 100k 时主动触发自动压缩，而不是被动等待 API 报错）
 unset CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT
