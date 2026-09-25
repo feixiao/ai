@@ -1,0 +1,49 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "lmstudio/qwen3.8-27b-splash",
+  "small_model": "lmstudio/google/gemma-4-26b-a4b-qat",
+  "provider": {
+    "lmstudio": {
+      "name": "LM Studio (Local M4 Max)",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:1234/v1",
+        "apiKey": "lmstudio"
+      },
+      "models": {
+        "qwen3.8-27b-splash": {
+          "name": "Qwen 3.8 27B Splash (Primary Coder)",
+          "tool_call": true,
+          "reasoning": true,
+          "limit": {
+            "context": 100000,
+            "output": 32768
+          }
+        },
+        "google/gemma-4-26b-a4b-qat": {
+          "name": "Gemma 4 26B A4B QAT (Fast Subagent)",
+          "tool_call": true,
+          "reasoning": false,
+          "limit": {
+            "context": 100000,
+            "output": 16384
+          }
+        }
+      }
+    }
+  },
+  "agent": {
+    "coder": {
+      "description": "核心编码智能体：负责架构设计、深度推理、核心功能实现与复杂重构",
+      "model": "lmstudio/qwen3.8-27b-splash",
+      "mode": "primary",
+      "temperature": 0.2
+    },
+    "fast": {
+      "description": "极速扫描智能体：负责快速文件扫描、轻量级检查与子任务分发",
+      "model": "lmstudio/google/gemma-4-26b-a4b-qat",
+      "mode": "subagent",
+      "temperature": 0.1
+    }
+  }
+}

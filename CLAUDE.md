@@ -20,6 +20,7 @@ This repository is a hands-on AI engineering knowledge base and practice playgro
 - `ClaudeCode/`: Configuration patterns and environment settings for connecting Claude Code with local models (LM Studio / Ollama).
 - `CodeBuddy/`: Skills and Agents migration, deployment scripts, and guides for Tencent CodeBuddy CLI.
 - `Antigravity/`: Skills and Agents migration, deployment scripts (`install.sh`), and CLI best practices for Google Antigravity (`agy` / Gemini).
+- `OpenCode/`: Configuration patterns, deployment scripts (`install.sh`), and LM Studio local model integration for OpenCode CLI.
 - `TensorFlowLite/`, `PyTorch/`, `spleeter/`: Deep learning experiments and audio source separation scripts.
 
 ## Environment & Common Commands
