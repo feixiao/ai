@@ -63,3 +63,22 @@ def test_lmstudio_successful_expansion(mock_urlopen: MagicMock) -> None:
     assert result.is_fallback is False
     assert "mechanical feline" in result.positive_prompt
     assert result.model_used == "mock-qwen-model"
+
+
+@patch("urllib.request.urlopen")
+def test_detect_model_prioritizes_qwen(mock_urlopen: MagicMock) -> None:
+    """测试探测模型时，如果存在多个模型，优先选择 Qwen 系列大模型。"""
+    mock_models_response = MagicMock()
+    mock_models_response.read.return_value = b'''{
+        "data": [
+            {"id": "google/gemma-4-26b-a4b-qat"},
+            {"id": "qwen3.8-27b-mlx"},
+            {"id": "qwen/qwen3-vl-8b"}
+        ]
+    }'''
+    mock_models_response.__enter__.return_value = mock_models_response
+    mock_urlopen.return_value = mock_models_response
+
+    expander = LMStudioPromptExpander(base_url="http://127.0.0.1:1234/v1")
+    detected = expander.detect_model()
+    assert "qwen" in detected.lower()

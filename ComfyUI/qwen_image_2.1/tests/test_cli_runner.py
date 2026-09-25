@@ -30,7 +30,7 @@ def test_submit_comfyui_prompt_diagnoses_http_error() -> None:
     }).encode("utf-8")
 
     mock_http_error = urllib.error.HTTPError(
-        url="http://127.0.0.1:8000/prompt",
+        url="http://127.0.0.1:8188/prompt",
         code=400,
         msg="Bad Request",
         hdrs={},
@@ -38,7 +38,7 @@ def test_submit_comfyui_prompt_diagnoses_http_error() -> None:
     )
 
     with patch("urllib.request.urlopen", side_effect=mock_http_error):
-        result_id = submit_comfyui_prompt("127.0.0.1:8000", {"test": "workflow"})
+        result_id = submit_comfyui_prompt("127.0.0.1:8188", {"test": "workflow"})
         assert result_id is None
 
 

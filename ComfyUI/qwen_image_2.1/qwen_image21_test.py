@@ -55,10 +55,16 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument(
         "--comfy-host",
         type=str,
-        default="127.0.0.1:8000",
-        help="ComfyUI 服务地址 (Comfy Desktop 默认为 8000，源码版默认为 8188)",
+        default="127.0.0.1:8188",
+        help="ComfyUI 服务地址 (Comfy Desktop 默认为 8188，源码版默认为 8188)",
     )
     parser.add_argument("--lmstudio-host", type=str, default="127.0.0.1:1234", help="LM Studio 服务地址")
+    parser.add_argument(
+        "--llm-model",
+        type=str,
+        default=None,
+        help="指定用于扩写的模型名称 (默认自动优先检测并选用 Qwen 系列大模型)",
+    )
     parser.add_argument("--dry-run", action="store_true", help="仅执行扩写与工作流参数装配，不实际向 ComfyUI 发起生图")
     return parser.parse_args(argv)
 
@@ -290,7 +296,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     # 3. 提示词扩写
     print("\n🔍 正在进行智能提示词扩写...")
     expand_start = time.time()
-    expander = LMStudioPromptExpander(base_url=f"http://{lmstudio_host}/v1")
+    expander = LMStudioPromptExpander(base_url=f"http://{lmstudio_host}/v1", preferred_model=args.llm_model)
     prompt_result = expander.expand(user_text=args.desc, style_preset=args.style, target_aspect=args.aspect)
     expand_duration = time.time() - expand_start
 
@@ -320,9 +326,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not services["comfyui"]:
         print(f"\n❌ 错误: ComfyUI 服务 ({comfy_host}) 未响应，无法派发生图任务。")
         print("💡 排查建议:")
-        print("   1. 如果使用 Comfy Desktop: 桌面端主面板需点击实例的【启动/Open】以启动 Python 后端 (默认端口 8000)")
+        print("   1. 如果使用 Comfy Desktop: 桌面端主面板需点击实例的【启动/Open】以启动 Python 后端 (默认端口 8188)")
         print("   2. 如果使用开源源码版: 可通过 --comfy-host 127.0.0.1:8188 指定 8188 端口")
-        print("   3. 命令行直接启动实例: /Users/frank/ComfyUI/.venv/bin/python /Users/frank/ComfyUI-Installs/ComfyUI/ComfyUI/main.py --port 8000")
+        print("   3. 命令行直接启动实例: /Users/frank/ComfyUI/.venv/bin/python /Users/frank/ComfyUI-Installs/ComfyUI/ComfyUI/main.py --port 8188")
         return 2
 
     print("\n📦 正在推送任务至 ComfyUI...")

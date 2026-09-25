@@ -56,22 +56,32 @@ class LMStudioPromptExpander:
         "3:4": (896, 1152),
     }
 
-    def __init__(self, base_url: str = "http://127.0.0.1:1234/v1", timeout_seconds: float = 30.0) -> None:
+    def __init__(
+        self,
+        base_url: str = "http://127.0.0.1:1234/v1",
+        timeout_seconds: float = 30.0,
+        preferred_model: Optional[str] = None,
+    ) -> None:
         """初始化扩写引擎。
 
         参数:
             base_url: LM Studio 服务基础地址 (默认: http://127.0.0.1:1234/v1)
             timeout_seconds: 接口请求超时秒数
+            preferred_model: 指定或偏好的模型名称
         """
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
+        self.preferred_model = preferred_model
 
     def detect_model(self) -> str:
-        """探测当前 LM Studio 实例挂载的模型。若无法连通或列表为空，返回通用回退标识。
+        """探测当前 LM Studio 实例挂载的模型。优先选择指定模型或 Qwen 系列模型。
 
         返回值:
             模型 ID 字符串
         """
+        if self.preferred_model:
+            return self.preferred_model
+
         url = f"{self.base_url}/models"
         request = urllib.request.Request(url, headers={"User-Agent": "QwenImageExpander/1.0"})
         try:
@@ -79,9 +89,16 @@ class LMStudioPromptExpander:
                 payload = json.loads(response.read().decode("utf-8"))
                 models = payload.get("data", [])
                 if models and isinstance(models, list):
-                    first_model = models[0]
-                    if isinstance(first_model, dict) and "id" in first_model:
-                        return str(first_model["id"])
+                    model_ids: List[str] = [
+                        str(item["id"]) for item in models if isinstance(item, dict) and "id" in item
+                    ]
+                    # 优先挑选 Qwen 系列模型 (如 qwen3-vl, qwen3.8 等)
+                    for model_id in model_ids:
+                        if "qwen" in model_id.lower():
+                            return model_id
+                    # 其次挑选首个可用模型
+                    if model_ids:
+                        return model_ids[0]
         except Exception as error:
             logger.warning(f"未能自动检测到 LM Studio 模型，原因: {error}")
         return "local-default-model"

@@ -91,7 +91,7 @@ python qwen_image21_test.py --desc "赛博朋克飞行汽车" --dry-run
 - `--aspect`: 显式指定比例（`1:1`, `16:9`, `9:16`, `4:3`, `3:4`）。
 - `--steps`: 迭代步数，默认 24（推荐 20-28 步）。
 - `--seed`: 随机种子（默认 `-1` 自动随机生成）。
-- `--comfy-host`: ComfyUI 地址（默认 `127.0.0.1:8000` 适配 Comfy Desktop；源码版一般为 `127.0.0.1:8188`）。
+- `--comfy-host`: ComfyUI 地址（默认 `127.0.0.1:8188` 适配 Comfy Desktop；源码版一般为 `127.0.0.1:8188`）。
 - `--lmstudio-host`: LM Studio 地址（默认 `127.0.0.1:1234`）。
 - `--dry-run`: 调试模式，生成组装完成的 API JSON 并退出。
 
@@ -100,7 +100,7 @@ python qwen_image21_test.py --desc "赛博朋克飞行汽车" --dry-run
 ## 6. ComfyUI Web 画布工作流与自定义节点
 
 ### 方式一：直接导入画布工作流
-1. 打开 ComfyUI 界面（Comfy Desktop 默认为 `http://127.0.0.1:8000`，源码版为 `http://127.0.0.1:8188`）；
+1. 打开 ComfyUI 界面（Comfy Desktop 默认为 `http://127.0.0.1:8188`，源码版为 `http://127.0.0.1:8188`）；
 2. 将 `workflows/qwen_image_2.1_t2i_canvas.json` 文件直接拖拽入浏览器画布中；
 3. 检查模型加载节点对应的文件名是否匹配本地已下载的模型；
 4. 点击 **Queue Prompt** 即可生成。
