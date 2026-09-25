@@ -39,17 +39,32 @@ ComfyUI/qwen_image_2.1/
 
 ## 3. 模型下载与配置分档 (Apple Silicon / Mac 优化)
 
-请将所需模型放置在您的 ComfyUI 模型目录中（默认路径通常为 `~/ComfyUI/models/`）：
+请将所需模型放置在您的 ComfyUI 模型目录中（默认路径通常为 `~/ComfyUI/models/` 或共享目录 `/Users/frank/ComfyUI/models/`）：
 
-| 模型分类 | 推荐文件名 (GGUF 方案，首选) | 官方 SafeTensors 方案 | 存放目录 |
-| :--- | :--- | :--- | :--- |
-| **Diffusion 主模型** | `qwen_image_2.1-Q8_0.gguf` 或 `Q4_K_M` | `qwen_image_2.1_int8_convrot.safetensors` | `models/unet/` 或 `models/diffusion_models/` |
-| **文本编码器** | `Qwen3VL-8B-Instruct-Q4_K_M.gguf` | `qwen3vl_8b_fp8_scaled.safetensors` | `models/clip/` 或 `models/text_encoders/` |
-| **VAE 解码器** | `qwen_image_2.1_vae_bf16.safetensors` | 官方 safetensors | `models/vae/` |
+| 角色分类 | 推荐下载文件名 (首选 GGUF) | 目标存放目录 | Hugging Face 仓库源 | 显存/内存预估 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Diffusion 主模型** | `qwen-image-2.1-Q8_0.gguf`<br>*(轻量可选 `qwen-image-2.1-Q4_K_M.gguf`)* | `models/unet/` | [`unsloth/Qwen-Image-2.1-GGUF`](https://huggingface.co/unsloth/Qwen-Image-2.1-GGUF) | ~8.5GB (Q8) / ~4.8GB (Q4) |
+| **文本/视觉编码器** | `Qwen3-VL-8B-Instruct-Q4_K_M.gguf` | `models/clip/` | [`unsloth/Qwen3-VL-8B-Instruct-GGUF`](https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF) | ~5.2GB |
+| **专用 VAE 解码器** | `qwen_image_2.1_vae_bf16.safetensors` | `models/vae/` | [`Comfy-Org/Qwen-Image-2.1`](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) | ~335MB |
 
-> 💡 **模型来源**：
-> - 官方模型仓库：[Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
-> - GGUF 社区量化：Hugging Face 搜索 `Qwen-Image-2.1-GGUF`。
+### 一键下载命令 (终端直接执行)
+
+Mac 系统可直接使用 `hf` (Hugging Face 官方 CLI) 快速并行下载至对应目录：
+
+```bash
+# 1. 下载 Qwen-Image-2.1 GGUF 主模型 (存入 models/unet)
+hf download unsloth/Qwen-Image-2.1-GGUF qwen-image-2.1-Q8_0.gguf --local-dir /Users/frank/ComfyUI/models/unet
+
+# 2. 下载 Qwen3-VL 编码器 GGUF (存入 models/clip)
+hf download unsloth/Qwen3-VL-8B-Instruct-GGUF Qwen3-VL-8B-Instruct-Q4_K_M.gguf --local-dir /Users/frank/ComfyUI/models/clip
+
+# 3. 下载 Qwen-Image-2.1 专用 16 通道 VAE (存入 models/vae)
+hf download Comfy-Org/Qwen-Image-2.1 vae/qwen_image_2.1_vae_bf16.safetensors --local-dir /tmp/qwen_vae && \
+mv /tmp/qwen_vae/vae/qwen_image_2.1_vae_bf16.safetensors /Users/frank/ComfyUI/models/vae/
+```
+
+> ⚠️ **常见报错说明**：
+> 如果在生图时终端打印 `ComfyUI 节点错误 (缺少模型文件或缺少自定义节点): clip_name / unet_name / vae_name ... Value not in list`，即表明上述对应模型文件尚未下载到位，下载对应文件并刷新 ComfyUI 即可解决。
 
 ---
 
@@ -57,9 +72,13 @@ ComfyUI/qwen_image_2.1/
 
 本系统能够将用户的一句极简描述自动扩充为影视级、高细节的结构化英文 Prompt。
 
+### 推荐大模型选型
+* **`qwen/qwen3-vl-8b` (强烈推荐)**：与 Qwen-Image-2.1 同源的多模态文本/视觉理解大模型，生成的景深、质感、构图词汇与 DiT 神经网络的先验分布最契合，本地单次扩写仅需约 2 秒。
+* **`qwen3.8-27b-mlx`**：27B 强语义大模型，适合极其复杂逻辑叙事画面的提示词扩写。
+
 ### 运行机制
 1. 脚本默认请求本地运行在 `1234` 端口的 LM Studio（`http://127.0.0.1:1234/v1`）。
-2. 自动检测 LM Studio 当前挂载的模型（如 `google/gemma-4-26b-a4b-qat`、`qwen3.8-27b` 等）。
+2. **Qwen 系列智能优先匹配**：引擎会自动读取 LM Studio 已挂载模型，并优先选用名称中带有 `qwen` 的模型（如 `qwen/qwen3-vl-8b`），用户亦可通过 `--llm-model` 手动指定。
 3. 内置 System Prompt 会指导 LLM 补充**主体微观细节、光影体积感、空间构图与镜头焦段**。
 4. **自动降级保护**：当 LM Studio 离线或超时，系统自动启用内置的高品质启发式规则库扩写，保证工作流不中断。
 
@@ -91,8 +110,9 @@ python qwen_image21_test.py --desc "赛博朋克飞行汽车" --dry-run
 - `--aspect`: 显式指定比例（`1:1`, `16:9`, `9:16`, `4:3`, `3:4`）。
 - `--steps`: 迭代步数，默认 24（推荐 20-28 步）。
 - `--seed`: 随机种子（默认 `-1` 自动随机生成）。
-- `--comfy-host`: ComfyUI 地址（默认 `127.0.0.1:8188` 适配 Comfy Desktop；源码版一般为 `127.0.0.1:8188`）。
+- `--comfy-host`: ComfyUI 地址（默认 `127.0.0.1:8188`）。
 - `--lmstudio-host`: LM Studio 地址（默认 `127.0.0.1:1234`）。
+- `--llm-model`: 指定扩写用 LLM 模型名称（默认自动优先选用已挂载的 Qwen 系列）。
 - `--dry-run`: 调试模式，生成组装完成的 API JSON 并退出。
 
 ---
