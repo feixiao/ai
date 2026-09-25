@@ -56,7 +56,7 @@ class LMStudioPromptExpander:
         "3:4": (896, 1152),
     }
 
-    def __init__(self, base_url: str = "http://127.0.0.1:1234/v1", timeout_seconds: float = 15.0) -> None:
+    def __init__(self, base_url: str = "http://127.0.0.1:1234/v1", timeout_seconds: float = 30.0) -> None:
         """初始化扩写引擎。
 
         参数:
@@ -178,7 +178,7 @@ class LMStudioPromptExpander:
                 {"role": "user", "content": f"Expand this into a visually rich image prompt: {clean_text}"},
             ],
             "temperature": 0.7,
-            "max_tokens": 300,
+            "max_tokens": 1024,
         }
 
         url = f"{self.base_url}/chat/completions"
@@ -196,7 +196,15 @@ class LMStudioPromptExpander:
                 if choices and isinstance(choices, list):
                     first_choice = choices[0]
                     if isinstance(first_choice, dict) and "message" in first_choice:
-                        message_content = first_choice["message"].get("content", "").strip()
+                        message = first_choice["message"]
+                        message_content = message.get("content", "").strip()
+                        # 若 content 为空但存在思考内容 (reasoning_content)，尝试截取最后有效段落
+                        if not message_content and "reasoning_content" in message:
+                            reasoning = message["reasoning_content"].strip()
+                            lines = [line.strip().strip('"') for line in reasoning.splitlines() if line.strip()]
+                            if lines:
+                                message_content = lines[-1]
+
                         if message_content:
                             return ExpandedPromptResult(
                                 positive_prompt=message_content,
