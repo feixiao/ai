@@ -52,7 +52,12 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--steps", type=int, default=24, help="采样迭代步数 (推荐 20-28)")
     parser.add_argument("--seed", type=int, default=-1, help="随机种子 (-1 表示随机生成)")
     parser.add_argument("--aspect", type=str, default=None, help="显式指定长宽比 (如 '1:1', '16:9', '3:4')")
-    parser.add_argument("--comfy-host", type=str, default="127.0.0.1:8188", help="ComfyUI 服务地址")
+    parser.add_argument(
+        "--comfy-host",
+        type=str,
+        default="127.0.0.1:8000",
+        help="ComfyUI 服务地址 (Comfy Desktop 默认为 8000，源码版默认为 8188)",
+    )
     parser.add_argument("--lmstudio-host", type=str, default="127.0.0.1:1234", help="LM Studio 服务地址")
     parser.add_argument("--dry-run", action="store_true", help="仅执行扩写与工作流参数装配，不实际向 ComfyUI 发起生图")
     return parser.parse_args(argv)
@@ -173,8 +178,22 @@ def submit_comfyui_prompt(comfy_host: str, workflow_dict: Dict[str, object]) -> 
     req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=10.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            return str(data.get("prompt_id"))
+            response_payload = json.loads(resp.read().decode("utf-8"))
+            return str(response_payload.get("prompt_id"))
+    except urllib.error.HTTPError as http_error:
+        error_body = ""
+        try:
+            error_body = http_error.read().decode("utf-8")
+            err_json = json.loads(error_body)
+            if "node_errors" in err_json:
+                logger.error(f"ComfyUI 节点错误 (缺少模型文件或缺少自定义节点): {err_json['node_errors']}")
+            elif "error" in err_json:
+                logger.error(f"ComfyUI 拒绝任务: {err_json['error']}")
+            else:
+                logger.error(f"ComfyUI 拒绝任务: {error_body}")
+        except Exception:
+            logger.error(f"向 ComfyUI 提交任务遭遇 HTTP {http_error.code}: {http_error.reason}")
+        return None
     except Exception as error:
         logger.error(f"向 ComfyUI 提交任务失败: {error}")
         return None
@@ -204,9 +223,9 @@ def wait_and_download_image(
         try:
             req = urllib.request.Request(history_url)
             with urllib.request.urlopen(req, timeout=5.0) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                if prompt_id in data:
-                    prompt_data = data[prompt_id]
+                history_payload = json.loads(resp.read().decode("utf-8"))
+                if prompt_id in history_payload:
+                    prompt_data = history_payload[prompt_id]
                     outputs = prompt_data.get("outputs", {})
                     # 查找图像输出节点
                     for node_id, node_output in outputs.items():
@@ -220,7 +239,7 @@ def wait_and_download_image(
                             )
                             view_url = f"http://{comfy_host}/view?{query_params}"
 
-                            dest_path = output_dir / f"{int(time.time())}_{filename}"
+                            dest_path = output_dir / f"{int(time.time())}_{prompt_id[:8]}_{filename}"
                             urllib.request.urlretrieve(view_url, str(dest_path))
                             logger.info(f"生成图片已下载: {dest_path}")
                             output_files.append(dest_path)
@@ -299,8 +318,11 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # 6. 正式提交 ComfyUI
     if not services["comfyui"]:
-        print("\n❌ 错误: ComfyUI 服务未启动，无法派发生图任务。")
-        print("💡 建议启动命令: cd ~/ComfyUI && python main.py --listen 127.0.0.1 --port 8188")
+        print(f"\n❌ 错误: ComfyUI 服务 ({comfy_host}) 未响应，无法派发生图任务。")
+        print("💡 排查建议:")
+        print("   1. 如果使用 Comfy Desktop: 桌面端主面板需点击实例的【启动/Open】以启动 Python 后端 (默认端口 8000)")
+        print("   2. 如果使用开源源码版: 可通过 --comfy-host 127.0.0.1:8188 指定 8188 端口")
+        print("   3. 命令行直接启动实例: /Users/frank/ComfyUI/.venv/bin/python /Users/frank/ComfyUI-Installs/ComfyUI/ComfyUI/main.py --port 8000")
         return 2
 
     print("\n📦 正在推送任务至 ComfyUI...")

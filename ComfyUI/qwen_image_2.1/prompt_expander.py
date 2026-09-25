@@ -82,7 +82,7 @@ class LMStudioPromptExpander:
                     first_model = models[0]
                     if isinstance(first_model, dict) and "id" in first_model:
                         return str(first_model["id"])
-        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+        except Exception as error:
             logger.warning(f"未能自动检测到 LM Studio 模型，原因: {error}")
         return "local-default-model"
 
@@ -131,8 +131,9 @@ class LMStudioPromptExpander:
         """
         logger.info(f"启用规则引擎对描述 [{user_text}] 执行本地降级扩写")
         style_keywords = self.STYLE_MODIFIERS.get(style_preset, self.STYLE_MODIFIERS["general"])
+        effective_text = user_text.strip() if user_text.strip() else "subject"
         positive_prompt = (
-            f"{user_text}, highly detailed visual representation, focused subject composition, "
+            f"{effective_text}, highly detailed visual representation, focused subject composition, "
             f"{style_keywords}, masterpiece quality"
         )
         return ExpandedPromptResult(
@@ -146,7 +147,11 @@ class LMStudioPromptExpander:
         )
 
     def expand(
-        self, user_text: str, style_preset: str = "cinematic", target_aspect: Optional[str] = None
+        self,
+        user_text: str,
+        style_preset: str = "cinematic",
+        target_aspect: Optional[str] = None,
+        temperature: float = 0.7,
     ) -> ExpandedPromptResult:
         """主入口：将用户极简描述扩写为高表现力的生图提示词。
 
@@ -154,6 +159,7 @@ class LMStudioPromptExpander:
             user_text: 简短自然语言输入 (中英文均可)
             style_preset: 目标视觉风格 (cinematic, photorealistic, anime, cyberpunk, general)
             target_aspect: 可选的固定长宽比
+            temperature: 采样随机度温度 (0.0-1.5)
         返回值:
             完整的 ExpandedPromptResult
         """
@@ -177,7 +183,7 @@ class LMStudioPromptExpander:
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": f"Expand this into a visually rich image prompt: {clean_text}"},
             ],
-            "temperature": 0.7,
+            "temperature": max(0.0, min(1.5, temperature)),
             "max_tokens": 1024,
         }
 

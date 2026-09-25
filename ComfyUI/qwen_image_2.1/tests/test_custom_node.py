@@ -21,6 +21,7 @@ def test_node_specification() -> None:
     assert "required" in inputs
     assert "user_short_desc" in inputs["required"]
     assert "style_preset" in inputs["required"]
+    assert "temperature" in inputs["required"]
 
     assert LMStudioPromptExpanderNode.RETURN_TYPES == ("STRING", "STRING", "INT", "INT")
     assert LMStudioPromptExpanderNode.RETURN_NAMES == ("positive_prompt", "negative_prompt", "width", "height")

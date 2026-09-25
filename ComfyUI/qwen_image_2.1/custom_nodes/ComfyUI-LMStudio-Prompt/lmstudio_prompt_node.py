@@ -37,6 +37,10 @@ class LMStudioPromptExpanderNode:
                     ["cinematic", "photorealistic", "anime", "cyberpunk", "general"],
                     {"default": "cinematic"},
                 ),
+                "temperature": (
+                    "FLOAT",
+                    {"default": 0.7, "min": 0.0, "max": 1.5, "step": 0.05, "round": 0.01},
+                ),
                 "aspect_ratio": (
                     ["auto", "1:1", "16:9", "9:16", "4:3", "3:4"],
                     {"default": "auto"},
@@ -57,6 +61,7 @@ class LMStudioPromptExpanderNode:
         self,
         user_short_desc: str,
         style_preset: str = "cinematic",
+        temperature: float = 0.7,
         lmstudio_host: str = "127.0.0.1:1234",
         aspect_ratio: str = "auto",
     ) -> Tuple[str, str, int, int]:
@@ -65,6 +70,7 @@ class LMStudioPromptExpanderNode:
         参数:
             user_short_desc: 用户输入的极简短句
             style_preset: 风格预设名称
+            temperature: 采样温度
             lmstudio_host: LM Studio 端口地址
             aspect_ratio: 指定或自动长宽比
         返回值:
@@ -80,7 +86,10 @@ class LMStudioPromptExpanderNode:
 
         expander = LMStudioPromptExpander(base_url=base_url)
         res: ExpandedPromptResult = expander.expand(
-            user_text=user_short_desc, style_preset=style_preset, target_aspect=target_ratio
+            user_text=user_short_desc,
+            style_preset=style_preset,
+            target_aspect=target_ratio,
+            temperature=temperature,
         )
 
         return (res.positive_prompt, res.negative_prompt, res.width, res.height)

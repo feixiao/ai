@@ -12,13 +12,13 @@ def test_api_workflow_structure() -> None:
     assert workflow_path.exists(), "API 工作流模板文件必须存在"
 
     with open(workflow_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        workflow_payload = json.load(f)
 
     # 验证是否为节点字典映射结构
-    assert isinstance(data, dict), "API 工作流顶层必须为字典映射"
+    assert isinstance(workflow_payload, dict), "API 工作流顶层必须为字典映射"
 
     # 查找关键节点类型
-    class_types = [node.get("class_type") for node in data.values() if isinstance(node, dict)]
+    class_types = [node.get("class_type") for node in workflow_payload.values() if isinstance(node, dict)]
     assert any("UnetLoaderGGUF" in ct or "UNETLoader" in ct for ct in class_types), "需包含扩散模型加载节点"
     assert any("CLIPLoaderGGUF" in ct or "CLIPLoader" in ct for ct in class_types), "需包含文本编码加载节点"
     assert "VAELoader" in class_types, "需包含 VAE 加载节点"
@@ -33,7 +33,7 @@ def test_canvas_workflow_structure() -> None:
     assert canvas_path.exists(), "画布工作流文件必须存在"
 
     with open(canvas_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+        canvas_payload = json.load(f)
 
-    assert "nodes" in data and isinstance(data["nodes"], list), "画布工作流必须包含 nodes 列表"
-    assert "links" in data and isinstance(data["links"], list), "画布工作流必须包含 links 列表"
+    assert "nodes" in canvas_payload and isinstance(canvas_payload["nodes"], list), "画布工作流必须包含 nodes 列表"
+    assert "links" in canvas_payload and isinstance(canvas_payload["links"], list), "画布工作流必须包含 links 列表"

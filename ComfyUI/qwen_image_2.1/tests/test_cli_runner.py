@@ -2,15 +2,44 @@
 """
 Qwen-Image-2.1 命令行测试套件单元测试
 """
+import io
 import json
 import sys
+import urllib.error
 from pathlib import Path
 
 # 保证父级目录在模块搜索路径中
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from unittest.mock import MagicMock, patch
+
 from prompt_expander import ExpandedPromptResult
-from qwen_image21_test import _normalize_host, inject_workflow_parameters, parse_arguments
+from qwen_image21_test import (
+    _normalize_host,
+    inject_workflow_parameters,
+    parse_arguments,
+    submit_comfyui_prompt,
+)
+
+
+def test_submit_comfyui_prompt_diagnoses_http_error() -> None:
+    """测试当 ComfyUI 返回 HTTP 400 (如缺少节点) 时，正确处理并记录节点错误。"""
+    error_content = json.dumps({
+        "error": "validation_error",
+        "node_errors": {"1": {"errors": [{"message": "Model not found"}]}},
+    }).encode("utf-8")
+
+    mock_http_error = urllib.error.HTTPError(
+        url="http://127.0.0.1:8000/prompt",
+        code=400,
+        msg="Bad Request",
+        hdrs={},
+        fp=io.BytesIO(error_content),
+    )
+
+    with patch("urllib.request.urlopen", side_effect=mock_http_error):
+        result_id = submit_comfyui_prompt("127.0.0.1:8000", {"test": "workflow"})
+        assert result_id is None
 
 
 def test_normalize_host() -> None:
