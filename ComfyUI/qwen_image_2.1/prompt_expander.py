@@ -1,0 +1,213 @@
+# -*- coding: utf-8 -*-
+"""
+Qwen-Image-2.1 提示词智能扩写引擎
+对接本地 LM Studio (默认端口 1234, OpenAI 兼容接口)，支持结构化扩写与本地启发式降级兜底。
+"""
+
+import json
+import logging
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger("PromptExpander")
+
+
+@dataclass
+class ExpandedPromptResult:
+    """扩写结果数据结构，包含正向词、负向词、分辨率规格及元数据。"""
+
+    positive_prompt: str
+    negative_prompt: str
+    aspect_ratio: str
+    width: int
+    height: int
+    model_used: str
+    is_fallback: bool
+
+
+class LMStudioPromptExpander:
+    """基于 LM Studio 本地大模型的提示词扩写引擎。"""
+
+    # 预设通用负向提示词
+    DEFAULT_NEGATIVE_PROMPT: str = (
+        "blurry, out of focus, low quality, bad anatomy, deformed limbs, extra fingers, "
+        "poorly drawn hands, missing fingers, low resolution, bad proportions, watermark, "
+        "signature, text artifacts, oversaturated, ugly, cropped"
+    )
+
+    # 常见风格注入模版
+    STYLE_MODIFIERS: Dict[str, str] = {
+        "cinematic": "cinematic lighting, 35mm film still, dramatic atmosphere, depth of field, anamorphic lens flares, 8k resolution, highly detailed",
+        "photorealistic": "hyperrealistic photograph, shot on Hasselblad, natural soft lighting, intricate textures, pore level detail, award-winning photography",
+        "anime": "refined anime aesthetic, Makoto Shinkai style, vibrant harmonious colors, clean lineart, soft cel shading, high aesthetic quality",
+        "cyberpunk": "cyberpunk genre, rainy night street, vibrant neon reflections, volumetric magenta and cyan lighting, intricate metallic mechanical components, futuristic high-tech",
+        "general": "masterpiece, best quality, ultra-detailed, beautiful composition, rich contrast, balanced color grading",
+    }
+
+    # 长宽比与分辨率映射 (对齐 64 像素倍数，匹配 VAE 编解码约束)
+    ASPECT_RATIO_PRESETS: Dict[str, Tuple[int, int]] = {
+        "1:1": (1024, 1024),
+        "16:9": (1280, 768),
+        "9:16": (768, 1280),
+        "4:3": (1152, 896),
+        "3:4": (896, 1152),
+    }
+
+    def __init__(self, base_url: str = "http://127.0.0.1:1234/v1", timeout_seconds: float = 15.0) -> None:
+        """初始化扩写引擎。
+
+        参数:
+            base_url: LM Studio 服务基础地址 (默认: http://127.0.0.1:1234/v1)
+            timeout_seconds: 接口请求超时秒数
+        """
+        self.base_url = base_url.rstrip("/")
+        self.timeout_seconds = timeout_seconds
+
+    def detect_model(self) -> str:
+        """探测当前 LM Studio 实例挂载的模型。若无法连通或列表为空，返回通用回退标识。
+
+        返回值:
+            模型 ID 字符串
+        """
+        url = f"{self.base_url}/models"
+        request = urllib.request.Request(url, headers={"User-Agent": "QwenImageExpander/1.0"})
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+                models = payload.get("data", [])
+                if models and isinstance(models, list):
+                    first_model = models[0]
+                    if isinstance(first_model, dict) and "id" in first_model:
+                        return str(first_model["id"])
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+            logger.warning(f"未能自动检测到 LM Studio 模型，原因: {error}")
+        return "local-default-model"
+
+    def _infer_dimensions(self, user_text: str, target_aspect: Optional[str]) -> Tuple[str, int, int]:
+        """根据用户输入文本的关键词与显式指定推断目标长宽比与尺寸。
+
+        参数:
+            user_text: 用户原始文本
+            target_aspect: 显式指定的长宽比 (如 '16:9', '3:4')
+        返回值:
+            (长宽比标签, 宽度, 高度)
+        """
+        if target_aspect and target_aspect in self.ASPECT_RATIO_PRESETS:
+            dims = self.ASPECT_RATIO_PRESETS[target_aspect]
+            return target_aspect, dims[0], dims[1]
+
+        lower_text = user_text.lower()
+        # 竖屏肖像相关词汇
+        portrait_keywords = ["肖像", "半身", "全身", "立绘", "美女", "少女", "帅哥", "人像", "portrait", "standing"]
+        # 横屏风景相关词汇
+        landscape_keywords = ["风景", "全景", "雪山", "大海", "森林", "城市", "宽屏", "壁纸", "landscape", "panorama", "wallpaper"]
+
+        if any(keyword in lower_text for keyword in portrait_keywords):
+            ratio = "3:4"
+        elif any(keyword in lower_text for keyword in landscape_keywords):
+            ratio = "16:9"
+        else:
+            ratio = "1:1"
+
+        width, height = self.ASPECT_RATIO_PRESETS[ratio]
+        return ratio, width, height
+
+    def _heuristic_fallback(
+        self, user_text: str, style_preset: str, aspect_ratio: str, width: int, height: int
+    ) -> ExpandedPromptResult:
+        """当无法访问本地大模型时的本地启发式规则兜底。
+
+        参数:
+            user_text: 原始用户描述
+            style_preset: 风格预设名称
+            aspect_ratio: 长宽比
+            width: 分辨率宽度
+            height: 分辨率高度
+        返回值:
+            ExpandedPromptResult 结构体
+        """
+        logger.info(f"启用规则引擎对描述 [{user_text}] 执行本地降级扩写")
+        style_keywords = self.STYLE_MODIFIERS.get(style_preset, self.STYLE_MODIFIERS["general"])
+        positive_prompt = (
+            f"{user_text}, highly detailed visual representation, focused subject composition, "
+            f"{style_keywords}, masterpiece quality"
+        )
+        return ExpandedPromptResult(
+            positive_prompt=positive_prompt,
+            negative_prompt=self.DEFAULT_NEGATIVE_PROMPT,
+            aspect_ratio=aspect_ratio,
+            width=width,
+            height=height,
+            model_used="local-heuristic-rule-engine",
+            is_fallback=True,
+        )
+
+    def expand(
+        self, user_text: str, style_preset: str = "cinematic", target_aspect: Optional[str] = None
+    ) -> ExpandedPromptResult:
+        """主入口：将用户极简描述扩写为高表现力的生图提示词。
+
+        参数:
+            user_text: 简短自然语言输入 (中英文均可)
+            style_preset: 目标视觉风格 (cinematic, photorealistic, anime, cyberpunk, general)
+            target_aspect: 可选的固定长宽比
+        返回值:
+            完整的 ExpandedPromptResult
+        """
+        clean_text = user_text.strip()
+        aspect_ratio, width, height = self._infer_dimensions(clean_text, target_aspect)
+        style_description = self.STYLE_MODIFIERS.get(style_preset, self.STYLE_MODIFIERS["general"])
+
+        active_model = self.detect_model()
+        system_instruction = (
+            "You are an expert prompt engineer specializing in Qwen-Image-2.1 and Qwen3-VL text-to-image models. "
+            "Your task is to take a short, simple user prompt and expand it into a rich, detailed, photographic/artistic English prompt. "
+            "Focus on: subject details, textures, environment, atmospheric lighting, spatial depth, and camera optics. "
+            f"Style orientation: {style_preset} ({style_description}). "
+            "Output ONLY the final expanded prompt text directly in one coherent English paragraph. "
+            "Do not include explanations, quotation marks, prefixes, or markdown blocks."
+        )
+
+        chat_payload = {
+            "model": active_model,
+            "messages": [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": f"Expand this into a visually rich image prompt: {clean_text}"},
+            ],
+            "temperature": 0.7,
+            "max_tokens": 300,
+        }
+
+        url = f"{self.base_url}/chat/completions"
+        encoded_data = json.dumps(chat_payload).encode("utf-8")
+        request = urllib.request.Request(
+            url,
+            data=encoded_data,
+            headers={"Content-Type": "application/json", "User-Agent": "QwenImageExpander/1.0"},
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
+                response_data = json.loads(response.read().decode("utf-8"))
+                choices = response_data.get("choices", [])
+                if choices and isinstance(choices, list):
+                    first_choice = choices[0]
+                    if isinstance(first_choice, dict) and "message" in first_choice:
+                        message_content = first_choice["message"].get("content", "").strip()
+                        if message_content:
+                            return ExpandedPromptResult(
+                                positive_prompt=message_content,
+                                negative_prompt=self.DEFAULT_NEGATIVE_PROMPT,
+                                aspect_ratio=aspect_ratio,
+                                width=width,
+                                height=height,
+                                model_used=active_model,
+                                is_fallback=False,
+                            )
+        except Exception as error:
+            logger.warning(f"LM Studio 请求失败，触发自动降级: {error}")
+
+        return self._heuristic_fallback(clean_text, style_preset, aspect_ratio, width, height)
