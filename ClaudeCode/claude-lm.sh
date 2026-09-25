@@ -5,8 +5,8 @@
 #
 # 本地模型列表与角色分配（基于 Apple Silicon / Mac Studio 本地已下载模型）：
 # ------------------------------------------------------------------------------
-# 1. qwen3.8-27b-splash     (17.4 GB, 27B ) -> 专用编码主力 / Sonnet / 默认主力
-# 2. qwen3.6-35b-a3b-splash (21.0 GB, 35B ) -> MoE 高速推理 / Haiku / Subagent / 架构推理
+# 1. qwen3.8-27b-splash         (17.4 GB, 27B Dense)   -> 核心编码主力 / 深度架构推理 / Sonnet / Opus
+# 2. google/gemma-4-26b-a4b-qat (21.0 GB, 26B/4B MoE)  -> 高速子代理 / 极速吞吐 / Haiku / Subagent
 # ==============================================================================
 
 # 1. 独立配置目录，避免与官方 Claude Code 登录凭证（Keychain/OAuth）冲突
@@ -51,9 +51,9 @@ export ANTHROPIC_BASE_URL="${ANTHROPIC_BASE_URL:-http://127.0.0.1:1234}"
 # ==============================================================================
 # 预设模型策略切换（可通过环境变量 PRESET=xxx 或命令行参数灵活切换）
 # 可选 PRESET:
-#   - coder / dual (默认推荐: 主力编码=qwen3.8-27b-splash, 快速Agent/架构推理=qwen3.6-35b-a3b-splash)
-#   - 27b          (全量使用 qwen3.8-27b-splash: 专用代码主力)
-#   - 35b          (全量使用 qwen3.6-35b-a3b-splash: 35B MoE 极速吞吐)
+#   - coder / dual (默认推荐: 主力编码+深度推理=qwen3.8-27b-splash, 极速子Agent=google/gemma-4-26b-a4b-qat)
+#   - 27b / qwen   (全量使用 qwen3.8-27b-splash: 27B Dense 专用代码与强推理)
+#   - 26b / gemma  (全量使用 google/gemma-4-26b-a4b-qat: 26B/4B MoE 极速吞吐)
 #   - single       (统一单模型模式: 将 Sonnet/Haiku/Opus/Subagent 全部重定向至单一模型)
 # ==============================================================================
 PRESET="${PRESET:-coder}"
@@ -71,12 +71,12 @@ while [[ $# -gt 0 ]]; do
             LM_SINGLE_MODEL="$2"
             shift 2
             ;;
-        --27b)
+        --27b|--qwen)
             PRESET="27b"
             shift
             ;;
-        --35b)
-            PRESET="35b"
+        --26b|--35b|--gemma)
+            PRESET="26b"
             shift
             ;;
         --dual|--hybrid)
@@ -100,7 +100,7 @@ if [ -n "$LM_SINGLE_MODEL" ]; then
     SUBAGENT_MODEL="$LM_SINGLE_MODEL"
 else
     case "$PRESET" in
-        27b|qwen27b|qwen3.8)
+        27b|qwen27b|qwen3.8|qwen)
             DEFAULT_MODEL="qwen3.8-27b-splash"
             OPUS_MODEL="qwen3.8-27b-splash"
             FABLE_MODEL="qwen3.8-27b-splash"
@@ -108,22 +108,22 @@ else
             HAIKU_MODEL="qwen3.8-27b-splash"
             SUBAGENT_MODEL="qwen3.8-27b-splash"
             ;;
-        35b|qwen35b|qwen3.6)
-            DEFAULT_MODEL="qwen3.6-35b-a3b-splash"
-            OPUS_MODEL="qwen3.6-35b-a3b-splash"
-            FABLE_MODEL="qwen3.6-35b-a3b-splash"
-            SONNET_MODEL="qwen3.6-35b-a3b-splash"
-            HAIKU_MODEL="qwen3.6-35b-a3b-splash"
-            SUBAGENT_MODEL="qwen3.6-35b-a3b-splash"
+        26b|35b|gemma|qwen35b|qwen3.6)
+            DEFAULT_MODEL="google/gemma-4-26b-a4b-qat"
+            OPUS_MODEL="google/gemma-4-26b-a4b-qat"
+            FABLE_MODEL="google/gemma-4-26b-a4b-qat"
+            SONNET_MODEL="google/gemma-4-26b-a4b-qat"
+            HAIKU_MODEL="google/gemma-4-26b-a4b-qat"
+            SUBAGENT_MODEL="google/gemma-4-26b-a4b-qat"
             ;;
         coder|dual|hybrid|*)
-            # 默认推荐组合：27B 编程主力 (Sonnet) + 35B MoE 架构推理 (Opus) 与极速 Agent (Haiku)
+            # 默认推荐组合：27B Dense 负责主力编码与深度推理 (Sonnet/Opus/Fable)，26B MoE (4B active) 专职极速子代理 (Haiku/Subagent)
             DEFAULT_MODEL="qwen3.8-27b-splash"
-            OPUS_MODEL="qwen3.6-35b-a3b-splash"
-            FABLE_MODEL="qwen3.6-35b-a3b-splash"
+            OPUS_MODEL="qwen3.8-27b-splash"
+            FABLE_MODEL="qwen3.8-27b-splash"
             SONNET_MODEL="qwen3.8-27b-splash"
-            HAIKU_MODEL="qwen3.6-35b-a3b-splash"
-            SUBAGENT_MODEL="qwen3.6-35b-a3b-splash"
+            HAIKU_MODEL="google/gemma-4-26b-a4b-qat"
+            SUBAGENT_MODEL="google/gemma-4-26b-a4b-qat"
             ;;
     esac
 fi
