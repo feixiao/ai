@@ -10,7 +10,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from prompt_expander import ExpandedPromptResult
-from qwen_image21_test import inject_workflow_parameters, parse_arguments
+from qwen_image21_test import _normalize_host, inject_workflow_parameters, parse_arguments
+
+
+def test_normalize_host() -> None:
+    """测试主机地址协议前缀的标准化处理。"""
+    assert _normalize_host("127.0.0.1:8188") == "127.0.0.1:8188"
+    assert _normalize_host("http://127.0.0.1:8188") == "127.0.0.1:8188"
+    assert _normalize_host("https://remote.server.com:8188") == "remote.server.com:8188"
+    assert _normalize_host("  http://localhost:1234  ") == "localhost:1234"
 
 
 def test_cli_argument_parsing() -> None:

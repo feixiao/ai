@@ -58,6 +58,22 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def _normalize_host(host_str: str) -> str:
+    """去除协议前缀，统一格式为 host:port。
+
+    参数:
+        host_str: 用户输入的主机字符串
+    返回值:
+        去除了协议头的主机与端口字符串
+    """
+    cleaned = host_str.strip()
+    if cleaned.startswith("http://"):
+        return cleaned[len("http://") :]
+    if cleaned.startswith("https://"):
+        return cleaned[len("https://") :]
+    return cleaned
+
+
 def check_system_readiness(comfy_url: str, lmstudio_url: str) -> Dict[str, bool]:
     """检测关键外部服务连通性。
 
@@ -68,10 +84,12 @@ def check_system_readiness(comfy_url: str, lmstudio_url: str) -> Dict[str, bool]
         服务名称到连通状态的映射
     """
     status: Dict[str, bool] = {"comfyui": False, "lmstudio": False}
+    normalized_comfy = _normalize_host(comfy_url)
+    normalized_lm = _normalize_host(lmstudio_url)
 
     # 检测 ComfyUI
     try:
-        req = urllib.request.Request(f"http://{comfy_url}/system_stats")
+        req = urllib.request.Request(f"http://{normalized_comfy}/system_stats")
         with urllib.request.urlopen(req, timeout=2.0) as resp:
             if resp.status == 200:
                 status["comfyui"] = True
@@ -80,7 +98,7 @@ def check_system_readiness(comfy_url: str, lmstudio_url: str) -> Dict[str, bool]
 
     # 检测 LM Studio
     try:
-        req = urllib.request.Request(f"http://{lmstudio_url}/v1/models")
+        req = urllib.request.Request(f"http://{normalized_lm}/v1/models")
         with urllib.request.urlopen(req, timeout=2.0) as resp:
             if resp.status == 200:
                 status["lmstudio"] = True
@@ -241,16 +259,19 @@ def main(argv: Optional[List[str]] = None) -> int:
     with open(workflow_path, "r", encoding="utf-8") as f:
         workflow_template = json.load(f)
 
+    comfy_host = _normalize_host(args.comfy_host)
+    lmstudio_host = _normalize_host(args.lmstudio_host)
+
     # 2. 检查外部服务连通性
-    services = check_system_readiness(args.comfy_host, args.lmstudio_host)
+    services = check_system_readiness(comfy_host, lmstudio_host)
     print(f"📡 连通性检查:")
-    print(f"   · LM Studio ({args.lmstudio_host}): {'✅ 在线' if services['lmstudio'] else '⚠️ 离线 (将启用本地规则兜底)'}")
-    print(f"   · ComfyUI   ({args.comfy_host}):   {'✅ 在线' if services['comfyui'] else '❌ 离线'}")
+    print(f"   · LM Studio ({lmstudio_host}): {'✅ 在线' if services['lmstudio'] else '⚠️ 离线 (将启用本地规则兜底)'}")
+    print(f"   · ComfyUI   ({comfy_host}):   {'✅ 在线' if services['comfyui'] else '❌ 离线'}")
 
     # 3. 提示词扩写
     print("\n🔍 正在进行智能提示词扩写...")
     expand_start = time.time()
-    expander = LMStudioPromptExpander(base_url=f"http://{args.lmstudio_host}/v1")
+    expander = LMStudioPromptExpander(base_url=f"http://{lmstudio_host}/v1")
     prompt_result = expander.expand(user_text=args.desc, style_preset=args.style, target_aspect=args.aspect)
     expand_duration = time.time() - expand_start
 
