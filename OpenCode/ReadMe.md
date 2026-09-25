@@ -29,9 +29,10 @@
 
 ```text
 OpenCode/
-├── opencode.json     # 符合 opencode.ai/config.json 规范的核心配置文件
-├── install.sh        # 一键安装、服务连通性自检与平滑合并脚本
-└── ReadMe.md         # 本部署与使用指南文档
+├── opencode.json      # 符合 opencode.ai/config.json 规范的核心配置文件
+├── install.sh         # 一键安装、服务连通性自检与平滑合并脚本
+├── remote-connect.sh  # 手机端与内网穿透直连管理脚本 (支持自有服务器/局域网/临时穿透)
+└── ReadMe.md          # 本部署、移动端接入与使用指南文档
 ```
 
 ---
@@ -162,3 +163,79 @@ opencode
 1. **服务端口冲突**：LM Studio 默认端口为 `1234`，若在设置中更改了端口（例如改为 `8000`），可通过 `./install.sh --port 8000` 进行部署，或直接修改 `opencode.json` 中的 `baseURL`。
 2. **JIT 模型加载**：确保 LM Studio 设置中开启了 "Keep in Memory" 或自动加载功能，避免并发请求时发生模型切换延迟。
 3. **网络代理旁路**：本地推理请求必须旁路系统代理，确保 `127.0.0.1` 和 `localhost` 不走外部 HTTP 代理。
+
+---
+
+## 7. 手机端与远程访问指南 (内网穿透 / 自有云服务器)
+
+OpenCode 原生内置了 **Web 控制台** 与 **安全扫码配对机制（Pairing）**，支持手机端浏览器直接访问，亦可一键“添加到主屏幕”作为独立 PWA App 使用。
+
+为满足您在**无公网域名、仅有公网云服务器 IP** 或**局域网环境**下的手机直连需求，本目录提供了自动化运维脚本 [`remote-connect.sh`](./remote-connect.sh)。
+
+### 7.1 方案 A：自有公网云服务器（SSH 反向隧道，纯 IP 访问，首选推荐）
+
+此方案无需购买或配置任何域名，直接利用 Mac 自带的 SSH 建立反向加密隧道，手机直接通过 `http://<云服务器IP>:<端口>` 访问，100% 走私有链路。
+
+#### 步骤一：云服务器 1 分钟基础配置
+云服务器 SSH 默认仅允许本地绑定，需开启网关端口转发（`GatewayPorts`）：
+```bash
+# 登录您的公网云服务器执行以下命令开启 GatewayPorts 并重启 sshd：
+sudo sed -i 's/^#*GatewayPorts.*/GatewayPorts yes/' /etc/ssh/sshd_config
+grep -q "^GatewayPorts yes" /etc/ssh/sshd_config || echo "GatewayPorts yes" | sudo tee -a /etc/ssh/sshd_config
+sudo systemctl restart sshd || sudo service ssh restart
+```
+并在云服务商控制台（阿里云/腾讯云/华为云/AWS 等）的安全组规则中，放行对应的入方向端口（推荐 `8888` 或 `9000` 等常用 Web 端口）。
+
+#### 步骤二：Mac 本地一键启动并配对
+若云服务器的 `8080` 端口已被其他服务占用，可指定任意放行端口（如 `8888`）：
+```bash
+# 基本用法（映射到云服务器 8888 端口）：
+./remote-connect.sh --server <您的服务器公网IP> --port 8888
+
+# 首次指定并保存配置（下次直接执行 ./remote-connect.sh 即可免参秒连）：
+./remote-connect.sh --server 43.163.244.203 --user ubuntu --port 8888 --save
+```
+
+脚本将自动：
+1. 确保本地 OpenCode 服务处于就绪状态。
+2. 建立稳定的 SSH 远程端口转发通道。
+3. 在终端即时绘制**专属二维码**与**带安全 Token 的登录链接**。
+4. 手机微信或自带相机扫码直接打开使用；在终端按 `Ctrl + C` 可随时安全终止隧道。
+
+---
+
+### 7.2 方案 B：局域网 Wi-Fi 快速配对
+
+当手机与 Mac 处于同一 Wi-Fi 或内网时，无需经过任何公网服务器：
+
+```bash
+./remote-connect.sh --lan
+```
+
+脚本会自动获取 Mac 当前 Wi-Fi 局域网 IP（如 `192.168.2.138`），输出配对二维码，手机在同一网络下扫码秒连。
+
+---
+
+### 7.3 方案 C：免配置临时穿透 (Cloudflare Quick Tunnel)
+
+在外出且临时无法访问自建服务器时，可使用免配置临时隧道：
+
+```bash
+./remote-connect.sh --quick
+```
+
+脚本会自动启动临时隧道并获取官方免费分配的安全 HTTPS 域名（如 `https://xxxx.trycloudflare.com`），生成扫码二维码。完全免注册、免自备域名。
+
+---
+
+### 7.4 手机端交互体验最佳实践
+
+1. **一键添加为独立 App (PWA)**：
+   - **iOS (Safari)**：点击底部“分享”按钮 -> 选择“添加到主屏幕”（Add to Home Screen）。
+   - **Android (Chrome)**：点击右上角菜单 -> 选择“安装应用”或“添加到主屏幕”。
+   - 此时 OpenCode 将以全屏、无地址栏的沉浸式原生 App 形态运行。
+2. **多设备鉴权隔离**：
+   - 扫码链接自带 OpenCode 原生 Hash 鉴权凭据，外网未授权用户无法随意访问。
+3. **远程会话无缝接续**：
+   - 手机端创建或正在运行的任务，回到电脑端打开 `opencode` 可直接无缝继续协作。
+
