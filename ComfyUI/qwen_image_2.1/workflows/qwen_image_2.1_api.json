@@ -33,7 +33,7 @@
         "2",
         0
       ],
-      "prompt": "A majestic cybernetic feline walking down a futuristic neon alley at rainy night, highly detailed, 8k resolution, cinematic lighting",
+      "prompt": "A majestic cybernetic feline walking down a futuristic neon alley at rainy night, highly detailed, 4k resolution, cinematic lighting",
       "negative_prompt": "blurry, out of focus, low quality, bad anatomy, deformed limbs, extra fingers, poorly drawn hands, low resolution, bad proportions, watermark, signature, ugly",
       "resolution": 1024
     },

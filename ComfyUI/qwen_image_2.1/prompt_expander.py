@@ -40,11 +40,11 @@ class LMStudioPromptExpander:
 
     # 常见风格注入模版
     STYLE_MODIFIERS: Dict[str, str] = {
-        "cinematic": "cinematic lighting, 35mm film still, dramatic atmosphere, depth of field, anamorphic lens flares, 8k resolution, highly detailed",
-        "photorealistic": "hyperrealistic photograph, shot on Hasselblad, natural soft lighting, intricate textures, pore level detail, award-winning photography",
-        "anime": "refined anime aesthetic, Makoto Shinkai style, vibrant harmonious colors, clean lineart, soft cel shading, high aesthetic quality",
-        "cyberpunk": "cyberpunk genre, rainy night street, vibrant neon reflections, volumetric magenta and cyan lighting, intricate metallic mechanical components, futuristic high-tech",
-        "general": "masterpiece, best quality, ultra-detailed, beautiful composition, rich contrast, balanced color grading",
+        "cinematic": "cinematic lighting, 35mm film still, dramatic atmosphere, depth of field, anamorphic lens flares, 4k resolution, highly detailed",
+        "photorealistic": "hyperrealistic photograph, shot on Hasselblad, natural soft lighting, intricate textures, 4k resolution, award-winning photography",
+        "anime": "refined anime aesthetic, Makoto Shinkai style, vibrant harmonious colors, clean lineart, soft cel shading, 4k high aesthetic quality",
+        "cyberpunk": "cyberpunk genre, rainy night street, vibrant neon reflections, volumetric magenta and cyan lighting, intricate metallic mechanical components, 4k resolution",
+        "general": "masterpiece, 4k resolution, sharp details, beautiful composition, rich contrast, balanced color grading",
     }
 
     # 长宽比与分辨率映射 (对齐 64 像素倍数，匹配 VAE 编解码约束)
@@ -193,6 +193,7 @@ class LMStudioPromptExpander:
             "You are an expert prompt engineer specializing in Qwen-Image-2.1 and Qwen3-VL text-to-image models. "
             "Your task is to take a short, simple user prompt and expand it into a rich, detailed, photographic/artistic English prompt. "
             "Focus on: subject details, textures, environment, atmospheric lighting, spatial depth, and camera optics. "
+            "Target quality standard: 4k resolution, crisp clean details, natural sharpness (do NOT use 8k or over-exaggerated buzzwords). "
             f"Style orientation: {style_preset} ({style_description}). "
             "Output ONLY the final expanded prompt text directly in one coherent English paragraph. "
             "Do not include explanations, quotation marks, prefixes, or markdown blocks."
