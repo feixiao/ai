@@ -1,7 +1,7 @@
 {
   "1": {
     "inputs": {
-      "unet_name": "qwen_image_2.1-Q8_0.gguf"
+      "unet_name": "qwen-image-2.1-Q8_0.gguf"
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
@@ -10,7 +10,7 @@
   },
   "2": {
     "inputs": {
-      "clip_name": "Qwen3VL-8B-Instruct-Q4_K_M.gguf",
+      "clip_name": "Qwen3-VL-8B-Instruct-Q4_K_M.gguf",
       "type": "qwen_image"
     },
     "class_type": "CLIPLoaderGGUF",
@@ -20,7 +20,7 @@
   },
   "3": {
     "inputs": {
-      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+      "vae_name": "ae.safetensors"
     },
     "class_type": "VAELoader",
     "_meta": {

@@ -66,6 +66,12 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
         help="指定用于扩写的模型名称 (默认自动优先检测并选用 Qwen 系列大模型)",
     )
     parser.add_argument("--dry-run", action="store_true", help="仅执行扩写与工作流参数装配，不实际向 ComfyUI 发起生图")
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=300.0,
+        help="等待 ComfyUI 生图完成的最大秒数 (Apple Silicon 建议 600 以上)",
+    )
     return parser.parse_args(argv)
 
 
@@ -207,16 +213,17 @@ def submit_comfyui_prompt(comfy_host: str, workflow_dict: Dict[str, object]) -> 
 
 def wait_and_download_image(
     comfy_host: str, prompt_id: str, output_dir: Path, timeout_seconds: float = 300.0
-) -> List[Path]:
-    """轮询任务历史记录并在完成后下载图像。
+) -> Tuple[bool, List[Path]]:
+    """轮询任务历史记录，在任务结束后下载图像产物。
 
     参数:
-        comfy_host: ComfyUI 服务地址
+        comfy_host: ComfyUI 服务地址 (host:port 格式)
         prompt_id: 任务标识符
         output_dir: 产物保存目录
         timeout_seconds: 最大等待超时时间
     返回值:
-        下载保存的图片路径列表
+        二元组 (任务是否真正执行成功, 下载保存的图片路径列表)。
+        ComfyUI 任务执行失败时 status.status_str 为 "error"，此时返回失败并打印完整错误日志。
     """
     history_url = f"http://{comfy_host}/history/{prompt_id}"
     start_time = time.time()
@@ -232,8 +239,18 @@ def wait_and_download_image(
                 history_payload = json.loads(resp.read().decode("utf-8"))
                 if prompt_id in history_payload:
                     prompt_data = history_payload[prompt_id]
+
+                    # 先检查任务状态：ComfyUI 执行失败也会写入 history，但 status_str 为 "error"
+                    status_info = prompt_data.get("status", {})
+                    if isinstance(status_info, dict) and status_info.get("status_str") == "error":
+                        messages = status_info.get("messages", [])
+                        logger.error(f"ComfyUI 任务执行失败 (ID: {prompt_id}):")
+                        for msg in messages:
+                            logger.error(f"   {msg}")
+                        return False, output_files
+
+                    # 查找图像输出节点并下载
                     outputs = prompt_data.get("outputs", {})
-                    # 查找图像输出节点
                     for node_id, node_output in outputs.items():
                         images = node_output.get("images", [])
                         for img in images:
@@ -249,13 +266,13 @@ def wait_and_download_image(
                             urllib.request.urlretrieve(view_url, str(dest_path))
                             logger.info(f"生成图片已下载: {dest_path}")
                             output_files.append(dest_path)
-                    return output_files
+                    return True, output_files
         except Exception as error:
             logger.debug(f"轮询历史状态重试: {error}")
         time.sleep(2.0)
 
     logger.warning("任务等待超时，未能获取最终产物")
-    return output_files
+    return False, output_files
 
 
 def main(argv: Optional[List[str]] = None) -> int:
@@ -333,20 +350,25 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     print("\n📦 正在推送任务至 ComfyUI...")
     gen_start = time.time()
-    prompt_id = submit_comfyui_prompt(args.comfy_host, injected_workflow)
+    prompt_id = submit_comfyui_prompt(comfy_host, injected_workflow)
     if not prompt_id:
         return 3
 
-    output_images = wait_and_download_image(args.comfy_host, prompt_id, output_dir)
+    success, output_images = wait_and_download_image(comfy_host, prompt_id, output_dir, timeout_seconds=args.timeout)
     gen_duration = time.time() - gen_start
 
     print("=" * 70)
-    print(f"🎉 任务完成! 生图总耗时: {gen_duration:.2f}s")
-    for img_path in output_images:
-        print(f"🖼️ 产物位置: {img_path}")
-    print("=" * 70)
+    if success and output_images:
+        print(f"🎉 任务完成! 生图总耗时: {gen_duration:.2f}s")
+        for img_path in output_images:
+            print(f"🖼️ 产物位置: {img_path}")
+        print("=" * 70)
+        return 0
 
-    return 0
+    print(f"❌ 生图失败! (总耗时: {gen_duration:.2f}s, 产出图片: {len(output_images)} 张)")
+    print("💡 排查建议: 查看上方 ERROR 日志, 常见原因为 VAE 架构与 UNet 不匹配或显存不足")
+    print("=" * 70)
+    return 4
 
 
 if __name__ == "__main__":
