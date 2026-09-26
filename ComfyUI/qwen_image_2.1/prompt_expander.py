@@ -59,14 +59,14 @@ class LMStudioPromptExpander:
     def __init__(
         self,
         base_url: str = "http://127.0.0.1:1234/v1",
-        timeout_seconds: float = 30.0,
+        timeout_seconds: float = 60.0,
         preferred_model: Optional[str] = None,
     ) -> None:
         """初始化扩写引擎。
 
         参数:
             base_url: LM Studio 服务基础地址 (默认: http://127.0.0.1:1234/v1)
-            timeout_seconds: 接口请求超时秒数
+            timeout_seconds: 接口请求超时秒数 (默认 60.0s)
             preferred_model: 指定或偏好的模型名称
         """
         self.base_url = base_url.rstrip("/")
@@ -74,7 +74,7 @@ class LMStudioPromptExpander:
         self.preferred_model = preferred_model
 
     def detect_model(self) -> str:
-        """探测当前 LM Studio 实例挂载的模型。优先选择指定模型或 Qwen 系列模型。
+        """探测当前 LM Studio 实例挂载的模型。优先选用 qwen3-vl，其次选用其他 Qwen 系列模型。
 
         返回值:
             模型 ID 字符串
@@ -92,11 +92,15 @@ class LMStudioPromptExpander:
                     model_ids: List[str] = [
                         str(item["id"]) for item in models if isinstance(item, dict) and "id" in item
                     ]
-                    # 优先挑选 Qwen 系列模型 (如 qwen3-vl, qwen3.8 等)
+                    # 优先级 1: 优先挑选视觉与多模态匹配的 qwen3-vl 模型
+                    for model_id in model_ids:
+                        if "qwen" in model_id.lower() and "vl" in model_id.lower():
+                            return model_id
+                    # 优先级 2: 挑选其他 Qwen 系列大模型
                     for model_id in model_ids:
                         if "qwen" in model_id.lower():
                             return model_id
-                    # 其次挑选首个可用模型
+                    # 优先级 3: 挑选首个可用模型
                     if model_ids:
                         return model_ids[0]
         except Exception as error:
