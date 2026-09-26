@@ -155,11 +155,18 @@ def inject_workflow_parameters(
         if isinstance(meta, dict):
             title = str(meta.get("title", "")).lower()
 
-        # 注入正向提示词
-        if class_type == "CLIPTextEncode" and ("positive" in title or node_id == "4"):
+        # 注入 TextEncodeQwenImage21 (官方 Qwen 2.1 复合编码节点)
+        if class_type == "TextEncodeQwenImage21":
+            inputs["prompt"] = prompt_res.positive_prompt
+            inputs["negative_prompt"] = prompt_res.negative_prompt
+            # 分辨率设为两者最大边或基准，至少为 512
+            inputs["resolution"] = max(prompt_res.width, prompt_res.height, 512)
+
+        # 注入正向提示词 (传统 CLIPTextEncode)
+        elif class_type == "CLIPTextEncode" and ("positive" in title or node_id == "4"):
             inputs["text"] = prompt_res.positive_prompt
 
-        # 注入负向提示词
+        # 注入负向提示词 (传统 CLIPTextEncode)
         elif class_type == "CLIPTextEncode" and ("negative" in title or node_id == "5"):
             inputs["text"] = prompt_res.negative_prompt
 
@@ -366,7 +373,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         return 0
 
     print(f"❌ 生图失败! (总耗时: {gen_duration:.2f}s, 产出图片: {len(output_images)} 张)")
-    print("💡 排查建议: 查看上方 ERROR 日志, 常见原因为 VAE 架构与 UNet 不匹配或显存不足")
+    print("💡 排查建议:")
+    print("   1. 若报错包含 'NoneType object has no attribute endswith': 表示 ComfyUI 无法找到指定的 GGUF 模型文件（模型不存在或软链接失效）")
+    print("   2. 若报错包含 VAE: 请确保使用专用 VAE (qwen_image_2.1_vae_bf16.safetensors)，勿与 SDXL/FLUX VAE 混用")
+    print("   3. 更多详情请查看上方 ERROR 日志中的 node_type 与 traceback")
     print("=" * 70)
     return 4
 
