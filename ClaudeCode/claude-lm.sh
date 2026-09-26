@@ -32,7 +32,7 @@ if [ ! -f "$CLAUDE_CONFIG_DIR/settings.json" ]; then
 {
   "model": "sonnet",
   "autoCompactEnabled": true,
-  "autoCompactWindow": 100000,
+  "autoCompactWindow": 150000,
   "skipDangerousModePermissionPrompt": true
 }
 EOF
@@ -165,15 +165,21 @@ export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1
 export CLAUDE_STREAM_IDLE_TIMEOUT_MS=3000000
 export API_TIMEOUT_MS=3000000
 
-# 上下文控制在 100k 以内并自动压缩配置
-# 1. 设定最大上下文窗口与自动压缩触发窗口为 100k
-export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-100000}"
-export CLAUDE_CODE_AUTO_COMPACT_WINDOW="${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-100000}"
+# 上下文控制在 150k 并自动压缩配置（扣除 20k 输出预留与 13k 安全边际后，真实触发阈值为 117k，留足 97k 工作缓冲，防止 3 轮内反弹熔断）
+# 1. 设定最大上下文窗口与自动压缩触发窗口为 150k
+export CLAUDE_CODE_MAX_CONTEXT_TOKENS="${CLAUDE_CODE_MAX_CONTEXT_TOKENS:-150000}"
+export CLAUDE_CODE_AUTO_COMPACT_WINDOW="${CLAUDE_CODE_AUTO_COMPACT_WINDOW:-150000}"
 
-# 2. 启用未知模型的窗口强制约束（确保本地模型在接近 100k 时主动触发自动压缩，而不是被动等待 API 报错）
+# 2. 限制单次读取文件/工具输出最大 Token，防止单次大文件瞬时打爆上下文
+export CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS="${CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS:-16000}"
+
+# 3. 启用冷压缩（剥离冗余附件，降低压缩后底噪）
+export CLAUDE_CODE_COLD_COMPACT=1
+
+# 4. 启用未知模型的窗口强制约束（确保本地模型在接近阈值时主动触发自动压缩，而不是被动等待 API 报错）
 unset CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT
 
-# 3. 确保压缩功能全量启用（防被外部环境意外禁用）
+# 5. 确保压缩功能全量启用（防被外部环境意外禁用）
 unset DISABLE_COMPACT
 unset DISABLE_AUTO_COMPACT
 
