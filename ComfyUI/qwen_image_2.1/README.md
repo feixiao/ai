@@ -58,10 +58,47 @@ hf download unsloth/Qwen-Image-2.1-GGUF qwen-image-2.1-Q8_0.gguf --local-dir /Us
 # 2. 下载 Qwen3-VL 编码器 GGUF (存入 models/clip)
 hf download unsloth/Qwen3-VL-8B-Instruct-GGUF Qwen3-VL-8B-Instruct-Q4_K_M.gguf --local-dir /Users/frank/ComfyUI/models/clip
 
+# 2.1 兼容性别名软链接 (确保不同工作流命名规范兼容)
+ln -sf /Users/frank/ComfyUI/models/clip/Qwen3-VL-8B-Instruct-Q4_K_M.gguf /Users/frank/ComfyUI/models/clip/Qwen3VL-8B-Instruct-Q4_K_M.gguf
+
 # 3. 下载 Qwen-Image-2.1 专用 16 通道 VAE (存入 models/vae)
 hf download Comfy-Org/Qwen-Image-2.1 vae/qwen_image_2.1_vae_bf16.safetensors --local-dir /tmp/qwen_vae && \
 mv /tmp/qwen_vae/vae/qwen_image_2.1_vae_bf16.safetensors /Users/frank/ComfyUI/models/vae/
 ```
+
+### 💡 核心答疑：LM Studio 中已下载 Qwen3-VL-8B，能否直接复用？
+
+**答：提示词扩写阶段可以直接用；但 ComfyUI 生图阶段不能直接复用 LM Studio 默认下载的 MLX 分片。**
+
+#### 1. 角色分工与底层机制差异
+- **提示词扩写（LLM 生成阶段）**：作为独立 HTTP 接口服务运行。本地 LM Studio 中只要已挂载 `qwen3-vl-8b`（无论 MLX 还是 GGUF 格式），本项目的测试脚本与自定义节点即可直接通过 API 调度进行智能扩写，**无需重复下载**。
+- **生图特征提取（ComfyUI 阶段）**：ComfyUI 的 `CLIPLoaderGGUF` 需要将模型权重直接载入计算图，以提取 Cross-Attention 隐层特征向量（Conditioning）。由于 LM Studio 在 Apple Silicon 上默认下载的常为 **MLX 多分片 safetensors 格式**（目录内包含 `model-00001-of-00002.safetensors` 与分片索引等），ComfyUI 无法直接解析该分片结构，必须使用**单一 GGUF 量化文件**。
+
+#### 2. 磁盘空间极致优化方案（统一由 LM Studio 下载 GGUF + 软链映射，立省 ~5.5GB）
+LM Studio（基于 llama.cpp 后端）原生支持 GGUF 格式。推荐直接在 LM Studio 中下载 GGUF 变体，再通过**软链接（Symlink）**共享给 ComfyUI，整机仅保留一份约 5.2GB 文件：
+
+##### 步骤 1：在 LM Studio 中获取 GGUF 变体
+* **GUI 界面操作**：打开 LM Studio 搜索 `qwen/qwen3-vl-8b`，在版本/量化选项（Variants）下拉列表中选择 **GGUF** 架构（推荐 `Q4_K_M` 量化）点击下载；
+* **CLI 命令行操作**（任选其一）：
+  ```bash
+  ~/.lmstudio/bin/lms get qwen/qwen3-vl-8b --gguf
+  ```
+
+##### 步骤 2：建立软链接至 ComfyUI clip 目录
+LM Studio 下载完成后，在终端执行以下软链命令，ComfyUI 即可立刻识别并加载：
+
+```bash
+# 1. 映射 LM Studio 下载的 GGUF 到 ComfyUI models/clip 目录
+ln -sf /Users/Shared/LLM_Models/lmstudio-community/Qwen3-VL-8B-Instruct-GGUF/Qwen3-VL-8B-Instruct-Q4_K_M.gguf /Users/frank/ComfyUI/models/clip/Qwen3-VL-8B-Instruct-Q4_K_M.gguf
+
+# 2. 创建兼容别名软链接（兼容不同工作流引用命名）
+ln -sf /Users/frank/ComfyUI/models/clip/Qwen3-VL-8B-Instruct-Q4_K_M.gguf /Users/frank/ComfyUI/models/clip/Qwen3VL-8B-Instruct-Q4_K_M.gguf
+```
+
+##### 步骤 3：双向复用与旧文件清理
+1. **ComfyUI 端**：直接作为 `clip_name` 文本编码器载入生图；
+2. **LM Studio 端**：直接加载该 GGUF 变体模型并开启本地 Server；
+3. **安全清理**：若硬盘空间紧张，可在 LM Studio 中删除原先的 `Qwen3-VL-8B-Instruct-MLX-4bit` 目录，全机只保留一份 ~5.2GB 的 GGUF 文件。
 
 > ⚠️ **常见报错说明**：
 > 如果在生图时终端打印 `ComfyUI 节点错误 (缺少模型文件或缺少自定义节点): clip_name / unet_name / vae_name ... Value not in list`，即表明上述对应模型文件尚未下载到位，下载对应文件并刷新 ComfyUI 即可解决。
