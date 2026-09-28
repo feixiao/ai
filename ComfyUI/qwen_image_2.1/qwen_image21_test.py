@@ -49,7 +49,19 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
         choices=["cinematic", "photorealistic", "anime", "cyberpunk", "general"],
         help="画面风格预设",
     )
-    parser.add_argument("--steps", type=int, default=24, help="采样迭代步数 (推荐 20-28)")
+    parser.add_argument("--steps", type=int, default=16, help="采样迭代步数 (Flow-Matching 推荐 14-20 步)")
+    parser.add_argument(
+        "--cfg",
+        type=float,
+        default=1.0,
+        help="Classifier-Free Guidance 引导系数 (默认 1.0 启用单前向极速生图，耗时减半；>1.0 启用双前向对比引导)",
+    )
+    parser.add_argument(
+        "--size",
+        type=str,
+        default=None,
+        help="强制指定分辨率，如 '896x896', '1024x1024', '768x768' (896x896 在 Mac 上兼顾极佳画质与出图速度)",
+    )
     parser.add_argument("--seed", type=int, default=-1, help="随机种子 (-1 表示随机生成)")
     parser.add_argument("--aspect", type=str, default=None, help="显式指定长宽比 (如 '1:1', '16:9', '3:4')")
     parser.add_argument(
@@ -63,7 +75,7 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
         "--llm-model",
         type=str,
         default=None,
-        help="指定用于扩写的模型名称 (默认自动优先检测并选用 Qwen 系列大模型)",
+        help="指定用于扩写的模型名称 (默认自动优先检测并选用同源多模态 Qwen3-VL 等 Qwen 系列大模型)",
     )
     parser.add_argument("--dry-run", action="store_true", help="仅执行扩写与工作流参数装配，不实际向 ComfyUI 发起生图")
     parser.add_argument(
@@ -126,7 +138,12 @@ def check_system_readiness(comfy_url: str, lmstudio_url: str) -> Dict[str, bool]
 
 
 def inject_workflow_parameters(
-    workflow_template: Dict[str, object], prompt_res: ExpandedPromptResult, steps: int, seed: int
+    workflow_template: Dict[str, object],
+    prompt_res: ExpandedPromptResult,
+    steps: int,
+    seed: int,
+    cfg: float = 1.0,
+    size_override: Optional[str] = None,
 ) -> Dict[str, object]:
     """将提示词扩写结果与采样参数深度注入到工作流字典中。
 
@@ -135,10 +152,22 @@ def inject_workflow_parameters(
         prompt_res: 扩写结果对象
         steps: 采样步数
         seed: 随机种子
+        cfg: 引导尺度 (默认 1.0)
+        size_override: 可选显式指定分辨率字符串 (如 '896x896')
     返回值:
         完成参数装配的新工作流字典
     """
     workflow: Dict[str, object] = copy.deepcopy(workflow_template)
+
+    target_w = prompt_res.width
+    target_h = prompt_res.height
+    if size_override and "x" in size_override.lower():
+        try:
+            parts = size_override.lower().split("x")
+            target_w = (int(parts[0]) // 16) * 16
+            target_h = (int(parts[1]) // 16) * 16
+        except Exception:
+            pass
 
     # 遍历节点注入参数
     for node_id, node_raw in workflow.items():
@@ -160,7 +189,7 @@ def inject_workflow_parameters(
             inputs["prompt"] = prompt_res.positive_prompt
             inputs["negative_prompt"] = prompt_res.negative_prompt
             # 分辨率设为两者最大边或基准，至少为 512
-            inputs["resolution"] = max(prompt_res.width, prompt_res.height, 512)
+            inputs["resolution"] = max(target_w, target_h, 512)
 
         # 注入正向提示词 (传统 CLIPTextEncode)
         elif class_type == "CLIPTextEncode" and ("positive" in title or node_id == "4"):
@@ -172,13 +201,14 @@ def inject_workflow_parameters(
 
         # 注入分辨率
         elif class_type in ("EmptyLatentImage", "EmptyQwenImageLayeredLatentImage"):
-            inputs["width"] = prompt_res.width
-            inputs["height"] = prompt_res.height
+            inputs["width"] = target_w
+            inputs["height"] = target_h
 
         # 注入采样参数
         elif class_type == "KSampler":
             inputs["steps"] = steps
             inputs["seed"] = seed
+            inputs["cfg"] = cfg
 
     return workflow
 
@@ -298,7 +328,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     print("🚀 Qwen-Image-2.1 本地测试套件启动")
     print(f"📝 原始描述: {args.desc}")
     print(f"🎨 风格预设: {args.style}")
-    print(f"⚙️ 采样步数: {args.steps}")
+    print(f"⚙️ 采样配置: 步数={args.steps}, CFG={args.cfg}")
+    if args.size:
+        print(f"📐 分辨率覆盖: {args.size}")
     print("=" * 70)
 
     # 1. 检查工作流模板
@@ -334,7 +366,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     # 4. 生成随机种子与组装参数
     chosen_seed = random.randint(1, 2**31 - 1) if args.seed == -1 else args.seed
     injected_workflow = inject_workflow_parameters(
-        workflow_template=workflow_template, prompt_res=prompt_result, steps=args.steps, seed=chosen_seed
+        workflow_template=workflow_template,
+        prompt_res=prompt_result,
+        steps=args.steps,
+        seed=chosen_seed,
+        cfg=args.cfg,
+        size_override=args.size,
     )
 
     # 5. 若为 dry-run 模式，直接保存测试组装结果并退出

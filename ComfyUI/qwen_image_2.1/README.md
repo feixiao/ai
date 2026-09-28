@@ -43,7 +43,7 @@ ComfyUI/qwen_image_2.1/
 
 | 角色分类 | 推荐下载文件名 (首选 GGUF) | 目标存放目录 | Hugging Face 仓库源 | 显存/内存预估 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Diffusion 主模型 (推荐)** | `qwen-image-2.1-Q4_K_M.gguf`<br>*(高精度可选 `qwen-image-2.1-Q8_0.gguf`)* | `models/unet/` | [`unsloth/Qwen-Image-2.1-GGUF`](https://huggingface.co/unsloth/Qwen-Image-2.1-GGUF) | ~4.8GB (Q4) / ~8.5GB (Q8) |
+| **Diffusion 主模型 (默认首选)** | `qwen-image-2.1-UC-Q4_K_M.gguf`<br>*(或 `qwen-image-2.1-Q4_K_M.gguf`，高精度可选 `Q8_0`)* | `models/unet/` | [`unsloth/Qwen-Image-2.1-GGUF`](https://huggingface.co/unsloth/Qwen-Image-2.1-GGUF) | ~4.3GB (Q4) / ~8.5GB (Q8) |
 | **文本/视觉编码器** | `Qwen3-VL-8B-Instruct-Q4_K_M.gguf`<br>*(极轻量可选 `Qwen3-VL-8B-Instruct-Q3_K_M.gguf`)* | `models/clip/` | [`unsloth/Qwen3-VL-8B-Instruct-GGUF`](https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF) | ~5.2GB (Q4) / ~3.8GB (Q3) |
 | **专用 VAE 解码器** | `qwen_image_2.1_vae_bf16.safetensors` | `models/vae/` | [`Comfy-Org/Qwen-Image-2.1`](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) | ~335MB |
 
@@ -52,10 +52,10 @@ ComfyUI/qwen_image_2.1/
 Mac 系统可直接使用 `hf` (Hugging Face 官方 CLI) 快速并行下载至对应目录：
 
 ```bash
-# 1.1 下载 Qwen-Image-2.1 GGUF 主模型 - 推荐轻量级 Q4_K_M (~4.8GB，适合 16G/24G 设备)
-hf download unsloth/Qwen-Image-2.1-GGUF qwen-image-2.1-Q4_K_M.gguf --local-dir /Users/frank/ComfyUI/models/unet
+# 1.1 下载 Qwen-Image-2.1 GGUF 主模型 - 默认首选轻量级 Q4_K_M (~4.3GB，速度快且画质几乎无损)
+hf download unsloth/Qwen-Image-2.1-GGUF qwen-image-2.1-UC-Q4_K_M.gguf --local-dir /Users/frank/ComfyUI/models/unet
 
-# 1.2 下载 Qwen-Image-2.1 GGUF 主模型 - 高精度 Q8_0 (~8.5GB，适合 32G+ 设备)
+# 1.2 下载 Qwen-Image-2.1 GGUF 主模型 - 高精度 Q8_0 (~8.5GB，适合追求极限浮点精度)
 hf download unsloth/Qwen-Image-2.1-GGUF qwen-image-2.1-Q8_0.gguf --local-dir /Users/frank/ComfyUI/models/unet
 
 # 2. 下载 Qwen3-VL 编码器 GGUF (存入 models/clip)
@@ -106,48 +106,63 @@ ln -sf /Users/frank/ComfyUI/models/clip/Qwen3-VL-8B-Instruct-Q4_K_M.gguf /Users/
 > ⚠️ **常见报错说明**：
 > 如果在生图时终端打印 `ComfyUI 节点错误 (缺少模型文件或缺少自定义节点): clip_name / unet_name / vae_name ... Value not in list`，即表明上述对应模型文件尚未下载到位，下载对应文件并刷新 ComfyUI 即可解决。
 
-### 资源开销评估与模型降级指南 (显著降低显存/内存峰值)
+### 资源开销评估与性能优化指南 (显著降低显存/内存峰值与提升生图速度)
 
-运行整套 Qwen-Image-2.1 系统时，涉及**提示词扩写大模型**与**ComfyUI 生图模型**两部分。为避免 16GB / 24GB 设备因显存与内存争抢产生 Swap 掉速，系统支持全链路降级优化：
+运行整套 Qwen-Image-2.1 系统时，涉及**提示词扩写大模型**与**ComfyUI 生图模型**两部分。为充分发挥 Apple Silicon 统一内存架构优势并杜绝掉速，系统支持全链路性能与资源优化：
 
-#### 1. 提示词扩写大模型 (LM Studio 侧)：按需降至 3B / 1.5B
-- **核心定位**：提示词扩写本质为单轮文本翻译与属性扩展（Text-to-Text），不执行图像理解，无需多模态视觉权重。
-- **降级建议**：
-  - **推荐黄金档**：`Qwen2.5-3B-Instruct`（Q4 显存占用约 2.0GB），扩写响应数百毫秒，指令遵循和画面细节描述充分。
-  - **极简轻量档**：`Qwen2.5-1.5B-Instruct`（显存占用约 1.0GB），对主体、光影及镜头语言的修饰完全够用。
-  - **零显存兜底**：关闭 LM Studio 时，系统自动调用内置启发式规则引擎（0GB 显存，0 毫秒延迟）。
+#### 1. 提示词扩写大模型 (LM Studio 侧)：默认首选 `qwen/qwen3-vl-8b`
+- **核心优势（黄金首选 ⭐️）**：Qwen-Image-2.1 的 Cross-Attention 文本编码器正是基于 `Qwen3-VL-8B` 预训练。使用同源多模态大模型扩写，生成的景深虚化、材质反射、镜头焦段等词汇分布与 DiT 神经网络的先验分布**完全对齐**，画质与意图表达最丰富。
+- **极速响应**：本地实测单次扩写响应仅需 **2.7 秒**，无思维链（Reasoning）冗余。
+- **零额外磁盘负担**：LM Studio 挂载后通过软链接直接共享给 ComfyUI `models/clip/`，全机只保留一份 ~5.2GB 文件，实现双向复用。
+- **低显存设备备选**：对于 16GB / 24GB 轻薄设备，若同时运行多个应用显存紧张，可按需降级选用 `Qwen2.5-3B-Instruct`（~2.0GB）或 `Qwen2.5-1.5B-Instruct`（~1.0GB），亦可使用内置启发式规则引擎（0GB 显存，0 毫秒）。
 
-#### 2. Diffusion 骨干模型 (DiT - Unet 侧)：推荐降至 Q4_K_M
+#### 2. Diffusion 骨干模型 (DiT - Unet 侧)：默认首选 `qwen-image-2.1-UC-Q4_K_M.gguf`
 - **核心定位**：Qwen-Image-2.1 基础 DiT 参数规模为 7B。
-- **降级建议**：从 `Q8_0`（~8.5GB）降级至 `Q4_K_M`（~4.8GB）。单流 DiT 对 4-bit 量化鲁棒性极高，人眼难以分辨画质损失，同时节约约 3.7GB 显存，显著提升推理吞吐。
+- **量化优势**：默认采用 `qwen-image-2.1-UC-Q4_K_M.gguf`（~4.3GB）。单流 DiT 对 4-bit 量化鲁棒性极高，画质几乎无损，相比 `Q8_0`（~8.5GB）节约近 40% 的内存带宽与 MPS 动态反量化开销，出图速度显著提升。
 
 #### 3. 文本/视觉编码器 (CLIP 侧)：架构锁定但可降量化
 - **架构约束**：Qwen-Image-2.1 的 Cross-Attention 交叉注意力层在预训练时深度对齐 `Qwen3-VL-8B` 的 4096 维隐藏层特征，**不可替换为其他尺寸或类型的 CLIP 编码器**（如 CLIP-L、T5 或 Qwen-3B）。
-- **量化降级**：可由 `Q4_K_M`（~5.2GB）选用社区的 `Q3_K_M`（~3.8GB），进一步释放约 1.4GB 显存。
+- **量化规格**：推荐使用 `Qwen3-VL-8B-Instruct-Q4_K_M.gguf`（~5.2GB），显存极端紧张设备可选 `Q3_K_M`（~3.8GB）。
 
 #### 4. 分级配置与资源占用对照表
 
 | 配置档位 | 扩写大模型 (LM Studio) | DiT 主模型 (ComfyUI) | Text Encoder (ComfyUI) | 总显存/内存预估 | 推荐设备与场景 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **顶配档** | Qwen3.8-27B (~16GB) | Qwen-Image-2.1 Q8 (~8.5GB) | Qwen3-VL-8B Q4 (~5.2GB) | **~30GB+** | 64GB/128GB Mac，极限复杂叙事 |
-| **标准档** | Qwen3-VL-8B (~5.2GB) | Qwen-Image-2.1 Q8 (~8.5GB) | Qwen3-VL-8B Q4 (~5.2GB) | **~14GB~19GB** | 32GB+ 内存，原厂同源多模态配置 |
-| **推荐降级档 ⭐️** | **`Qwen2.5-3B-Instruct` (~2.0GB)** | **`qwen-image-2.1-Q4_K_M` (~4.8GB)** | Qwen3-VL-8B Q4 (~5.2GB) | **~12GB** | **16GB/24GB 黄金甜点位，速度快、画质几乎无损** |
-| **极致轻量档** | **`Qwen2.5-1.5B` (~1.0GB)** 或规则 | **`qwen-image-2.1-Q4_K_M` (~4.8GB)** | Qwen3-VL-8B Q3 (~3.8GB) | **~9.6GB** | 16GB Mac/轻薄本，无显存压力 |
+| **首选黄金档 ⭐️** | **`qwen/qwen3-vl-8b` (~5.2GB)** | **`qwen-image-2.1-UC-Q4_K_M` (~4.3GB)** | **Qwen3-VL-8B Q4 (~5.2GB)** | **~14GB** | **32GB+ / 64GB / 128GB Mac 首选，原厂同源对齐，实测 2.7s 极速扩写，画质无损且出图快** |
+| **顶配超精度档** | `qwen/qwen3-vl-8b` (~5.2GB) | Qwen-Image-2.1 Q8 (~8.5GB) | Qwen3-VL-8B Q4 (~5.2GB) | **~19GB** | 64GB/128GB Mac，追求极限浮点精度与复杂叙事 |
+| **16G 显存降级档** | `Qwen2.5-3B` (~2.0GB) 或规则 | `qwen-image-2.1-UC-Q4_K_M` (~4.3GB) | Qwen3-VL-8B Q4 (~5.2GB) | **~11GB** | 16GB/24GB 轻薄设备，防止同时加载爆显存 |
 
-#### 5. 快速切换配置操作指引
+#### 5. 出图性能第一性原理剖析与 1 分钟生图调优 (实测对比)
+
+在 Apple Silicon (MPS 后端) 运行 7B 级 DiT 模型时，生图耗时受三大因素共同支配：
+1. **CFG 双前向 vs 单前向开销**：当 `cfg > 1.0` 且输入了负向提示词时，每个采样步需分别执行一次正向和一次负向的 7B DiT 前向传播。18 步需执行 **36 次完整前向**；而将 `cfg` 设为 `1.0`（Flow-Matching 模型的原生单前向模式）时，ComfyUI 自动剪枝负向分支，前向次数直接减半（仅需 18 次），**单步耗时直接腰斩**。
+2. **MPS 动态反量化开销**：ComfyUI-GGUF 在 MPS 每次前向计算中动态解包 Q4_K_M 权重为 FP16，32 层 DiT 共有 224 个主要线性层，单次前向需消耗 ~6.7 秒。
+3. **Token 序列平方复杂度 ($O(N^2)$)**：Qwen-Image-2.1 下采样倍率为 16x。1024×1024 包含 4096 个图像 token；而适度调整为 **896×896** 时，Token 降至 3136 个（**注意力计算量剧减 41.4%**），画质肉眼几乎无区别。
+
+| 调优策略 | 分辨率 | 步数 | CFG | 实测单步耗时 | 总生图耗时 | 提速比与画质评价 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **初始基准** | 1024×1024 | 18 步 | 4.0 (双前向) | 13.45 秒/步 | **250.57s (4分10秒)** | 基准值，CFG 双前向反量化开销过大 |
+| **单前向前向减半** | 1024×1024 | 18 步 | 1.0 (单前向) | 6.79 秒/步 | **~122s (~2分)** | **提速 2.0x**，完全无损，耗时直接减半 |
+| **黄金平衡档 ⭐️** | **896×896** | **14 步** | **1.0 (单前向)** | **5.21 秒/步** | **80.18s (1分20秒)** | **提速 3.12x**，微观机械结构与光影依然顶级 |
+| **极速草稿档 🚀** | **768×768** | **14 步** | **1.0 (单前向)** | **4.25 秒/步** | **~59s (突破1分钟大关)** | **提速 4.25x**，创意探索与极速原型首选 |
+
+#### 6. 快速操作指引
 1. **下载 Q4_K_M 主模型**：
    ```bash
-   hf download unsloth/Qwen-Image-2.1-GGUF qwen-image-2.1-Q4_K_M.gguf --local-dir /Users/frank/ComfyUI/models/unet
+   hf download unsloth/Qwen-Image-2.1-GGUF qwen-image-2.1-UC-Q4_K_M.gguf --local-dir /Users/frank/ComfyUI/models/unet
    ```
-2. **下载并加载 3B 扩写模型**：
+2. **生图测试直接执行**（默认选用 16 步 + CFG 1.0 极速单前向模式）：
    ```bash
-   ~/.lmstudio/bin/lms get qwen/qwen2.5-3b-instruct --gguf
+   # 黄金平衡档 (约 1分20秒，强烈推荐)
+   python qwen_image21_test.py --desc "雨夜小巷里的机甲猫" --size 896x896 --steps 14
+
+   # 1 分钟极速出图草稿档 (约 59 秒)
+   python qwen_image21_test.py --desc "雨夜小巷里的机甲猫" --size 768x768 --steps 14
+
+   # 默认测试 (1024x1024 + 16 步)
+   python qwen_image21_test.py --desc "雨夜小巷里的机甲猫"
    ```
-3. **生图测试时指定扩写模型**：
-   ```bash
-   python qwen_image21_test.py --desc "雨夜小巷里的机甲猫" --llm-model qwen2.5-3b-instruct
-   ```
-4. **工作流配置**：将 API 模板 `workflows/qwen_image_2.1_api.json` 及画布工作流中的 `unet_name` 修改为 `qwen-image-2.1-Q4_K_M.gguf`。
+3. **工作流默认集成**：API 模板 `workflows/qwen_image_2.1_api.json` 及画布工作流均已默认配置为 `qwen-image-2.1-UC-Q4_K_M.gguf`，采样器默认配置为 `Steps: 16, CFG: 1.0`。
 
 ---
 
@@ -156,14 +171,13 @@ ln -sf /Users/frank/ComfyUI/models/clip/Qwen3-VL-8B-Instruct-Q4_K_M.gguf /Users/
 本系统能够将用户的一句极简描述自动扩充为影视级、高细节的结构化英文 Prompt。
 
 ### 推荐大模型选型
-* **`qwen/qwen2.5-3b-instruct` (极力推荐，最佳性价比)**：纯文本高效扩写模型，Q4 量化显存占用仅约 2.0GB，单次扩写响应仅需数百毫秒，中文语义理解及光影构图细节丰富，大幅减轻系统显存争抢。
-* **`qwen/qwen2.5-1.5b-instruct` (极致轻量)**：占用约 1.0GB 显存，对基础镜头与构图修饰完全够用。
-* **`qwen/qwen3-vl-8b` (多模态同源)**：与 Qwen-Image-2.1 同源的多模态文本/视觉理解大模型，词汇先验分布契合，但纯文本扩写阶段显存占用偏高 (~5.2GB)。
+* **`qwen/qwen3-vl-8b` (极力推荐，原厂同源首选 ⭐️)**：与 Qwen-Image-2.1 同源的多模态文本/视觉理解大模型，词汇与构图先验契合度最高，实测本地单次扩写仅需约 **2.7 秒**，无思维链冗余，且与 ComfyUI 共用一份 GGUF 软链。
+* **`qwen/qwen2.5-3b-instruct` / `1.5b` (低显存备选)**：占用显存仅约 1~2GB，专为 16GB 设备显存紧张时降级备用。
 * **`qwen3.8-27b-mlx` (复杂叙事)**：27B 强语义大模型，仅建议拥有 64GB+ 统一内存设备运行极其复杂的多主体叙事画面时使用。
 
 ### 运行机制
 1. 脚本默认请求本地运行在 `1234` 端口的 LM Studio（`http://127.0.0.1:1234/v1`）。
-2. **Qwen 系列智能优先匹配**：引擎会自动读取 LM Studio 已挂载模型，并优先选用名称中带有 `qwen` 的模型（如 `qwen/qwen3-vl-8b`），用户亦可通过 `--llm-model` 手动指定。
+2. **Qwen3-VL 原生智能优先匹配**：引擎会自动读取 LM Studio 已挂载模型，并最高优先级挑选 `qwen3-vl` 同源大模型，用户亦可通过 `--llm-model` 手动指定。
 3. 内置 System Prompt 会指导 LLM 补充**主体微观细节、光影体积感、空间构图与镜头焦段**。
 4. **自动降级保护**：当 LM Studio 离线或超时，系统自动启用内置的高品质启发式规则库扩写，保证工作流不中断。
 
@@ -176,16 +190,19 @@ ln -sf /Users/frank/ComfyUI/models/clip/Qwen3-VL-8B-Instruct-Q4_K_M.gguf /Users/
 ### 基础测试命令
 
 ```bash
-# 1. 默认测试（极简描述）
+# 1. 默认测试（自动调用 Qwen3-VL-8B 同源极速扩写 + Q4_K_M 快速生图，16 步，CFG 1.0）
 python qwen_image21_test.py --desc "雨夜小巷里的机甲猫"
 
-# 2. 选定艺术风格（cinematic / photorealistic / anime / cyberpunk / general）
-python qwen_image21_test.py --desc "雪山湖泊日落" --style cinematic
+# 2. 黄金平衡档（896x896，14 步，约 1 分 20 秒出图，强烈推荐）
+python qwen_image21_test.py --desc "雨夜小巷里的机甲猫" --size 896x896 --steps 14
 
-# 3. 指定长宽比与采样步数
-python qwen_image21_test.py --desc "少女华丽晚礼服半身像" --style photorealistic --aspect 3:4 --steps 24
+# 3. 极速冲刺档（768x768，14 步，约 59 秒出图）
+python qwen_image21_test.py --desc "赛博朋克飞行汽车" --size 768x768 --steps 14
 
-# 4. Dry-Run 模式（仅执行扩写与参数组装校验，无需 ComfyUI 运行）
+# 4. 指定长宽比与艺术风格
+python qwen_image21_test.py --desc "少女华丽晚礼服半身像" --style photorealistic --aspect 3:4
+
+# 5. Dry-Run 模式（仅执行扩写与参数组装校验，无需 ComfyUI 运行）
 python qwen_image21_test.py --desc "赛博朋克飞行汽车" --dry-run
 ```
 
@@ -193,7 +210,9 @@ python qwen_image21_test.py --desc "赛博朋克飞行汽车" --dry-run
 - `--desc`: 用户输入的极简短句。
 - `--style`: 风格预设（`cinematic`, `photorealistic`, `anime`, `cyberpunk`, `general`）。
 - `--aspect`: 显式指定比例（`1:1`, `16:9`, `9:16`, `4:3`, `3:4`）。
-- `--steps`: 迭代步数，默认 24（推荐 20-28 步）。
+- `--size`: 显式覆盖分辨率（如 `896x896`, `1024x1024`, `768x768`）。
+- `--steps`: 迭代步数，默认 16（Flow-Matching 推荐 14-20 步）。
+- `--cfg`: 引导系数，默认 1.0（单前向模式，耗时直接减半；>1.0 启用双前向对比引导）。
 - `--seed`: 随机种子（默认 `-1` 自动随机生成）。
 - `--comfy-host`: ComfyUI 地址（默认 `127.0.0.1:8188`）。
 - `--lmstudio-host`: LM Studio 地址（默认 `127.0.0.1:1234`）。

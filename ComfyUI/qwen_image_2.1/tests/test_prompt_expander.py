@@ -81,4 +81,4 @@ def test_detect_model_prioritizes_qwen(mock_urlopen: MagicMock) -> None:
 
     expander = LMStudioPromptExpander(base_url="http://127.0.0.1:1234/v1")
     detected = expander.detect_model()
-    assert "qwen" in detected.lower()
+    assert detected == "qwen/qwen3-vl-8b", "应最高优先级匹配同源 Qwen3-VL 视觉语言模型"

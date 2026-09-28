@@ -52,10 +52,12 @@ def test_normalize_host() -> None:
 
 def test_cli_argument_parsing() -> None:
     """测试命令行参数解析默认值与自定义参数。"""
-    args = parse_arguments(["--desc", "森林里的小鹿", "--style", "cinematic", "--steps", "28", "--dry-run"])
+    args = parse_arguments(["--desc", "森林里的小鹿", "--style", "cinematic", "--steps", "28", "--cfg", "2.0", "--size", "896x896", "--dry-run"])
     assert args.desc == "森林里的小鹿"
     assert args.style == "cinematic"
     assert args.steps == 28
+    assert args.cfg == 2.0
+    assert args.size == "896x896"
     assert args.dry_run is True
 
 
@@ -75,7 +77,9 @@ def test_workflow_parameter_injection() -> None:
         is_fallback=False,
     )
 
-    injected = inject_workflow_parameters(template, prompt_res, steps=20, seed=12345)
+    injected = inject_workflow_parameters(
+        template, prompt_res, steps=20, seed=12345, cfg=1.0, size_override="896x896"
+    )
 
     # 验证是否正向提示词节点被成功替换
     found_pos = False
@@ -87,10 +91,10 @@ def test_workflow_parameter_injection() -> None:
             if node.get("class_type") == "CLIPTextEncode" and node["inputs"].get("text") == prompt_res.positive_prompt:
                 found_pos = True
             if node.get("class_type") == "KSampler":
-                if node["inputs"].get("steps") == 20 and node["inputs"].get("seed") == 12345:
+                if node["inputs"].get("steps") == 20 and node["inputs"].get("seed") == 12345 and node["inputs"].get("cfg") == 1.0:
                     found_sampler = True
             if node.get("class_type") in ("EmptyLatentImage", "EmptyQwenImageLayeredLatentImage"):
-                if node["inputs"].get("width") == 1280 and node["inputs"].get("height") == 768:
+                if node["inputs"].get("width") == 896 and node["inputs"].get("height") == 896:
                     found_latent = True
 
     assert found_pos, "正向提示词未成功注入"

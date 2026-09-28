@@ -1,11 +1,11 @@
 {
   "1": {
     "inputs": {
-      "unet_name": "qwen-image-2.1-Q8_0.gguf"
+      "unet_name": "qwen-image-2.1-UC-Q4_K_M.gguf"
     },
     "class_type": "UnetLoaderGGUF",
     "_meta": {
-      "title": "Unet Loader (GGUF) - Qwen-Image-2.1"
+      "title": "Unet Loader (GGUF) - Qwen-Image-2.1 (Q4_K_M)"
     }
   },
   "2": {
@@ -67,8 +67,8 @@
   "7": {
     "inputs": {
       "seed": 42,
-      "steps": 24,
-      "cfg": 4.0,
+      "steps": 16,
+      "cfg": 1.0,
       "sampler_name": "euler",
       "scheduler": "simple",
       "denoise": 1.0,
@@ -91,7 +91,7 @@
     },
     "class_type": "KSampler",
     "_meta": {
-      "title": "KSampler (Euler / Simple)"
+      "title": "KSampler (Euler / Simple, Steps: 16, CFG: 1.0)"
     }
   },
   "8": {

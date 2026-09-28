@@ -22,9 +22,9 @@
         "Node name for S&R": "UnetLoaderGGUF"
       },
       "widgets_values": [
-        "qwen_image_2.1-Q8_0.gguf"
+        "qwen-image-2.1-UC-Q4_K_M.gguf"
       ],
-      "title": "Unet Loader (GGUF) - Qwen-Image-2.1"
+      "title": "Unet Loader (GGUF) - Qwen-Image-2.1 (Q4_K_M)"
     },
     {
       "id": 2,
@@ -207,13 +207,13 @@
       "widgets_values": [
         42,
         "randomize",
-        24,
-        4.0,
+        16,
+        1.0,
         "euler",
         "simple",
         1.0
       ],
-      "title": "KSampler (Euler / Simple, Steps: 24, CFG: 4.0)"
+      "title": "KSampler (Euler / Simple, Steps: 16, CFG: 1.0)"
     },
     {
       "id": 8,
