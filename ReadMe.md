@@ -11,6 +11,7 @@
     + [《Ultimate-Agentic-AI-with-AutoGen-for-Enterprise-Automation》](https://github.com/feixiao/Ultimate-Agentic-AI-with-AutoGen-for-Enterprise-Automation)
     + [AutoGenBench](https://github.com/microsoft/autogen/blob/0.2/samples/tools/autogenbench/README.md)  a benchmarking suite for evaluating agent performance.
 + [ds4 (DwarfStar)](./ds4/README.md) antirez 开源的高性能原生推理引擎与编码 Agent（支持 DeepSeek V4 Flash/PRO、GLM 5.2）
++ [h3 (MiniMax-H3)](./h3/README.md) antirez 开源的原生 C/Metal 视音频生成推理引擎（支持 MiniMax-H3 纯端侧 DiT 推理）
 
 #### Prompt Engineering
 + [Prompt-Engineering-Guide](https://github.com/feixiao/Prompt-Engineering-Guide) prompt engineering, context engineering
