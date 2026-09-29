@@ -54,3 +54,4 @@
 + [Claude Code 指南与本地配置](./ClaudeCode/ReadMe.md) Anthropic 官方 CLI 架构与本地大模型连接实战
 + [CodeBuddy Skills 与 Agents 部署方案](./CodeBuddy/ReadMe.md) 面向腾讯 CodeBuddy CLI 的技能与角色一键迁移体系
 + [Antigravity (agy) 部署与实践指南](./Antigravity/ReadMe.md) 面向 Google Antigravity / Gemini CLI 的三足鼎立生态对齐与一键安装工具
++ [Google Gemini 核心特权与高阶实战指南](./Gemini/README.md) 5TB 云端中枢、百万 Token 超大上下文、Deep Research、NotebookLM、Jules 代码 Agent 与 Veo 视频生成
