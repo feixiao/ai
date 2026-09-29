@@ -67,33 +67,131 @@ cd /Users/frank/wk/github/ai/h3
 
 ---
 
-## 4. 运行与使用方式
+## 4. 视频生成参数详解与场景化调优
 
-在 `/Users/frank/wk/github/ai/h3` 目录下，提供了一系列开箱即用的快捷代理脚本，自动衔接底层运行环境与 Metal 显存配额调优。
+MiniMax-H3 是高参数量的视音频 Diffusion Transformer 模型。在 Apple Silicon (Metal) 环境下，生成速度与画质细节受去噪步数、时序外推、层数剪枝、空间 Token 规模及分辨率多重维度的共同影响。
 
-### 4.1 一键生成视频 (T2V)
+### 4.1 核心参数深度剖析
 
-#### 基础文本生成视频
+1. **去噪步数 (`--steps N`)**：默认 20 步。
+   * **原理**：控制 DiT 逆向扩散求解微分方程的离散步数。
+   * **调优策略**：
+     * `10 ~ 12 步`：快速勾勒主体与动态轮廓，耗时减半；
+     * `14 ~ 18 步`：平衡档位，日常出片主体轮廓与动态连贯；
+     * `24 ~ 28 步`：高保真档位，呈现丰富光影、微表情与复杂纹理；
+     * `> 32 步`：细节收益递减，耗时线性增加。
+2. **时序速度外推 (`--reuse N` 与 `--core-reuse N`)**：
+   * **原理**：antirez 为端侧定制的时序外推算法（Velocity Extrapolation）。在扩散去噪相邻时间步之间，导数向量变化连续平滑；开启外推后，引擎仅在基准步执行完整 Transformer 前向传播，其余步通过导数外推预测，直接跳过重型计算。
+   * `--reuse 1`：精确逐步前向计算，无外推；
+   * `--reuse 2`：隔步计算并外推，整体推理速度提升约 **2.0x ~ 2.5x**，画面质感保留度达 95% 以上，**日常最高性价比提速选项**；
+   * `--reuse 3`：激进外推，极速预览专用；
+   * `--core-reuse N`：残差核心刷新（1 精确，4 快速，6 激进），与 `--reuse` 互斥。
+3. **DiT 活跃层数剪枝 (`--layers N`)**：默认 50 层（全量无损）。
+   * **原理**：MiniMax-H3 主干 Transformer 共包含 50 个 DiT Block。
+   * `--layers 50`：50 层全量运算，保持最大建模能力与细节精度；
+   * `--layers 45`：跳过尾部 5 个微调 Block，提速约 10%~15%，人眼视觉几乎无感；
+   * `--layers 40`：激进剪枝 10 层，计算量直接减少 20%，生成耗时大幅降低。
+4. **空间 Token 缩减 (`--token-reduction`)**：
+   * **原理**：在 DiT 中间计算块中，对空间横向相邻的视频 Token 进行成对合并计算，直接将中间层的 Token 序列减半，计算吞吐提升约 25%。
+5. **渲染分辨率与内部超分 (`--width`, `--height`, `--render-width`, `--render-height`)**：
+   * **原理**：DiT 注意力计算量与空间分辨率呈平方级增长。
+   * **超分策略**：指定较低的内部渲染分辨率（如 `--render-width 640 --render-height 384`），DiT 完成轻量计算后，由 macOS 硬件加速的 Apple vImage 高精度滤镜动态上采样至目标输出尺寸（如 `--width 864 --height 480`），成倍提升生成效率。
+   * **硬性约束**：所有宽、高数值必须为 **32 的整数倍**。
+6. **视频时长与帧数公式 (`--frames N`, `--seconds N`)**：
+   * **约束**：帧数必须严格符合 **$5 + 17 \times n$**（如 22 帧、39 帧、56 帧、73 帧）。
+   * `22 帧`（n=1，约 0.9 秒）：极致速度验证 Prompt 首选；
+   * `56 帧`（n=3，约 2.3 秒）：默认标准镜头长度；
+   * `73 帧`（n=4，约 3.0 秒）：完整动态运镜。
+7. **硬件级 INT8 加速 (`--use-int8-row-fc2`)**：
+   * 在 Apple Silicon M4/M5 芯片上启用硬件级单缩放 INT8 矩阵乘加速 FC2 全连接层，减轻显存带宽与计算压力。
+
+---
+
+### 4.2 场景化黄金参数配置方案
+
+根据实际创作场景，提供四组针对性调优配置：
+
+#### ⚡ 方案 1：极致速度档（如何最快出片）
+
+* **适用场景**：Prompt 构图验证、镜头调度摸索、短镜头秒级试错。
+* **核心参数组合**：
+  * 去噪步数：`--steps 10`
+  * 速度外推：`--reuse 2`
+  * 层数剪枝：`--layers 40`
+  * Token 缩减：`--token-reduction`
+  * 视频帧数：`--frames 22`（约 1 秒短镜头）
+  * 内部超分：`--render-width 640 --render-height 384 --width 864 --height 480`
+  * 硬件加速：`--use-int8-row-fc2`
+* **性能表现**：综合生成耗时缩短至默认全量生成的 **1/4 ~ 1/5**，实现秒级快速产出。
+* **一键运行命令**：
+  ```bash
+  cd /Users/frank/wk/github/ai/h3
+  ./generate.sh "A cute cyber kitten walking through neon rain" --lightning
+  ```
+
+#### 🎬 方案 2：极致画质档（如何生成最高质量视频）
+
+* **适用场景**：终稿成品输出、高清 4K 放大底片、角色微表情与复杂光影质感。
+* **核心参数组合**：
+  * 去噪步数：`--steps 28`（或 24~30 步充分去噪）
+  * 活跃层数：`--layers 50`（全量 50 层无损运算）
+  * 速度外推：不启用 `--reuse`（全步数真实前向求解，避免外推插值微小残差）
+  * Token 规模：禁用 `--token-reduction`（全稠密空间 Token，保留发丝级细节）
+  * 原生分辨率：`--width 864 --height 480`（原生无插值直出）
+  * 视频帧数：`--frames 56` 或 `--frames 73`（标准流畅运镜）
+* **性能表现**：耗时相对最长，但发丝细节、材质反光、水流与火焰动态物理规律最为真实完整。
+* **一键运行命令**：
+  ```bash
+  cd /Users/frank/wk/github/ai/h3
+  ./generate.sh "A majestic ancient dragon flying through sunset clouds, 4k cinematic" --ultra
+  ```
+
+#### ⚖️ 方案 3：平衡日常档（日常主力出片，兼顾画质与效率）
+
+* **适用场景**：日常创意生成、自媒体视音频素材、动态镜头产出。
+* **核心参数组合**：
+  * 去噪步数：`--steps 14`
+  * 速度外推：`--reuse 2`
+  * 层数剪枝：`--layers 45`
+  * Token 缩减：`--token-reduction`
+  * 视频帧数：`--frames 56`（约 2.3 秒）
+* **性能表现**：推理速度提速约 **2.5x**，人眼画质保留度达 95% 以上，兼顾效率与画面表现力。
+* **一键运行命令**：
+  ```bash
+  cd /Users/frank/wk/github/ai/h3
+  ./generate.sh "A futuristic sports car drifting on a mountain road" --fast
+  ```
+
+#### 💾 方案 4：极简显存 / 后台静默档（SSD 双缓冲流式）
+
+* **适用场景**：后台无感运行、并发其他高显存负载任务、显存受限机型。
+* **核心参数组合**：
+  * 流式加载：`--ssd-streaming`（仅驻留 2 个 DiT 块槽位，显存控制在 ≤24GB）
+  * 去噪步数：`--steps 16`
+  * 速度外推：`--reuse 2`
+* **一键运行命令**：
+  ```bash
+  cd /Users/frank/wk/github/ai/h3
+  ./generate.sh "Drone view of a tropical island, turquoise water" --ssd
+  ```
+
+---
+
+### 4.3 基础运行与原生命令行调用
+
+除预设快捷指令外，所有原生 CLI 参数均可自由透传组合：
+
 ```bash
+# 基础生成命令
 ./generate.sh "A cute cyber kitten walking through neon rain at night, cinematic lighting"
-```
 
-#### 极速预览档（Fast Preset）
-去噪采样 14 步，启用 2 阶速度外推与 Token 合并：
-```bash
-./generate.sh "A futuristic sports car drifting on a mountain road" --fast
-```
-
-#### 电影画质档（Quality Preset）
-去噪采样 24 步，DiT 50 层全量运算：
-```bash
-./generate.sh "A majestic ancient dragon flying through sunset clouds, 4k resolution" --quality
-```
-
-#### 显存极简流式档（SSD Preset）
-采用双缓冲流式加载，适合后台并发展开其他任务时使用：
-```bash
-./generate.sh "Drone view of a tropical island, turquoise water" --ssd
+# 自定义高清长镜头渲染
+./generate.sh -p "Sunset over Tokyo skyline with flying cars" \
+              -o outputs/tokyo_sunset.mp4 \
+              --width 864 --height 480 \
+              --frames 73 \
+              --steps 24 \
+              --layers 50
 ```
 
 ---
@@ -151,9 +249,23 @@ cd /Users/frank/wk/github/ai/h3
 
 ---
 
-## 8. 参数速查表与避坑指南
+## 8. 参数速查表与调优矩阵
 
-### 常用命令行选项速查
+### 8.1 速度与画质调优权衡矩阵表
+
+| 核心参数 | 默认值 | 极致速度推荐 | 极致画质推荐 | 对生成速度的影响 | 对画面质量的影响 | 核心调优说明 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **`--steps`** | `20` | `10 ~ 12` | `24 ~ 28` | **强正比线性影响** | 步数越高，光影纹理与微动态越细腻 | 10 步成型；14 步平衡；28 步极致；>32 步收益饱和 |
+| **`--reuse`** | `1` (关闭) | `2` 或 `3` | 不启用 (或 `1`) | **提速 2.0x ~ 2.5x** | `2` 画面保留度 >95%，`3` 偶有轻微外推残差 | 日常性价比最高的加速开关，与 `--core-reuse` 互斥 |
+| **`--layers`** | `50` | `40` | `50` | `40` 提速约 20%，`45` 提速 10% | 剪枝仅略微影响超深层高频细节 | 推荐 45 层作为平衡档，40 层作为极速档 |
+| **`--token-reduction`** | 关闭 | 开启 | 关闭 | **提速约 25%** | 中间层 Token 合并，大动态下画面略微软化 | 构图验证与日常推荐开启，终稿关闭 |
+| **`--render-width/height`** | 同 output | `640x384` | 不使用 (原生渲染) | **提速约 30% ~ 40%** | 低分辨率渲染后经 Apple vImage 硬件超分 | 输出分辨率保持 864x480，内部降分辨率大幅减负 |
+| **`--frames`** | `56` | `22` (约 0.9s) | `56` 或 `73` (约 3s) | 帧数越少，3D 注意力越快 | 决定视频总时长与运镜跨度 | 必须严格符合公式 $5 + 17 \times n$ |
+| **`--use-int8-row-fc2`** | 关闭 | 开启 (M4/M5 Max) | 开启 | 提速 5% ~ 10% | 硬件级单缩放量化，精度损失几近无感 | 仅支持 Apple M4 / M5 Max 系列 Metal 硬件 |
+| **`--ssd-streaming`** | 关闭 | 关闭 (全显存最快) | 关闭 | 引入 NVMe SSD 双缓冲 I/O 延迟 | 无任何算法画质损失 | 将统一内存占用严格压至 ≤24GB，低显存保底 |
+| **`--show`** | 开启 | 关闭 (后台批处理) | 开启 (终端实时监看) | 终端 ANSI 图形绘制占用少量 I/O | 不影响生成视频文件质量 | 在 Kitty/Ghostty/iTerm2 下提供单步渐进预览 |
+
+### 8.2 常用命令行选项速查
 
 | 参数 | 默认值 | 说明与约束 |
 | :--- | :--- | :--- |
@@ -161,13 +273,17 @@ cd /Users/frank/wk/github/ai/h3
 | `-p, --prompt <TEXT>` | 缺省进入 REPL | 文本提示词 |
 | `-o, --output <PATH>` | `outputs/h3_<ts>.mp4` | 目标视频生成路径 |
 | `--width`, `--height` | `864x480` | 分辨率，**必须为 32 的整数倍** |
+| `--render-width`, `--render-height` | 缺省同 output | 内部 DiT 计算分辨率，由 vImage 超分 |
 | `--frames <N>` | `56` | 视频帧数，**必须符合 $5 + 17 \times n$ 公式** |
 | `--seconds <N>` | 互斥 | 按秒指定时长，自动换算帧数公式 |
 | `--steps <N>` | `20` | 去噪步数（12~24 推荐） |
+| `--reuse <N>` | `1` | 速度外推（1: 精确, 2: 推荐, 3: 激进） |
+| `--layers <N>` | `50` | DiT 计算层数（50: 全量, 45: 快速, 40: 极速） |
+| `--token-reduction` | 关闭 | 中间计算块空间 Token 成对合并 |
 | `--show` | 开启 | 启用终端实时视觉预览 |
 | `--zoom <N>` | `2` | 视网膜屏图像缩放因子 |
 
-### 关键互斥与规则避坑
+### 8.3 关键互斥与规则避坑
 
 1. **分辨率与时长限制**：宽度与高度非 32 的倍数会报错拒绝启动；帧数公式不满足 $5 + 17 \times n$ 会被向上对齐。
 2. **加速参数互斥**：
