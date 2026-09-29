@@ -1,0 +1,160 @@
+{
+  "1": {
+    "class_type": "DualCLIPLoader",
+    "_meta": { "title": "DualCLIPLoader (Qwen2.5-VL-7B + ByT5)" },
+    "inputs": {
+      "clip_name1": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "clip_name2": "byt5_small_glyphxl_fp16.safetensors",
+      "type": "hunyuan_video_15",
+      "device": "default"
+    }
+  },
+  "2": {
+    "class_type": "VAELoader",
+    "_meta": { "title": "VAELoader (HunyuanVideo 1.5 VAE)" },
+    "inputs": {
+      "vae_name": "hunyuanvideo15_vae_fp16.safetensors"
+    }
+  },
+  "3": {
+    "class_type": "UNETLoader",
+    "_meta": { "title": "UNETLoader (720p I2V)" },
+    "inputs": {
+      "unet_name": "hunyuanvideo1.5_720p_i2v_fp16.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "4": {
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "正向提示词" },
+    "inputs": {
+      "text": "A feathered young dinosaur (with ruffled brown-and-white plumage, sharp claws, and a spiky crested head) moves alertly through a sun-dappled, dense coniferous forest. Sunbeams filter through the tall tree canopy, casting warm golden rays over the mossy undergrowth and ferns. The dinosaur lifts one clawed foot mid-step, head tilted sharply to scan for prey, its tail fanning slightly for balance. The air glows with soft mist, and the forest hums with quiet rustles. The camera captures the dynamic, tense stillness of its movement, emphasizing the lush, ancient wilderness and the creature's vivid, lifelike details.",
+      "clip": ["1", 0]
+    }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "负向提示词" },
+    "inputs": {
+      "text": "blurry, low quality, jitter, flicker, distorted, watermark, text, oversaturated",
+      "clip": ["1", 0]
+    }
+  },
+  "6": {
+    "class_type": "ModelSamplingSD3",
+    "_meta": { "title": "ModelSamplingSD3 (shift=7)" },
+    "inputs": {
+      "model": ["3", 0],
+      "shift": 7.0
+    }
+  },
+  "7": {
+    "class_type": "BasicScheduler",
+    "_meta": { "title": "BasicScheduler (20 步)" },
+    "inputs": {
+      "model": ["3", 0],
+      "scheduler": "simple",
+      "steps": 20,
+      "denoise": 1.0
+    }
+  },
+  "8": {
+    "class_type": "KSamplerSelect",
+    "_meta": { "title": "KSamplerSelect (euler)" },
+    "inputs": {
+      "sampler_name": "euler"
+    }
+  },
+  "9": {
+    "class_type": "RandomNoise",
+    "_meta": { "title": "RandomNoise" },
+    "inputs": {
+      "noise_seed": 887963123424675
+    }
+  },
+  "10": {
+    "class_type": "CFGGuider",
+    "_meta": { "title": "CFGGuider (cfg=6)" },
+    "inputs": {
+      "model": ["6", 0],
+      "positive": ["18", 0],
+      "negative": ["18", 1],
+      "cfg": 6.0
+    }
+  },
+  "11": {
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": { "title": "SamplerCustomAdvanced" },
+    "inputs": {
+      "noise": ["9", 0],
+      "guider": ["10", 0],
+      "sampler": ["8", 0],
+      "sigmas": ["7", 0],
+      "latent_image": ["18", 2]
+    }
+  },
+  "12": {
+    "class_type": "VAEDecode",
+    "_meta": { "title": "VAEDecode" },
+    "inputs": {
+      "samples": ["11", 0],
+      "vae": ["2", 0]
+    }
+  },
+  "13": {
+    "class_type": "CreateVideo",
+    "_meta": { "title": "CreateVideo (24fps)" },
+    "inputs": {
+      "images": ["12", 0],
+      "fps": 24.0
+    }
+  },
+  "14": {
+    "class_type": "SaveVideo",
+    "_meta": { "title": "SaveVideo" },
+    "inputs": {
+      "video": ["13", 0],
+      "filename_prefix": "video/hunyuan_video_1.5_i2v",
+      "format": "auto",
+      "codec": "h264"
+    }
+  },
+  "15": {
+    "class_type": "LoadImage",
+    "_meta": { "title": "起始帧图像" },
+    "inputs": {
+      "image": "hunyuan_video_1.5_i2v_start.png"
+    }
+  },
+  "16": {
+    "class_type": "CLIPVisionLoader",
+    "_meta": { "title": "CLIPVisionLoader (SigLIP)" },
+    "inputs": {
+      "clip_name": "sigclip_vision_patch14_384.safetensors"
+    }
+  },
+  "17": {
+    "class_type": "CLIPVisionEncode",
+    "_meta": { "title": "CLIPVisionEncode (center)" },
+    "inputs": {
+      "clip_vision": ["16", 0],
+      "image": ["15", 0],
+      "crop": "center"
+    }
+  },
+  "18": {
+    "class_type": "HunyuanVideo15ImageToVideo",
+    "_meta": { "title": "HunyuanVideo15ImageToVideo (1280x720 / 121 帧)" },
+    "inputs": {
+      "positive": ["4", 0],
+      "negative": ["5", 0],
+      "vae": ["2", 0],
+      "width": 1280,
+      "height": 720,
+      "length": 121,
+      "batch_size": 1,
+      "start_image": ["15", 0],
+      "clip_vision_output": ["17", 0]
+    }
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "1": {
+    "class_type": "DualCLIPLoader",
+    "_meta": { "title": "DualCLIPLoader (Qwen2.5-VL-7B + ByT5)" },
+    "inputs": {
+      "clip_name1": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "clip_name2": "byt5_small_glyphxl_fp16.safetensors",
+      "type": "hunyuan_video_15",
+      "device": "default"
+    }
+  },
+  "2": {
+    "class_type": "VAELoader",
+    "_meta": { "title": "VAELoader (HunyuanVideo 1.5 VAE)" },
+    "inputs": {
+      "vae_name": "hunyuanvideo15_vae_fp16.safetensors"
+    }
+  },
+  "3": {
+    "class_type": "UNETLoader",
+    "_meta": { "title": "UNETLoader (720p T2V)" },
+    "inputs": {
+      "unet_name": "hunyuanvideo1.5_720p_t2v_fp16.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "4": {
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "正向提示词" },
+    "inputs": {
+      "text": "A paper airplane released from the top of a skyscraper, gliding through urban canyons, crossing traffic, flying over streets, spiraling upward between buildings. The camera follows the paper airplane's perspective, shooting cityscape in first-person POV, finally flying toward the sunset, disappearing in golden light. Creative camera movement, free perspective, dreamlike colors.",
+      "clip": ["1", 0]
+    }
+  },
+  "5": {
+    "class_type": "CLIPTextEncode",
+    "_meta": { "title": "负向提示词" },
+    "inputs": {
+      "text": "blurry, low quality, jitter, flicker, distorted, watermark, text, oversaturated",
+      "clip": ["1", 0]
+    }
+  },
+  "6": {
+    "class_type": "ModelSamplingSD3",
+    "_meta": { "title": "ModelSamplingSD3 (shift=7)" },
+    "inputs": {
+      "model": ["3", 0],
+      "shift": 7.0
+    }
+  },
+  "7": {
+    "class_type": "BasicScheduler",
+    "_meta": { "title": "BasicScheduler (20 步)" },
+    "inputs": {
+      "model": ["3", 0],
+      "scheduler": "simple",
+      "steps": 20,
+      "denoise": 1.0
+    }
+  },
+  "8": {
+    "class_type": "KSamplerSelect",
+    "_meta": { "title": "KSamplerSelect (euler)" },
+    "inputs": {
+      "sampler_name": "euler"
+    }
+  },
+  "9": {
+    "class_type": "RandomNoise",
+    "_meta": { "title": "RandomNoise" },
+    "inputs": {
+      "noise_seed": 887963123424675
+    }
+  },
+  "10": {
+    "class_type": "CFGGuider",
+    "_meta": { "title": "CFGGuider (cfg=6)" },
+    "inputs": {
+      "model": ["6", 0],
+      "positive": ["4", 0],
+      "negative": ["5", 0],
+      "cfg": 6.0
+    }
+  },
+  "11": {
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": { "title": "SamplerCustomAdvanced" },
+    "inputs": {
+      "noise": ["9", 0],
+      "guider": ["10", 0],
+      "sampler": ["8", 0],
+      "sigmas": ["7", 0],
+      "latent_image": ["15", 0]
+    }
+  },
+  "12": {
+    "class_type": "VAEDecode",
+    "_meta": { "title": "VAEDecode" },
+    "inputs": {
+      "samples": ["11", 0],
+      "vae": ["2", 0]
+    }
+  },
+  "13": {
+    "class_type": "CreateVideo",
+    "_meta": { "title": "CreateVideo (24fps)" },
+    "inputs": {
+      "images": ["12", 0],
+      "fps": 24.0
+    }
+  },
+  "14": {
+    "class_type": "SaveVideo",
+    "_meta": { "title": "SaveVideo" },
+    "inputs": {
+      "video": ["13", 0],
+      "filename_prefix": "video/hunyuan_video_1.5",
+      "format": "auto",
+      "codec": "h264"
+    }
+  },
+  "15": {
+    "class_type": "EmptyHunyuanVideo15Latent",
+    "_meta": { "title": "空潜变量 (1280x720 / 121 帧)" },
+    "inputs": {
+      "width": 1280,
+      "height": 720,
+      "length": 121,
+      "batch_size": 1
+    }
+  }
+}
