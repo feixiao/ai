@@ -49,18 +49,18 @@ make -j8
 
 ## 3. 模型权重下载
 
-MiniMax-H3 模型权重（包含 Transformer DiT、Text Encoder、Audio VAE、Video VAE 及 Tokenizer）体积较大。推荐在 `/Users/frank/wk/github/ai/h3` 目录下直接调用自动化脚本下载：
+MiniMax-H3 模型权重（包含 Transformer DiT、Text Encoder、Audio VAE、Video VAE 及 Tokenizer）体积较大。推荐在 `/Users/frank/wk/github/ai/h3` 目录下直接调用自动化脚本下载（内置纯 Python 引擎，**无需安装 git-lfs**）：
 
-### 3.1 极速下载主力模型（国内推荐 ModelScope）
+### 3.1 极速下载主力模型
 
 ```bash
 cd /Users/frank/wk/github/ai/h3
 
-# 使用阿里魔搭社区镜像高速下载（国内首选）
-./download_model.sh /Users/frank/forbuild/h3/models/MiniMax-H3 modelscope
+# 推荐：使用 HuggingFace 原生多线程高速下载（直接复用系统已安装的 huggingface_hub，支持断点续传）
+./download_model.sh
 
-# 或者使用 HuggingFace 镜像源下载
-./download_model.sh /Users/frank/forbuild/h3/models/MiniMax-H3 hf-mirror
+# 或者：使用 ModelScope 阿里魔搭社区源（REST API 直连下载，无需 git-lfs）
+./download_model.sh "" modelscope
 ```
 
 下载完成后，脚本会自动建立软链接至 `/Users/frank/forbuild/h3/MiniMax-H3`，以供推理引擎直接加载。
