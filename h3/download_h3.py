@@ -3,6 +3,7 @@
 MiniMax-H3 权重下载与管理助手 (纯 Python 实现，零 git-lfs 依赖)
 支持 HuggingFace (原生 snapshot_download) 与 ModelScope (REST API 下载)
 默认仅下载核心 FL2VA 模式 (约 134 GB)，避免全量下载 Ref2VA (可省 ~125 GB 空间)
+支持命令行一键下载/补全 Ref2VA 多参考模式 (--ref2va / ref2va)
 """
 
 import sys
@@ -85,7 +86,7 @@ def download_from_huggingface(repo_id: str, target_dir: str, variant: str = "fl2
         print("💡 [精简模式] 已自动过滤 Ref2VA 多参考目录，仅下载 FL2VA 核心文生视频/首尾帧权重 (~134 GB)")
     elif variant == "ref2va":
         kwargs["allow_patterns"] = ["Ref2VA/*", "Ref2VA/**", "*.json", "*.md", "LICENSE", ".gitattributes"]
-        print("💡 [增量模式] 仅下载 Ref2VA 多参考目录权重 (~125 GB)")
+        print("💡 [Ref2VA模式] 仅增量下载 Ref2VA 多参考目录权重 (~125 GB)")
     else:
         print("💡 [全量模式] 下载完整模型仓库，包含 FL2VA 与 Ref2VA (~260 GB)")
 
@@ -101,7 +102,7 @@ def download_from_modelscope_api(model_id: str, target_dir: str, variant: str = 
     if variant == "fl2va":
         print("💡 [精简模式] 已自动过滤 Ref2VA 多参考目录，仅下载 FL2VA 核心文生视频/首尾帧权重 (~134 GB)")
     elif variant == "ref2va":
-        print("💡 [增量模式] 仅下载 Ref2VA 多参考目录权重 (~125 GB)")
+        print("💡 [Ref2VA模式] 仅增量下载 Ref2VA 多参考目录权重 (~125 GB)")
     else:
         print("💡 [全量模式] 下载完整模型仓库，包含 FL2VA 与 Ref2VA (~260 GB)")
 
@@ -164,48 +165,82 @@ def download_from_modelscope_api(model_id: str, target_dir: str, variant: str = 
 
 def main():
     parser = argparse.ArgumentParser(description="MiniMax-H3 权重下载管理工具")
-    parser.add_argument("target_dir", nargs="?", default="", help="保存目录 (默认: models/MiniMax-H3)")
-    parser.add_argument("source", nargs="?", default="modelscope", choices=["modelscope", "huggingface"], help="下载源 (默认: modelscope)")
-    parser.add_argument("variant", nargs="?", default="fl2va", choices=["fl2va", "all", "ref2va", "clean"], help="下载模式或操作 (默认: fl2va 仅下核心)")
+    parser.add_argument("arg1", nargs="?", default="", help="目标目录 或 下载源 或 模式")
+    parser.add_argument("arg2", nargs="?", default="", help="下载源 或 模式")
+    parser.add_argument("arg3", nargs="?", default="", help="模式 (fl2va / all / ref2va / clean)")
     parser.add_argument("--clean", action="store_true", help="清理非必需的 Ref2VA 目录与缓存文件")
-    parser.add_argument("--variant-opt", dest="opt_variant", choices=["fl2va", "all", "ref2va"], default="", help="显示指定下载变体")
+    parser.add_argument("--ref2va", action="store_true", help="一键下载 Ref2VA 多模态参考权重 (~125GB)")
+    parser.add_argument("--fl2va", action="store_true", help="一键下载 FL2VA 核心权重 (~134GB)")
+    parser.add_argument("--all", action="store_true", help="一键下载全量模型权重 (~260GB)")
+    parser.add_argument("--source", choices=["modelscope", "huggingface"], default="", help="指定下载源")
+    parser.add_argument("--dir", dest="custom_dir", default="", help="指定自定义目标目录")
     args = parser.parse_args()
 
-    # 优先解析 clean 意图
-    is_clean = args.clean or args.variant == "clean" or args.source == "clean"
-    variant = args.opt_variant or (args.variant if args.variant != "clean" else "fl2va")
+    # 智能参数归一化
+    target_dir = args.custom_dir
+    source = args.source
+    variant = ""
+    is_clean = args.clean
+
+    if args.ref2va:
+        variant = "ref2va"
+    elif args.all:
+        variant = "all"
+    elif args.fl2va:
+        variant = "fl2va"
+
+    pos_args = [a for a in [args.arg1, args.arg2, args.arg3] if a]
+    known_variants = {"fl2va", "all", "ref2va", "clean"}
+    known_sources = {"modelscope", "huggingface"}
+
+    for a in pos_args:
+        lower = a.lower()
+        if lower in known_variants:
+            if lower == "clean":
+                is_clean = True
+            else:
+                variant = lower
+        elif lower in known_sources:
+            source = lower
+        elif not target_dir:
+            target_dir = a
+
+    if not source:
+        source = "modelscope"
+    if not variant:
+        variant = "fl2va"
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    target_dir = args.target_dir if args.target_dir else os.path.join(script_dir, "models", "MiniMax-H3")
-    target_dir = os.path.abspath(target_dir)
+    final_dir = target_dir if target_dir else os.path.join(script_dir, "models", "MiniMax-H3")
+    final_dir = os.path.abspath(final_dir)
 
     print("=================================================================")
     print("  MiniMax-H3 权重下载管理工具 (原生 Python，无需 git-lfs)")
-    print(f"  目标保存目录: {target_dir}")
-    print(f"  运行模式:     {'仅清理冗余文件' if is_clean else f'下载模式 [{variant}] (源: {args.source})'}")
+    print(f"  目标保存目录: {final_dir}")
+    print(f"  运行模式:     {'仅清理冗余文件' if is_clean else f'下载模式 [{variant}] (源: {source})'}")
     print("=================================================================")
 
     if is_clean:
-        clean_extra_files(target_dir)
+        clean_extra_files(final_dir)
         return
 
-    if args.source == "huggingface":
-        download_from_huggingface("MiniMaxAI/MiniMax-H3", target_dir, variant)
+    if source == "huggingface":
+        download_from_huggingface("MiniMaxAI/MiniMax-H3", final_dir, variant)
     else:
-        download_from_modelscope_api("MiniMax/MiniMax-H3", target_dir, variant)
+        download_from_modelscope_api("MiniMax/MiniMax-H3", final_dir, variant)
 
     # 软链接至当前目录的 MiniMax-H3 方便直连
     link_path = os.path.join(script_dir, "MiniMax-H3")
     try:
         if os.path.islink(link_path) or os.path.exists(link_path):
             os.remove(link_path)
-        os.symlink(target_dir, link_path)
+        os.symlink(final_dir, link_path)
     except OSError:
         pass
 
-    config_path = os.path.join(target_dir, "FL2VA", "transformer", "config.json")
+    config_path = os.path.join(final_dir, "FL2VA", "transformer", "config.json")
     if os.path.exists(config_path):
-        print("🎉 MiniMax-H3 FL2VA 核心权重就绪，可直接运行 ./generate.sh 生成！")
+        print("🎉 MiniMax-H3 权重就绪，可直接运行 ./generate.sh 生成！")
 
 
 if __name__ == "__main__":

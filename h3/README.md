@@ -59,16 +59,16 @@ MiniMax-H3 是一个原生视音频超大多模态系统，官方全量仓库（
 cd /Users/frank/wk/github/ai/h3
 
 # 推荐：使用 ModelScope 阿里魔搭国内源（REST API 直连，零 git-lfs，默认仅下 FL2VA 核心，省 ~125GB）
-./download_model.sh "" modelscope
+./download_model.sh
 
-# 或者：使用 HuggingFace 官方源（自动过滤 Ref2VA 目录）
-./download_model.sh "" huggingface
+# 一键增量补充下载 Ref2VA 多模态参考权重 (~125GB)
+./download_model.sh --ref2va
 
-# 一键清理多余的 Ref2VA 目录与临时缓存以释放磁盘空间
+# 一键清理多余的 Ref2VA 目录与临时缓存以释放磁盘空间 (~64GB)
 ./download_model.sh --clean
 
-# 若后续需要全模态多参考生成 (Ref2VA)，可指定全量下载模式
-./download_model.sh "" modelscope all
+# 或者使用 HuggingFace 官方源下载 Ref2VA
+./download_model.sh --ref2va --source huggingface
 ```
 
 下载完成后，脚本会自动建立软链接至 `/Users/frank/forbuild/h3/MiniMax-H3`，以供推理引擎直接加载。可以通过 `./h3 --info -d ./MiniMax-H3` 验证权重完整性。
