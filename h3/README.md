@@ -47,23 +47,31 @@ make -j8
 
 ---
 
-## 3. 模型权重下载
+## 3. 模型权重下载与体积优化
 
-MiniMax-H3 模型权重（包含 Transformer DiT、Text Encoder、Audio VAE、Video VAE 及 Tokenizer）体积较大。推荐在 `/Users/frank/wk/github/ai/h3` 目录下直接调用自动化脚本下载（内置纯 Python 引擎，**无需安装 git-lfs**）：
+MiniMax-H3 是一个原生视音频超大多模态系统，官方全量仓库（包含首尾帧核心模式 FL2VA 与多参考模式 Ref2VA）高达 **~260 GB**。
 
-### 3.1 极速下载主力模型
+而在日常创作与工程实践中，文生视频与首尾帧图生视频仅需核心的 **FL2VA** 权重（**约 134 GB**），即可获得完整的音视频生成能力。当前下载脚本已全面优化为**按需精简下载**：
+
+### 3.1 极速下载主力模型 (FL2VA 核心)
 
 ```bash
 cd /Users/frank/wk/github/ai/h3
 
-# 推荐：使用 HuggingFace 原生多线程高速下载（直接复用系统已安装的 huggingface_hub，支持断点续传）
-./download_model.sh
-
-# 或者：使用 ModelScope 阿里魔搭社区源（REST API 直连下载，无需 git-lfs）
+# 推荐：使用 ModelScope 阿里魔搭国内源（REST API 直连，零 git-lfs，默认仅下 FL2VA 核心，省 ~125GB）
 ./download_model.sh "" modelscope
+
+# 或者：使用 HuggingFace 官方源（自动过滤 Ref2VA 目录）
+./download_model.sh "" huggingface
+
+# 一键清理多余的 Ref2VA 目录与临时缓存以释放磁盘空间
+./download_model.sh --clean
+
+# 若后续需要全模态多参考生成 (Ref2VA)，可指定全量下载模式
+./download_model.sh "" modelscope all
 ```
 
-下载完成后，脚本会自动建立软链接至 `/Users/frank/forbuild/h3/MiniMax-H3`，以供推理引擎直接加载。
+下载完成后，脚本会自动建立软链接至 `/Users/frank/forbuild/h3/MiniMax-H3`，以供推理引擎直接加载。可以通过 `./h3 --info -d ./MiniMax-H3` 验证权重完整性。
 
 ---
 
