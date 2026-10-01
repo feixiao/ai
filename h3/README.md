@@ -301,3 +301,56 @@ MiniMax-H3 是高参数量的视音频 Diffusion Transformer 模型。在 Apple 
 3. **音频参考输入规范**：
    * `--ref-audio` 仅能挂载 2~15 秒的音频文件，且总长不得超过 15 秒；
    * 音频参考必须配合图片或视频同时输入，不可单独作为唯一的参考条件。
+
+---
+
+## 9. 财经与科技内容生产：如何用 h3.c 实现降本增效
+
+财经研报解读与科技商业分析视频常面临“只有口播干货，缺乏高质量动态画面和版权音效”的痛点。h3.c 支持原生音画同步（Prompt-to-Video/Audio）、首尾帧锚定（FL2VA）和多模态参考图（Ref2VA），是打造自研端侧无版权风险 B-roll 资产库的利器。
+
+### 9.1 结构化 Prompt 模版（符合 H3 Context-IR 规范）
+
+H3 模型由 Qwen3-VL-32B 驱动多模态编码，对结构化提示词理解最佳。推荐遵循 **场景（Scene）+ 动作（Action）+ 运镜（Camera）+ 视效（Look）+ 音效（Audio）** 公式撰写：
+
+#### 示例 1：宏观流动性危机隐喻（金融抽象意象）
+```text
+Scene: An abstract dark vault with golden coins melting away into sand through iron grates.
+Action: Sand and gold flow steadily downward, hourglass effect.
+Camera: Slow downward tracking shot, macro lens, dramatic side shadows.
+Look: Cinematic, hyper-realistic metallic texture, cool corporate blue ambient light with warm gold highlights.
+Audio: Deep sub-bass hum, echoing metallic dripping, low wind rumble, no music.
+```
+
+#### 示例 2：高频量化与服务器机房特写（科技算力实景）
+```text
+Scene: High-tech data center hallway with flashing green and amber server rack LEDs.
+Action: Heat distortion waves rising, fiber optic cables pulsing with soft light.
+Camera: Forward dolly shot moving smoothly down the server corridor.
+Look: Cyberpunk corporate aesthetic, pristine reflections on polished floor, 8k realism.
+Audio: Low mechanical server fan hum, subtle data processing beeps, no music.
+```
+
+> **💡 Prompt 调优秘诀**：在 `Audio:` 描述结尾显式添加 `, no music` 是核心技巧。它能精准抑制模型自行生成突兀的背景旋律，专注于提炼逼真的工业白噪音、机械底噪与环境音效，为口播解说提供干净的垫底音。
+
+### 9.2 首尾帧连接与图表动态（FL2VA 核心已就绪）
+
+* **图表转实景**：使用 `--first-frame chart.png`，接续提示词让图表平滑过渡到现实产业场景（如航运码头、自动化车间），大幅增强宏观分析的视觉表现力。
+* **分层合成避坑建议**：Diffusion 视频模型的 VAE 具有 32 倍空间下采样，精细文字与高频 K 线极易发生边缘模糊。推荐工作流为：**让 H3 专注生成带逼真环境音的实体产业 B-roll 背景，上层通过剪辑软件或 Remotion 叠加绝对清晰的矢量图表或数据动画**。
+
+### 9.3 多模态参考与实体保真（Ref2VA 按需补全）
+
+* **多模态参考功能**：使用 `--ref-image building.png` 或 `--ref-video clip.mp4`，让模型保留企业特定厂房、矿区或设备的视觉特征。
+* **命令行按需增量下载**：当前环境默认精简了该模块以省空间。若需解锁该功能，在终端执行以下命令即可一键补全：
+  ```bash
+  ./download_model.sh --ref2va
+  ```
+* **Logo 与商业标识建议**：复杂的商标 Logo 建议通过后期贴片保证 100% 精度，模型参考侧重于大型建筑外观、工业装备形态与空间色调。
+
+### 9.4 降本增效生产流落地建议
+
+1. **夜间批处理资产池**：财经常用隐喻意象（流动性枯竭、牛熊转换、算力狂飙、供应链断裂）高度复用。利用 M4 Max 在夜间以 `--fast` 档位批量跑出 50~100 条 2~3 秒带原生立体声的短视频，剪辑时随取随用，零等待。
+2. **结合 LLM 自动化生成**：通过本地模型（如 DeepSeek-R1）自动切片财经研报金句，并批量转换为 Scene/Action/Camera/Audio 结构化提示词，管道化输入 `./generate.sh`，实现高质量短视频工业化量产。
+
+---
+
+*更多关于 Apple M4 Max 硬件底层探针数据与特性支持矩阵，请参阅专题文档：[核心功能支持清单与硬件底座适配报告](./docs/FEATURE_SUPPORT_AND_HARDWARE_BENCHMARK.md)。*
