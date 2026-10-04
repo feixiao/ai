@@ -1,0 +1,30 @@
+{
+  "$schema": "https://pi.dev/config/settings.json",
+  "defaultProvider": "reverse-proxy-openai",
+  "defaultModel": "claude-3-5-sonnet-20241022",
+  "defaultThinkingLevel": "medium",
+  "modelThinkingLevels": {
+    "reverse-proxy-openai/deepseek-ai/DeepSeek-R1": "high",
+    "siliconflow/deepseek-ai/DeepSeek-R1": "high",
+    "reverse-proxy-openai/claude-3-5-sonnet-20241022": "low",
+    "lmstudio/qwen3.8-27b-splash": "medium"
+  },
+  "thinkingBudgets": {
+    "minimal": 1024,
+    "low": 2048,
+    "medium": 4096,
+    "high": 8192,
+    "xhigh": 16384,
+    "max": 32768
+  },
+  "hideThinkingBlock": false,
+  "enabledModels": [
+    "reverse-proxy-openai/*",
+    "reverse-proxy-anthropic/*",
+    "siliconflow/*",
+    "lmstudio/*",
+    "ollama/*",
+    "anthropic/*",
+    "deepseek/*"
+  ]
+}

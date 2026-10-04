@@ -1,0 +1,228 @@
+{
+  "providers": {
+    "google-gemini": {
+      "name": "Google Gemini 官方直连 / 反代专线",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+      "apiKey": "$GEMINI_API_KEY",
+      "api": "google-generative-ai",
+      "models": [
+        {
+          "id": "gemini-1.5-pro",
+          "name": "Gemini 1.5 Pro (1M 超长上下文/旗舰)",
+          "contextWindow": 1048576,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        },
+        {
+          "id": "gemini-2.0-flash",
+          "name": "Gemini 2.0 Flash (极速/次时代原生多模态)",
+          "contextWindow": 1048576,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        },
+        {
+          "id": "gemini-2.0-pro-exp-02-05",
+          "name": "Gemini 2.0 Pro Experimental (顶尖代码推演)",
+          "contextWindow": 1048576,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        }
+      ]
+    },
+    "reverse-proxy-gemini": {
+      "name": "Gemini 自建反向代理通道 (Cloudflare/Nginx)",
+      "baseUrl": "https://gemini-proxy.yourdomain.com/v1beta",
+      "apiKey": "$GEMINI_API_KEY",
+      "api": "google-generative-ai",
+      "models": [
+        {
+          "id": "gemini-1.5-pro",
+          "name": "Gemini 1.5 Pro (自建反代)",
+          "contextWindow": 1048576,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        },
+        {
+          "id": "gemini-2.0-flash",
+          "name": "Gemini 2.0 Flash (自建反代)",
+          "contextWindow": 1048576,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        }
+      ]
+    },
+    "reverse-proxy-openai": {
+      "name": "One-API / New-API 聚合反代网关",
+      "baseUrl": "https://api.your-proxy-domain.com/v1",
+      "apiKey": "$CUSTOM_PROXY_API_KEY",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "claude-3-5-sonnet-20241022",
+          "name": "Claude 3.5 Sonnet (反代主力)",
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        },
+        {
+          "id": "gemini-1.5-pro",
+          "name": "Gemini 1.5 Pro (聚合反代通道)",
+          "contextWindow": 1000000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-V3",
+          "name": "DeepSeek V3 (反代高性价比)",
+          "contextWindow": 64000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": false
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-R1",
+          "name": "DeepSeek R1 (反代深度推理)",
+          "contextWindow": 64000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": false
+        },
+        {
+          "id": "gpt-4o",
+          "name": "GPT-4o (反代标准通道)",
+          "contextWindow": 128000,
+          "maxTokens": 4096,
+          "supportsTools": true,
+          "supportsImages": true
+        }
+      ]
+    },
+    "reverse-proxy-anthropic": {
+      "name": "Anthropic 专用反代通道 (Messages API)",
+      "baseUrl": "https://claude-proxy.yourdomain.com",
+      "apiKey": "$ANTHROPIC_PROXY_KEY",
+      "api": "anthropic-messages",
+      "models": [
+        {
+          "id": "claude-3-5-sonnet-20241022",
+          "name": "Claude 3.5 Sonnet (Anthropic 原生专线)",
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        },
+        {
+          "id": "claude-3-5-haiku-20241022",
+          "name": "Claude 3.5 Haiku (极速子代理专线)",
+          "contextWindow": 200000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": true
+        }
+      ]
+    },
+    "siliconflow": {
+      "name": "硅基流动 (SiliconFlow 高速通道)",
+      "baseUrl": "https://api.siliconflow.cn/v1",
+      "apiKey": "$SILICONFLOW_API_KEY",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "deepseek-ai/DeepSeek-V3",
+          "name": "DeepSeek V3 (硅基流动)",
+          "contextWindow": 64000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": false
+        },
+        {
+          "id": "deepseek-ai/DeepSeek-R1",
+          "name": "DeepSeek R1 (硅基推理)",
+          "contextWindow": 64000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": false
+        },
+        {
+          "id": "Qwen/Qwen2.5-Coder-32B-Instruct",
+          "name": "Qwen 2.5 Coder 32B (代码专模)",
+          "contextWindow": 32768,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": false
+        }
+      ]
+    },
+    "lmstudio": {
+      "name": "LM Studio (本地 Apple Silicon / M 系列推演)",
+      "baseUrl": "http://127.0.0.1:1234/v1",
+      "apiKey": "lmstudio",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "qwen3.8-27b-splash",
+          "name": "Qwen 3.8 27B Splash (本地主力编码)",
+          "contextWindow": 100000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": false
+        },
+        {
+          "id": "google/gemma-4-26b-a4b-qat",
+          "name": "Gemma 4 26B A4B QAT (本地轻量快速)",
+          "contextWindow": 100000,
+          "maxTokens": 4096,
+          "supportsTools": true,
+          "supportsImages": false
+        }
+      ]
+    },
+    "ollama": {
+      "name": "Ollama (本地/局域网服务)",
+      "baseUrl": "http://127.0.0.1:11434/v1",
+      "apiKey": "ollama",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "deepseek-r1:14b",
+          "name": "DeepSeek R1 14B (本地 Ollama)",
+          "contextWindow": 32768,
+          "maxTokens": 4096,
+          "supportsTools": true,
+          "supportsImages": false
+        },
+        {
+          "id": "qwen2.5-coder:14b",
+          "name": "Qwen 2.5 Coder 14B (本地代码助手)",
+          "contextWindow": 32768,
+          "maxTokens": 4096,
+          "supportsTools": true,
+          "supportsImages": false
+        }
+      ]
+    },
+    "vllm-local": {
+      "name": "vLLM 私有化推理集群",
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "apiKey": "none",
+      "api": "openai-completions",
+      "models": [
+        {
+          "id": "deepseek-ai/DeepSeek-V3",
+          "name": "DeepSeek V3 (私有 vLLM 集群)",
+          "contextWindow": 64000,
+          "maxTokens": 8192,
+          "supportsTools": true,
+          "supportsImages": false
+        }
+      ]
+    }
+  }
+}
