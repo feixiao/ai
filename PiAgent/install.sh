@@ -217,17 +217,21 @@ install_recommended_skills() {
         return
     fi
 
-    local scope_flag=()
-    if [[ "$INSTALL_TARGET" == "project" ]]; then
-        scope_flag=(-l)
-    fi
+    install_skill_package() {
+        local source="$1"
+        if [[ "$INSTALL_TARGET" == "project" ]]; then
+            pi install "$source" -l
+        else
+            pi install "$source"
+        fi
+    }
 
     log_info "正在安装 Pi 官方基础 Skill 集合..."
-    pi install git:github.com/badlogic/pi-skills "${scope_flag[@]}" \
+    install_skill_package git:github.com/badlogic/pi-skills \
         || log_warn "Pi Skill 集合安装失败。请检查网络后手动运行: pi install git:github.com/badlogic/pi-skills"
 
     log_info "正在安装 Anthropic 文档 Skill 集合（docx、pdf、pptx、xlsx 等）..."
-    pi install git:github.com/anthropics/skills "${scope_flag[@]}" \
+    install_skill_package git:github.com/anthropics/skills \
         || log_warn "Anthropic Skill 集合安装失败。请检查网络后手动运行: pi install git:github.com/anthropics/skills"
 
     log_success "基础 Skill 安装步骤完成。运行 'pi list' 查看已安装包；启动 Pi 后可用 /skill:<name> 显式调用。"
