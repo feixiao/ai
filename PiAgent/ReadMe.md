@@ -46,7 +46,7 @@ Pi Agent 秉持 **"极简 Harness + 自由可塑"** 的哲学，与臃肿笨重�
 PiAgent/
 ├── models.json      # 核心模型与反代 Provider 定义 (覆盖 Google/Anthropic/OpenAI/本地)
 ├── settings.json    # Agent 行为偏好、默认模型及思考预算配置
-├── install.sh       # 一键检查环境、测试服务连通性并部署到 ~/.pi/agent/
+├── install.sh       # 一键检查环境、测试服务连通性、部署配置并安装可选扩展/Skills
 └── ReadMe.md        # 本使用与反向代理接入指南
 ```
 
@@ -167,8 +167,8 @@ Pi Agent 对 Gemini 系列提供了官方一等公民支持。接入主要有以
 chmod +x PiAgent/install.sh
 ./PiAgent/install.sh
 
-# 2. 如果本机未安装 Pi CLI，一键安装 CLI + 部署配置 + 安装自动发现扩展
-./PiAgent/install.sh -i -e
+# 2. 如果本机未安装 Pi CLI，一键安装 CLI + 部署配置 + 自动发现扩展 + 基础 Skills
+./PiAgent/install.sh -i -e -s
 
 # 3. 仅测试各推理后端与反向代理网关连通性
 ./PiAgent/install.sh --check
@@ -214,7 +214,70 @@ pi
 
 ---
 
-## 7. 动态模型自动发现（进阶）
+## 7. 安装基础 Skills
+
+Pi 原生实现 [Agent Skills 规范](https://agentskills.io/specification)：一个 Skill 是包含 `SKILL.md` 的目录。启动时 Pi 只加载 Skill 的名称和描述；任务匹配时才读取完整指令，因此适合安装按需使用的工作流。
+
+这与 Claude Code 的 `claude plugin install` 不同。Pi 使用 `pi install` 安装 **Pi Package**，一个 Package 可以同时包含扩展、Skills、提示词模板和主题。`SKILL.md` 格式与 Claude Code、Codex 的 Agent Skills 兼容，因此本指南中的 Anthropic 文档技能可以直接由 Pi 发现和调用。
+
+### 一键安装推荐基础集合
+
+运行本目录的安装脚本并加入 `--skills`：
+
+```bash
+# 安装到 ~/.pi/agent/，适用于所有项目
+./PiAgent/install.sh -s
+
+# 为当前项目安装到 .pi/settings.json
+./PiAgent/install.sh --project . --skills
+```
+
+该选项会安装以下两个经过 Pi 文档明确支持的集合：
+
+| 集合 | 来源 | 用途 |
+| :--- | :--- | :--- |
+| Pi Skills | `badlogic/pi-skills` | Pi 原生的通用工作流示例与基础技能 |
+| Anthropic Skills | `anthropics/skills` | 文档处理技能，如 `docx`、`pdf`、`pptx` 与 `xlsx` |
+
+如需手动安装或固定到自己的部署流程，可使用相同命令：
+
+```bash
+# 用户级安装
+pi install git:github.com/badlogic/pi-skills
+pi install git:github.com/anthropics/skills
+
+# 项目级安装（写入 .pi/settings.json）
+pi install -l git:github.com/badlogic/pi-skills
+pi install -l git:github.com/anthropics/skills
+```
+
+安装后使用以下方式检查和调用：
+
+```bash
+pi list                    # 查看由 pi install 管理的 Package
+pi                         # 启动后查看可用的 /skill:<name> 命令
+```
+
+当需要明确指定某个已安装 Skill 时，在 Pi 交互界面输入：
+
+```text
+/skill:<skill-name> 提取 report.pdf 中的表格并汇总为 Markdown。
+```
+
+Pi 还会自动发现以下目录中的 Skill：
+
+```text
+~/.pi/agent/skills/<skill-name>/SKILL.md  # 用户级 Pi Skill
+.pi/skills/<skill-name>/SKILL.md          # 项目级 Pi Skill
+~/.agents/skills/<skill-name>/SKILL.md    # 跨 Agent Skills 规范目录
+.agents/skills/<skill-name>/SKILL.md      # 项目跨 Agent Skills 规范目录
+```
+
+仅安装并审查可信来源的 Package：Skills 可携带脚本，项目级 Package 在授予项目信任后才会加载。编辑 Skill 后，在 Pi 会话中运行 `/reload` 重新发现。
+
+---
+
+## 8. 动态模型自动发现（进阶）
 
 如果你的反代网关（如 One-API）经常增删模型，可以安装官方社区的自动发现扩展：
 

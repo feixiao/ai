@@ -7,7 +7,7 @@
 # 1. 自动化检测 Node.js 环境与 Pi Agent CLI (pi / @earendil-works/pi-coding-agent) 安装状态
 # 2. 自动化检测反向代理网关及本地推理引擎 (LM Studio, Ollama, vLLM) 连通性
 # 3. 部署或智能合并 models.json 与 settings.json 至全局 (~/.pi/agent/) 或工作区 (.pi/)
-# 4. 支持自动备份旧配置、可选安装扩展 (如 pi-models-discovery)
+# 4. 支持自动备份旧配置、可选安装扩展与基础 Skill 集合
 #
 # ==============================================================================
 
@@ -38,6 +38,7 @@ FORCE_OVERWRITE=0
 CHECK_ONLY=0
 INSTALL_CLI_IF_MISSING=0
 INSTALL_EXTENSIONS=0
+INSTALL_SKILLS=0
 PROXY_URL=""
 PROXY_KEY=""
 
@@ -58,13 +59,14 @@ ${CYAN}选项:${NC}
   -c, --check               仅检测本地后端/反代服务连通性与模型列表，不写入配置
   -f, --force               强制覆盖目标配置（会自动创建时间戳备份文件）
   -e, --extensions          自动安装推荐扩展 (如 pi-models-discovery 模型自动发现)
+  -s, --skills              安装基础 Skill 集合（Pi 官方技能与 Anthropic 文档技能）
       --proxy-url <URL>     快速测试指定的反向代理 BaseURL (如 https://api.proxy.com/v1)
       --proxy-key <KEY>     配合 --proxy-url 测试时使用的 API Key
   -h, --help                显示此帮助信息
 
 ${CYAN}示例:${NC}
   ./install.sh                      # 部署模型与参数配置到 ~/.pi/agent/
-  ./install.sh -i -e                # 自动安装 Pi CLI，部署配置并安装推荐扩展
+  ./install.sh -i -e -s             # 安装 Pi CLI、配置、扩展与基础 Skill 集合
   ./install.sh --check              # 检查 LM Studio、Ollama 与反代端点连通性
   ./install.sh --project .          # 为当前项目生成工作区专属配置 (.pi/)
   ./install.sh --proxy-url https://api.siliconflow.cn/v1 --proxy-key sk-xxx
@@ -207,6 +209,31 @@ install_recommended_extensions() {
 }
 
 # ==============================================================================
+# 安装基础 Skills
+# ==============================================================================
+install_recommended_skills() {
+    if ! command -v pi >/dev/null 2>&1; then
+        log_warn "未找到 pi CLI，跳过 Skill 安装。"
+        return
+    fi
+
+    local scope_flag=()
+    if [[ "$INSTALL_TARGET" == "project" ]]; then
+        scope_flag=(-l)
+    fi
+
+    log_info "正在安装 Pi 官方基础 Skill 集合..."
+    pi install git:github.com/badlogic/pi-skills "${scope_flag[@]}" \
+        || log_warn "Pi Skill 集合安装失败。请检查网络后手动运行: pi install git:github.com/badlogic/pi-skills"
+
+    log_info "正在安装 Anthropic 文档 Skill 集合（docx、pdf、pptx、xlsx 等）..."
+    pi install git:github.com/anthropics/skills "${scope_flag[@]}" \
+        || log_warn "Anthropic Skill 集合安装失败。请检查网络后手动运行: pi install git:github.com/anthropics/skills"
+
+    log_success "基础 Skill 安装步骤完成。运行 'pi list' 查看已安装包；启动 Pi 后可用 /skill:<name> 显式调用。"
+}
+
+# ==============================================================================
 # 部署配置文件
 # ==============================================================================
 deploy_config() {
@@ -313,6 +340,10 @@ main() {
                 INSTALL_EXTENSIONS=1
                 shift
                 ;;
+            -s|--skills)
+                INSTALL_SKILLS=1
+                shift
+                ;;
             --proxy-url)
                 if [[ $# -gt 1 ]]; then
                     PROXY_URL="$2"
@@ -355,6 +386,10 @@ main() {
 
     if [[ $INSTALL_EXTENSIONS -eq 1 ]]; then
         install_recommended_extensions
+    fi
+
+    if [[ $INSTALL_SKILLS -eq 1 ]]; then
+        install_recommended_skills
     fi
 }
 
