@@ -13,6 +13,7 @@
 | **Deep Research (深度研究)** | 多轮自主规划、深度网页递归抓取、交叉验证、生成万字报告 | 技术选型全景对比、前沿架构优劣势调研、复杂技术链路可行性分析 | 行业竞争格局梳理、冷门细分赛道深挖、上市公司财务暴雷红队压力测试 |
 | **Gemini Spark (云端 Agent)** | 24 小时云端驻守、定时任务编排、自主轮询与状态监控 | 依赖库安全漏洞轮询、CI/CD 状态告警智能汇总、外部 API 状态监控 | 盘后财报与监管公告抓取、突发宏观快讯结构化过滤、自选股舆情预警 |
 | **满血版 NotebookLM** | Source-Grounded 溯源事实约束（零幻觉）、Audio Overview 双人播客 | 官方技术文档/RFC/API Spec 导入，生成随时可溯源的精准开发助手 | 几十万字英文研报/财报一键生成双人对谈播客，边通勤边高效吸收 |
+| **Overview & Reports 套件** | 包含 Audio/Video Overview、高管简报、万字研报、时间线与自测题 | 视频架构分享生成带时间戳分镜章节，会议录音自动提炼决策备忘录 | 财报电话会一键转双人对谈播客，批量生成赛道深度研究报告 |
 | **Google Flow (每月 1000 积分)** | 官方 Veo / Flow 影视级视频与分镜生成平台，光影与物理一致性 | 软件系统演示动效、技术方案架构动态演化演示 | 投研成果可视化展示、商业计划书动态演示、财经视频分镜制作 |
 | **Jules (GitHub 代码助理)** | 异步云端自主编程代理，直接联动 GitHub Repo，自主改代码提 PR | 自动化修 Bug、补全 TypeScript 强类型、批量补单测、依赖跨版本升级 | 个人自动化量化脚本维护、回测代码优化与开源投研数据清洗管道维护 |
 
@@ -64,11 +65,20 @@
    - 研发素材库、ComfyUI/Wan2.2 视频生成大文件、本地大模型数据集归档规范。
    - 数据隐私安全边界与家庭组资源隔离策略。
 
+8. **[08. Google 多模态概览与智能研报全景指南 (Overview & Reports)](./08_MULTIMODAL_OVERVIEW_AND_REPORTS.md)**
+   - 告别传统 ASR+LLM+TTS 繁琐链路：Gemini 原生超长音视频多模态直通架构。
+   - Audio Overview 进阶实战：双人播客生成机理、Interactive 实时插话打断与受众定制 Prompt。
+   - Video Overview 与音画穿透：免转写原生多模态、秒级时间戳引用与架构白板分镜抽取。
+   - Reports 结构化套件：高管简报 (Briefing Doc)、万字深度研报、时序演进表 (Timeline) 与反向盲点审计 (Red Team)。
+   - 认知层工具：概念词汇表 (Glossary)、预测型 FAQ 问答库与场景模拟自测题 (Quiz)。
+   - 自动化工程流水线：基于最新 `google-genai` SDK 实现一键批量自动化产出。
+
 ---
 
 ## 辅助工具
 
 - **[上下文打包工具 (`tools/pack_context.py`)](./tools/pack_context.py)**：用于将本地复杂的源码仓库或多个研报/PDF/Markdown 目录扫描并打包为单份带有清晰路径标记的文本文件，便于直接上传至 Google AI Studio 或 Gemini 进行百万级 Token 深度分析。
+- **[多模态概览全套自动化生成器 (`tools/auto_overview_generator.py`)](./tools/auto_overview_generator.py)**：基于官方最新 `google-genai` SDK，传入本地 PDF/音视频文件，一键批量并发生成高管简报、深度研报、双人播客脚本、FAQ 题库及精准时间戳导航。
 
 ---
 
