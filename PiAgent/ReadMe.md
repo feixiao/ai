@@ -214,66 +214,81 @@ pi
 
 ---
 
-## 7. 安装基础 Skills
+## 7. 高质量 Skills 选型与角色化安装（对齐 RECOMMENDED_SKILLS.md）
 
-Pi 原生实现 [Agent Skills 规范](https://agentskills.io/specification)：一个 Skill 是包含 `SKILL.md` 的目录。启动时 Pi 只加载 Skill 的名称和描述；任务匹配时才读取完整指令，因此适合安装按需使用的工作流。
+Pi 原生实现 [Agent Skills 规范](https://agentskills.io/specification)：一个 Skill 是包含 `SKILL.md` 及配套脚本/提示词模板的独立目录。启动时 Pi 只轻量加载各 Skill 的元数据与描述；任务执行命中时才动态拉取完整实操指南，兼顾上下文 Token 节约与提示词缓存利用率。
 
-这与 Claude Code 的 `claude plugin install` 不同。Pi 使用 `pi install` 安装 **Pi Package**，一个 Package 可以同时包含扩展、Skills、提示词模板和主题。`SKILL.md` 格式与 Claude Code、Codex 的 Agent Skills 兼容，因此本指南中的 Anthropic 文档技能可以直接由 Pi 发现和调用。
+本目录安装脚本与 [`ClaudeCode/RECOMMENDED_SKILLS.md`](../ClaudeCode/RECOMMENDED_SKILLS.md) 的权威选型**保持 100% 对齐**，提供面向**全栈工程师**、**产品经理 (PM)** 与**个人投资者**三大核心角色的技能画像矩阵，并通过本地 Claude 插件缓存优先同步 + 上游 Git 直下机制实现秒级部署。
 
-### 一键安装推荐基础集合
+### 7.1 核心角色技能矩阵
 
-运行本目录的安装脚本并加入 `--skills`：
+| 角色 Profile | 核心目标与定位 | 包含技能数量 | 核心包含的 Skills 清单 |
+| :--- | :--- | :--- | :--- |
+| **`minimal`**<br>(默认核心档) | 个人投资者、全栈与 PM 共同交集 | 18 个核心技能 | • 文档三剑客: `xlsx`, `pdf`, `docx`, `pptx`<br>• 工程规范: `systematic-debugging`, `test-driven-development`, `brainstorming`, `using-superpowers`, `using-git-worktrees`, `verification-before-completion`<br>• 质询与建模: `grilling`, `domain-modeling`, `codebase-design`<br>• 前端设计: `ui-ux-pro-max`, `design-system`, `ui-styling`<br>• 跨会话规划: `planning-with-files`<br>• 自定义 MCP: `mcp-builder` |
+| **`eng`**<br>(全栈工程师) | 严格工程规范、TDD、DDD 建模与前端设计系统 | 33 个专业技能 | • `superpowers` 14 项完整全家桶 (调试/TDD/Worktree/计划编写与执行/审查/多Agent编排)<br>• `ui-ux-pro-max` 7 项全套设计系统 (design-system, ui-styling, design, brand, banner, slides)<br>• `mattpocock-skills` (domain-modeling, codebase-design, grilling, research, resolving-merge-conflicts, tdd, wizard, diagnosing-bugs)<br>• 扩展与测试: `mcp-builder`, `webapp-testing`, `web-artifacts-builder`<br>• 跨会话规划: `planning-with-files` |
+| **`pm`**<br>(产品经理) | 工业级 PRD、严苛对抗质询(砍需求)、SaaS 商业化阶梯定价与敏捷管理 | 36 个专业技能 | • 需求文档: `docx`, `pdf`, `xlsx`, `pptx`<br>• 对抗质询: `grilling`, `brainstorming`<br>• 体验与落地页: `ui-ux-pro-max`, `design`, `design-system`, `ui-styling`, `landing-page-generator`<br>• 商业化增收: `commercial-skills`, `pricing-strategist`, `commercial-policy`, `commercial-forecaster`, `deal-desk`<br>• 产品套件: `product-manager-toolkit`, `product-strategist`, `product-discovery`, `product-analytics`, `competitive-teardown`, `experiment-designer`, `roadmap-communicator`, `spec-to-repo`, `saas-scaffolder`, `ui-design-system`, `ux-researcher-designer`<br>• 敏捷协作: `senior-pm`, `scrum-master`, `jira-expert`, `confluence-expert`, `atlassian-admin`, `atlassian-templates`, `meeting-analyzer`, `team-communications`<br>• 路线图跟踪: `planning-with-files` |
+| **`invest`**<br>(个人投资者) | 财报长文表格提取、估值模型联动、红队严苛质询与资产看板可视化 | 13 个专业技能 | • 财报与研报三剑客: `xlsx`, `pdf`, `docx`, `pptx`<br>• 红队反脆弱审查: `grilling`, `grill-me`<br>• 深度事实调研: `research`<br>• 投资论点推演: `brainstorming`<br>• 资产图表与原型: `theme-factory`, `frontend-design`, `canvas-design`, `web-artifacts-builder`<br>• 跨季度日志: `planning-with-files` |
+| **`full`**<br>(全量生态档) | 装载本地缓存与来源库中全部可用技能 | 1000+ 个 | 安装包含全部垂类（金融、工程进阶、深度调研、合规、高管顾问等）的所有可用技能 |
+
+---
+
+### 7.2 一键部署与角色安装命令
 
 ```bash
-# 安装到 ~/.pi/agent/，适用于所有项目
+# 1. 部署默认精选必备 Skills (minimal: 18 个核心技能，部署到 ~/.pi/agent/skills/)
 ./PiAgent/install.sh -s
 
-# 为当前项目安装到 .pi/settings.json
-./PiAgent/install.sh --project . --skills
+# 2. 为全栈工程师一键部署完整工程技能栈
+./PiAgent/install.sh -s --profile eng
+
+# 3. 为产品经理一键部署 PRD/商业化/敏捷协作技能栈
+./PiAgent/install.sh -s --profile pm
+
+# 4. 为个人投资者一键部署财报建模/红队质询技能栈
+./PiAgent/install.sh -s --profile invest
+
+# 5. 预览指定角色包含的技能清单 (不写盘)
+./PiAgent/install.sh --list-skills --profile eng
+
+# 6. 为当前工作区项目生成专属配置及项目级技能目录 (.pi/skills/)
+./PiAgent/install.sh --project . -s --profile minimal
+
+# 7. 清理目标目录中未包含在当前 profile 清单内的冗余技能
+./PiAgent/install.sh -s --profile minimal --prune-skills
+
+# 8. 若本地无 Claude 插件缓存，允许从上游 Git 直下缺失技能
+./PiAgent/install.sh -s --profile eng --fetch-skills
 ```
 
-该选项会安装以下两个经过 Pi 文档明确支持的集合：
+---
 
-| 集合 | 来源 | 用途 |
-| :--- | :--- | :--- |
-| Pi Skills | `badlogic/pi-skills` | Pi 原生的通用工作流示例与基础技能 |
-| Anthropic Skills | `anthropics/skills` | 文档处理技能，如 `docx`、`pdf`、`pptx` 与 `xlsx` |
+### 7.3 Pi Agent 技能生效目录与调用方式
 
-如需手动安装或固定到自己的部署流程，可使用相同命令：
-
-```bash
-# 用户级安装
-pi install git:github.com/badlogic/pi-skills
-pi install git:github.com/anthropics/skills
-
-# 项目级安装（写入 .pi/settings.json）
-pi install -l git:github.com/badlogic/pi-skills
-pi install -l git:github.com/anthropics/skills
-```
-
-安装后使用以下方式检查和调用：
-
-```bash
-pi list                    # 查看由 pi install 管理的 Package
-pi                         # 启动后查看可用的 /skill:<name> 命令
-```
-
-当需要明确指定某个已安装 Skill 时，在 Pi 交互界面输入：
+Pi 会自动递归扫描并加载以下目录中的 `SKILL.md`：
 
 ```text
-/skill:<skill-name> 提取 report.pdf 中的表格并汇总为 Markdown。
+~/.pi/agent/skills/<skill-name>/SKILL.md  # 用户全局级 Pi Skill [install.sh -g 部署目标]
+.pi/skills/<skill-name>/SKILL.md          # 项目工作区级 Pi Skill [install.sh -p 部署目标]
+~/.agents/skills/<skill-name>/SKILL.md    # 跨 Agent 规范全局目录
+.agents/skills/<skill-name>/SKILL.md      # 跨 Agent 规范项目目录
 ```
 
-Pi 还会自动发现以下目录中的 Skill：
+#### 检查与显式调用
 
-```text
-~/.pi/agent/skills/<skill-name>/SKILL.md  # 用户级 Pi Skill
-.pi/skills/<skill-name>/SKILL.md          # 项目级 Pi Skill
-~/.agents/skills/<skill-name>/SKILL.md    # 跨 Agent Skills 规范目录
-.agents/skills/<skill-name>/SKILL.md      # 项目跨 Agent Skills 规范目录
+启动 Pi 进入交互式会话：
+
+```bash
+pi
 ```
 
-仅安装并审查可信来源的 Package：Skills 可携带脚本，项目级 Package 在授予项目信任后才会加载。编辑 Skill 后，在 Pi 会话中运行 `/reload` 重新发现。
+- **语义自主调用**：任务命中技能范围时（如输入“审查某财报 PDF”或“用 TDD 修复并发 Bug”），Pi 会自动识别并加载对应技能；
+- **显式定向调用**：在交互输入框中输入 `/skill:<skill-name>` 强制触发，例如：
+  ```text
+  /skill:grilling 我打算重构用户权限中心，请对我接下来的设计思路进行最严苛的红队质询。
+  /skill:xlsx 根据当前财报数据构建 5 年期 DCF 现金流折现估值模型并输出敏感性分析表格。
+  /skill:systematic-debugging 接口在高并发下偶现 500，请按根因追踪法排查日志。
+  ```
+- **重载更新**：如果在外部更新了技能文件，在 Pi 会话中输入 `/reload` 即可实时热重载。
 
 ---
 

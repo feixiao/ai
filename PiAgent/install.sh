@@ -39,6 +39,10 @@ CHECK_ONLY=0
 INSTALL_CLI_IF_MISSING=0
 INSTALL_EXTENSIONS=0
 INSTALL_SKILLS=0
+PROFILE="minimal" # 默认角色: minimal, eng, pm, invest, full
+LIST_SKILLS=0
+PRUNE_SKILLS=0
+FETCH_SKILLS=0
 PROXY_URL=""
 PROXY_KEY=""
 
@@ -52,23 +56,33 @@ ${BOLD}Pi Agent (pi-coding-agent) 一键安装与配置管理工具${NC}
 ${CYAN}用法:${NC}
   ./install.sh [选项]
 
-${CYAN}选项:${NC}
+${CYAN}基础选项:${NC}
   -g, --global              部署到全局配置目录 (~/.pi/agent/) [默认]
   -p, --project [DIR]       部署到指定工程目录 (默认: 当前目录 ./.pi/)
   -i, --install-cli         若系统未安装 Pi Agent CLI，则自动执行官方安装
   -c, --check               仅检测本地后端/反代服务连通性与模型列表，不写入配置
   -f, --force               强制覆盖目标配置（会自动创建时间戳备份文件）
   -e, --extensions          自动安装推荐扩展 (如 pi-models-discovery 模型自动发现)
-  -s, --skills              安装基础 Skill 集合（Pi 官方技能与 Anthropic 文档技能）
       --proxy-url <URL>     快速测试指定的反向代理 BaseURL (如 https://api.proxy.com/v1)
       --proxy-key <KEY>     配合 --proxy-url 测试时使用的 API Key
   -h, --help                显示此帮助信息
 
+${CYAN}技能 (Skills) 选项 (对齐 RECOMMENDED_SKILLS.md 权威规范):${NC}
+  -s, --skills              安装高质量 Skill 集合 (根据 --profile 抽取或部署)
+      --profile <NAME>      选配技能角色画像: minimal [默认], eng (全栈), pm (产品), invest (投资), full
+      --list-skills         打印选定 profile 对应的 Skill 清单后退出
+      --prune-skills        清理目标技能目录中不在当前 profile 清单内的旧技能
+      --fetch-skills        若本地 Claude 插件缓存缺少某些 Skill，自动从上游 Git 直下
+
 ${CYAN}示例:${NC}
   ./install.sh                      # 部署模型与参数配置到 ~/.pi/agent/
-  ./install.sh -i -e -s             # 安装 Pi CLI、配置、扩展与基础 Skill 集合
+  ./install.sh -i -e -s             # 安装 Pi CLI、配置、扩展与精选核心 Skill 集合
+  ./install.sh -s --profile eng     # 部署全栈工程师专属 Skill (superpowers, ui-ux, mattpocock, mcp)
+  ./install.sh -s --profile pm      # 部署产品经理专属 Skill (PRD/文档, 质询, 商业化, 敏捷协作)
+  ./install.sh -s --profile invest  # 部署个人投资者专属 Skill (财报三张表, 研报抽取, 投资论点红队质询)
+  ./install.sh --list-skills --profile eng # 仅预览全栈工程师包含的技能清单
+  ./install.sh --project . -s       # 为当前项目生成专属配置及本地 .pi/skills/
   ./install.sh --check              # 检查 LM Studio、Ollama 与反代端点连通性
-  ./install.sh --project .          # 为当前项目生成工作区专属配置 (.pi/)
   ./install.sh --proxy-url https://api.siliconflow.cn/v1 --proxy-key sk-xxx
 EOF
 }
@@ -209,32 +223,260 @@ install_recommended_extensions() {
 }
 
 # ==============================================================================
-# 安装基础 Skills
+# 查看与列出 Skill 清单
+# ==============================================================================
+list_profile_skills() {
+    python3 - "$PROFILE" << 'PY'
+import sys
+
+PROFILES = {
+    "minimal": [
+        "xlsx", "pdf", "docx", "pptx",
+        "systematic-debugging", "test-driven-development", "brainstorming", "using-superpowers",
+        "using-git-worktrees", "verification-before-completion",
+        "grilling", "domain-modeling", "codebase-design",
+        "ui-ux-pro-max", "design-system", "ui-styling",
+        "planning-with-files",
+        "mcp-builder"
+    ],
+    "eng": [
+        "using-superpowers", "brainstorming", "writing-plans", "executing-plans",
+        "systematic-debugging", "test-driven-development", "requesting-code-review",
+        "receiving-code-review", "verification-before-completion",
+        "dispatching-parallel-agents", "subagent-driven-development",
+        "finishing-a-development-branch", "using-git-worktrees", "writing-skills",
+        "ui-ux-pro-max", "design", "design-system", "ui-styling", "brand", "banner-design", "slides",
+        "domain-modeling", "codebase-design", "grilling", "research",
+        "resolving-merge-conflicts", "tdd", "wizard", "diagnosing-bugs",
+        "mcp-builder", "webapp-testing", "web-artifacts-builder",
+        "planning-with-files"
+    ],
+    "pm": [
+        "docx", "pdf", "pptx", "xlsx",
+        "grilling", "brainstorming",
+        "ui-ux-pro-max", "design", "design-system", "ui-styling", "landing-page-generator",
+        "commercial-skills", "pricing-strategist", "commercial-policy", "commercial-forecaster", "deal-desk",
+        "product-manager-toolkit", "product-strategist", "product-discovery", "product-analytics",
+        "competitive-teardown", "experiment-designer", "roadmap-communicator", "spec-to-repo",
+        "saas-scaffolder", "ui-design-system", "ux-researcher-designer",
+        "senior-pm", "scrum-master", "jira-expert", "confluence-expert", "atlassian-admin",
+        "atlassian-templates", "meeting-analyzer", "team-communications",
+        "planning-with-files"
+    ],
+    "invest": [
+        "xlsx", "pdf", "docx", "pptx",
+        "grilling", "grill-me", "research", "brainstorming",
+        "theme-factory", "frontend-design", "canvas-design", "web-artifacts-builder",
+        "planning-with-files"
+    ],
+    "full": []
+}
+
+prof = sys.argv[1]
+if prof not in PROFILES:
+    print(f"未知 profile: {prof} (可选: minimal, eng, pm, invest, full)", file=sys.stderr)
+    sys.exit(1)
+
+if prof == "full":
+    print("角色画像: full (全量生态档，安装本地缓存与来源库中找到的所有可用 Skill)")
+else:
+    skills = PROFILES[prof]
+    print(f"角色画像: {prof} (对齐 RECOMMENDED_SKILLS.md 推荐技能，共 {len(skills)} 项):")
+    for s in skills:
+        print(f"  • {s}")
+PY
+}
+
+# ==============================================================================
+# 安装推荐与定制 Skills (对齐 RECOMMENDED_SKILLS.md 规范)
 # ==============================================================================
 install_recommended_skills() {
-    if ! command -v pi >/dev/null 2>&1; then
-        log_warn "未找到 pi CLI，跳过 Skill 安装。"
-        return
+    local target_skills_dir=""
+    if [[ "$INSTALL_TARGET" == "global" ]]; then
+        target_skills_dir="${TARGET_GLOBAL_DIR}/skills"
+    else
+        target_skills_dir="${PROJECT_DIR}/.pi/skills"
     fi
 
-    install_skill_package() {
-        local source="$1"
-        if [[ "$INSTALL_TARGET" == "project" ]]; then
-            pi install "$source" -l
-        else
-            pi install "$source"
-        fi
-    }
+    log_info "正在部署技能 (Skills) -> ${target_skills_dir}"
+    log_info "所选角色画像 (Profile): ${BOLD}${PROFILE}${NC}"
 
-    log_info "正在安装 Pi 官方基础 Skill 集合..."
-    install_skill_package git:github.com/badlogic/pi-skills \
-        || log_warn "Pi Skill 集合安装失败。请检查网络后手动运行: pi install git:github.com/badlogic/pi-skills"
+    mkdir -p "$target_skills_dir"
 
-    log_info "正在安装 Anthropic 文档 Skill 集合（docx、pdf、pptx、xlsx 等）..."
-    install_skill_package git:github.com/anthropics/skills \
-        || log_warn "Anthropic Skill 集合安装失败。请检查网络后手动运行: pi install git:github.com/anthropics/skills"
+    python3 - "$target_skills_dir" "$PROFILE" "$PRUNE_SKILLS" "$FETCH_SKILLS" "$HOME/.cache/pi-skills" << 'PY'
+import os, sys, shutil, re, subprocess
 
-    log_success "基础 Skill 安装步骤完成。运行 'pi list' 查看已安装包；启动 Pi 后可用 /skill:<name> 显式调用。"
+dest_dir = os.path.abspath(sys.argv[1])
+profile = sys.argv[2]
+prune = sys.argv[3] == "1"
+fetch = sys.argv[4] == "1"
+fetch_cache_dir = os.path.abspath(sys.argv[5])
+
+PROFILES = {
+    "minimal": [
+        "xlsx", "pdf", "docx", "pptx",
+        "systematic-debugging", "test-driven-development", "brainstorming", "using-superpowers",
+        "using-git-worktrees", "verification-before-completion",
+        "grilling", "domain-modeling", "codebase-design",
+        "ui-ux-pro-max", "design-system", "ui-styling",
+        "planning-with-files",
+        "mcp-builder"
+    ],
+    "eng": [
+        "using-superpowers", "brainstorming", "writing-plans", "executing-plans",
+        "systematic-debugging", "test-driven-development", "requesting-code-review",
+        "receiving-code-review", "verification-before-completion",
+        "dispatching-parallel-agents", "subagent-driven-development",
+        "finishing-a-development-branch", "using-git-worktrees", "writing-skills",
+        "ui-ux-pro-max", "design", "design-system", "ui-styling", "brand", "banner-design", "slides",
+        "domain-modeling", "codebase-design", "grilling", "research",
+        "resolving-merge-conflicts", "tdd", "wizard", "diagnosing-bugs",
+        "mcp-builder", "webapp-testing", "web-artifacts-builder",
+        "planning-with-files"
+    ],
+    "pm": [
+        "docx", "pdf", "pptx", "xlsx",
+        "grilling", "brainstorming",
+        "ui-ux-pro-max", "design", "design-system", "ui-styling", "landing-page-generator",
+        "commercial-skills", "pricing-strategist", "commercial-policy", "commercial-forecaster", "deal-desk",
+        "product-manager-toolkit", "product-strategist", "product-discovery", "product-analytics",
+        "competitive-teardown", "experiment-designer", "roadmap-communicator", "spec-to-repo",
+        "saas-scaffolder", "ui-design-system", "ux-researcher-designer",
+        "senior-pm", "scrum-master", "jira-expert", "confluence-expert", "atlassian-admin",
+        "atlassian-templates", "meeting-analyzer", "team-communications",
+        "planning-with-files"
+    ],
+    "invest": [
+        "xlsx", "pdf", "docx", "pptx",
+        "grilling", "grill-me", "research", "brainstorming",
+        "theme-factory", "frontend-design", "canvas-design", "web-artifacts-builder",
+        "planning-with-files"
+    ],
+    "full": []
+}
+
+FETCH_SOURCES = {
+    "planning-with-files": ("https://github.com/OthmanAdi/planning-with-files.git", [".pi/skills/planning-with-files", "skills/planning-with-files"]),
+    "grilling": ("https://github.com/FeatherHunter/dsh-mattpocock-skills-deck.git", ["package/bundled-skills/grilling"]),
+    "domain-modeling": ("https://github.com/FeatherHunter/dsh-mattpocock-skills-deck.git", ["package/bundled-skills/domain-modeling"]),
+    "codebase-design": ("https://github.com/FeatherHunter/dsh-mattpocock-skills-deck.git", ["package/bundled-skills/codebase-design"]),
+    "ui-ux-pro-max": ("https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git", [".claude/skills/ui-ux-pro-max", "cli/assets/skills/ui-ux-pro-max"]),
+    "design-system": ("https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git", [".claude/skills/design-system", "cli/assets/skills/design-system"]),
+    "ui-styling": ("https://github.com/nextlevelbuilder/ui-ux-pro-max-skill.git", [".claude/skills/ui-styling", "cli/assets/skills/ui-styling"]),
+    "systematic-debugging": ("https://github.com/anthropics/claude-plugins-official.git", ["plugins/superpowers/skills/systematic-debugging"]),
+    "test-driven-development": ("https://github.com/anthropics/claude-plugins-official.git", ["plugins/superpowers/skills/test-driven-development"]),
+    "brainstorming": ("https://github.com/anthropics/claude-plugins-official.git", ["plugins/superpowers/skills/brainstorming"]),
+    "using-superpowers": ("https://github.com/anthropics/claude-plugins-official.git", ["plugins/superpowers/skills/using-superpowers"]),
+    "xlsx": ("https://github.com/anthropics/skills.git", ["skills/xlsx"]),
+    "pdf": ("https://github.com/anthropics/skills.git", ["skills/pdf"]),
+    "docx": ("https://github.com/anthropics/skills.git", ["skills/docx"]),
+    "pptx": ("https://github.com/anthropics/skills.git", ["skills/pptx"]),
+    "mcp-builder": ("https://github.com/anthropics/skills.git", ["skills/mcp-builder"]),
+    "commercial-skills": ("https://github.com/alirezarezvani/claude-skills.git", ["skills/commercial-skills", "skills/commercial/pricing-strategist"]),
+    "product-skills": ("https://github.com/alirezarezvani/claude-skills.git", ["skills/product-skills", "skills/product/product-manager-toolkit"]),
+    "pm-skills": ("https://github.com/alirezarezvani/claude-skills.git", ["skills/pm-skills", "skills/project/senior-pm"])
+}
+
+if profile not in PROFILES:
+    print(f"\033[0;31m[ERROR]\033[0m 未知的 profile: '{profile}'。可选: minimal, eng, pm, invest, full", file=sys.stderr)
+    sys.exit(1)
+
+def get_sort_score(p):
+    score = 0
+    if ".pi/skills" in p:
+        score += 1000
+    if "cache" in p:
+        score += 500
+    ver_match = re.search(r'/(\d+\.\d+[\.\d]*)/', p)
+    if ver_match:
+        try:
+            parts = [int(x) for x in ver_match.group(1).split('.')]
+            score += parts[0] * 100 + (parts[1] if len(parts) > 1 else 0)
+        except Exception:
+            pass
+    return score
+
+search_roots = [
+    os.path.expanduser("~/.claude/plugins/cache"),
+    os.path.expanduser("~/.claude/plugins/marketplaces"),
+    os.path.expanduser("~/.codebuddy/plugins/marketplaces"),
+    fetch_cache_dir
+]
+
+all_skills = {}
+for root in search_roots:
+    if not os.path.exists(root):
+        continue
+    for dirpath, dirnames, filenames in os.walk(root):
+        if "SKILL.md" in filenames:
+            skill_name = os.path.basename(dirpath)
+            if skill_name in ["skills", "template"]:
+                continue
+            if skill_name not in all_skills:
+                all_skills[skill_name] = []
+            all_skills[skill_name].append(dirpath)
+
+for name in all_skills:
+    all_skills[name].sort(key=get_sort_score, reverse=True)
+
+target_skills = PROFILES[profile] if profile != "full" else sorted(list(all_skills.keys()))
+
+installed_count = 0
+missing_skills = []
+
+for skill in target_skills:
+    src_dir = None
+    if skill in all_skills and len(all_skills[skill]) > 0:
+        src_dir = all_skills[skill][0]
+    elif fetch and skill in FETCH_SOURCES:
+        repo_url, subdirs = FETCH_SOURCES[skill]
+        repo_name = os.path.splitext(os.path.basename(repo_url))[0]
+        clone_dest = os.path.join(fetch_cache_dir, repo_name)
+        if not os.path.exists(clone_dest):
+            os.makedirs(fetch_cache_dir, exist_ok=True)
+            print(f"  • 正在从上游 Git 下载: {repo_url} ...")
+            subprocess.run(["git", "clone", "--depth", "1", "-q", repo_url, clone_dest], check=False)
+        for sub in subdirs:
+            candidate = os.path.join(clone_dest, sub)
+            if os.path.exists(os.path.join(candidate, "SKILL.md")):
+                src_dir = candidate
+                break
+
+    if src_dir and os.path.exists(os.path.join(src_dir, "SKILL.md")):
+        dst_dir = os.path.join(dest_dir, skill)
+        if os.path.exists(dst_dir):
+            if os.path.islink(dst_dir):
+                os.unlink(dst_dir)
+            else:
+                shutil.rmtree(dst_dir)
+        shutil.copytree(src_dir, dst_dir)
+        installed_count += 1
+        print(f"  ✓ 已安装: {skill:<28} (来源: {os.path.basename(os.path.dirname(src_dir))})")
+    else:
+        missing_skills.append(skill)
+
+if prune:
+    for existing in os.listdir(dest_dir):
+        existing_path = os.path.join(dest_dir, existing)
+        if os.path.isdir(existing_path) and profile != "full" and existing not in target_skills:
+            shutil.rmtree(existing_path)
+            print(f"  - 已清理非当前 profile 技能: {existing}")
+
+print(f"\n\033[0;32m[OK]\033[0m 成功部署 {installed_count} 个 Skill 到 {dest_dir}")
+if missing_skills:
+    print(f"\033[0;33m[WARN]\033[0m 暂未在本地缓存中找到 {len(missing_skills)} 个技能: {', '.join(missing_skills)}")
+    print("      提示: 可加上 --fetch-skills 参数允许脚本从 Git 上游自动下载缺失技能。")
+PY
+
+    if command -v pi >/dev/null 2>&1; then
+        echo ""
+        log_success "Pi Agent CLI 已就绪。启动 Pi (命令: pi) 进入交互式会话，"
+        echo -e "     可在 TUI 会话中直接使用 ${BOLD}/skill:<skill-name>${NC} 显式调用已部署的技能。"
+        echo -e "     运行 ${BOLD}pi list${NC} 可查看已安装的扩展与全局包。"
+    else
+        echo ""
+        log_info "提示: 技能文件已准备完毕。系统安装 Pi Agent (./install.sh -i) 后启动即可无缝加载。"
+    fi
 }
 
 # ==============================================================================
@@ -348,6 +590,33 @@ main() {
                 INSTALL_SKILLS=1
                 shift
                 ;;
+            --profile=*)
+                PROFILE="${1#--profile=}"
+                INSTALL_SKILLS=1
+                shift
+                ;;
+            --profile)
+                if [[ $# -gt 1 && ! "$2" =~ ^- ]]; then
+                    PROFILE="$2"
+                    INSTALL_SKILLS=1
+                    shift 2
+                else
+                    log_error "--profile 参数缺少角色名称 (例如: minimal, eng, pm, invest, full)"
+                    exit 1
+                fi
+                ;;
+            --list-skills)
+                LIST_SKILLS=1
+                shift
+                ;;
+            --prune-skills)
+                PRUNE_SKILLS=1
+                shift
+                ;;
+            --fetch-skills)
+                FETCH_SKILLS=1
+                shift
+                ;;
             --proxy-url)
                 if [[ $# -gt 1 ]]; then
                     PROXY_URL="$2"
@@ -377,6 +646,11 @@ main() {
                 ;;
         esac
     done
+
+    if [[ $LIST_SKILLS -eq 1 ]]; then
+        list_profile_skills
+        exit 0
+    fi
 
     check_prerequisites
     run_health_checks
