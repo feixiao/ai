@@ -44,10 +44,11 @@ Pi Agent 秉持 **"极简 Harness + 自由可塑"** 的哲学，与臃肿笨重�
 
 ```text
 PiAgent/
-├── models.json      # 核心模型与反代 Provider 定义 (覆盖 Google/Anthropic/OpenAI/本地)
-├── settings.json    # Agent 行为偏好、默认模型及思考预算配置
-├── install.sh       # 一键检查环境、测试服务连通性、部署配置并安装可选扩展/Skills
-└── ReadMe.md        # 本使用与反向代理接入指南
+├── models.json             # 核心模型与反代 Provider 定义 (覆盖 Google/Anthropic/OpenAI/本地)
+├── settings.json           # Agent 行为偏好、默认模型及思考预算配置
+├── install.sh              # 一键检查环境、测试服务连通性、部署配置并安装可选扩展/Skills
+├── RECOMMENDED_SKILLS.md   # 高质量 Skill 选型、部署与三大角色实操指南
+└── ReadMe.md               # 本使用与反向代理接入指南
 ```
 
 ---
@@ -219,6 +220,8 @@ pi
 Pi 原生实现 [Agent Skills 规范](https://agentskills.io/specification)：一个 Skill 是包含 `SKILL.md` 及配套脚本/提示词模板的独立目录。启动时 Pi 只轻量加载各 Skill 的元数据与描述；任务执行命中时才动态拉取完整实操指南，兼顾上下文 Token 节约与提示词缓存利用率。
 
 本目录安装脚本与 [`ClaudeCode/RECOMMENDED_SKILLS.md`](../ClaudeCode/RECOMMENDED_SKILLS.md) 的权威选型**保持 100% 对齐**，提供面向**全栈工程师**、**产品经理 (PM)** 与**个人投资者**三大核心角色的技能画像矩阵，并通过本地 Claude 插件缓存优先同步 + 上游 Git 直下机制实现秒级部署。
+
+> 💡 **详细指南**: 各角色技能清单拆解、深入工作流调用范例与最佳实践请参见专属指南：**[`PiAgent/RECOMMENDED_SKILLS.md`](./RECOMMENDED_SKILLS.md)**。
 
 ### 7.1 核心角色技能矩阵
 

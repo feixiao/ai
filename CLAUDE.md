@@ -22,7 +22,7 @@ This repository is a hands-on AI engineering knowledge base and practice playgro
 - `Antigravity/`: Skills and Agents migration, deployment scripts (`install.sh`), and CLI best practices for Google Antigravity (`agy` / Gemini).
 - `Gemini/`: Deep dive guides and practical toolkits for Google Gemini ecosystem (1M+ context window, Deep Research, NotebookLM Pro, Jules code agent, Gemini Spark, Google Flow/Veo video, and 5TB cloud AI asset hub).
 - `OpenCode/`: Configuration patterns, deployment scripts (`install.sh`), and LM Studio local model integration for OpenCode CLI.
-- `PiAgent/`: Configuration patterns, deployment scripts (`install.sh`), Google Gemini Pro integration, and reverse proxy/gateway setups for Pi Agent (`pi` / `pi-coding-agent`).
+- `PiAgent/`: Configuration patterns, deployment scripts (`install.sh`), Skills selection and migration (`RECOMMENDED_SKILLS.md`), Google Gemini Pro integration, and reverse proxy/gateway setups for Pi Agent (`pi` / `pi-coding-agent`).
 - `TensorFlowLite/`, `PyTorch/`, `spleeter/`: Deep learning experiments and audio source separation scripts.
 
 ## Environment & Common Commands
