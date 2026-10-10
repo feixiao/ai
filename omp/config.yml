@@ -1,0 +1,20 @@
+setupVersion: 2
+
+# 默认角色模型配置
+modelRoles:
+  default: magpie/antigravity/gemini-3.8-flash
+  smol: magpie/antigravity/gemini-3.8-flash
+  slow: magpie/antigravity/claude-opus-4-6-thinking
+  plan: magpie/codex/gpt-6-astra
+
+# 思考深度与运行时偏好
+defaultThinkingLevel: medium
+steeringMode: one-at-a-time
+
+# 界面与终端风格
+theme:
+  dark: true
+
+# 工具自动化与审批策略
+tools:
+  approvalMode: yolo

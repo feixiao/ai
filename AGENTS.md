@@ -23,6 +23,7 @@ This repository is a hands-on AI engineering knowledge base and practice playgro
 - `Gemini/`: Deep dive guides and practical toolkits for Google Gemini ecosystem (1M+ context window, Deep Research, NotebookLM Pro, Jules code agent, Gemini Spark, Google Flow/Veo video, and 5TB cloud AI asset hub).
 - `OpenCode/`: Configuration patterns, deployment scripts (`install.sh`), and LM Studio local model integration for OpenCode CLI.
 - `PiAgent/`: Configuration patterns, deployment scripts (`install.sh`), Google Gemini Pro integration, and reverse proxy/gateway setups for Pi Agent (`pi` / `pi-coding-agent`).
+- `omp/`: Configuration patterns, deployment scripts (`install.sh`), multi-model roles, and local gateway integration for omp (oh-my-pi) Coding Agent CLI.
 - `TensorFlowLite/`, `PyTorch/`, `spleeter/`: Deep learning experiments and audio source separation scripts.
 
 ## Environment & Common Commands

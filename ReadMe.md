@@ -63,6 +63,7 @@
 - **[CodeBuddy Skills & Agents 体系](./CodeBuddy/ReadMe.md)**：腾讯 CodeBuddy CLI 的技能系统对齐与角色配置一键部署。
 - **[Google Antigravity (`agy`) 实践](./Antigravity/ReadMe.md)**：对齐 Gemini 体系的前沿 Coding CLI 与 Agent 运行环境。
 - **[Google Gemini 生态实战矩阵](./Gemini/README.md)**：覆盖百万 Token 超长上下文、Deep Research、NotebookLM Pro、Jules 代码 Agent 与 Veo 视频生成。
+- **[omp (oh-my-pi) 全面配置指南](./omp/ReadMe.md)**：Bun 原生驱动 + Rust 加速的下一代 Coding Agent，支持多角色分级路由 (`default`/`smol`/`slow`/`plan`)、并发子 Agent 与本地 Magpie/LM Studio 网关无缝对接。
 
 ---
 
