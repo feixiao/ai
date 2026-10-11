@@ -1,11 +1,11 @@
 setupVersion: 2
 
-# 默认角色模型配置
+# 默认角色模型配置 (统一调度自本地 Magpie 网关)
 modelRoles:
   default: magpie/antigravity/gemini-3.8-flash
   smol: magpie/antigravity/gemini-3.8-flash
-  slow: magpie/antigravity/claude-opus-4-6-thinking
-  plan: magpie/codex/gpt-6-astra
+  slow: magpie/codex/gpt-6-luna
+  plan: magpie/codex/gpt-6-luna
 
 # 思考深度与运行时偏好
 defaultThinkingLevel: medium
@@ -18,3 +18,36 @@ theme:
 # 工具自动化与审批策略
 tools:
   approvalMode: yolo
+
+# 禁用未运行、冗余或非本机的 Providers，确保模型选择器与路由聚焦本机统一网关
+disabledProviders:
+  # 臃肿的远端或免密/带Token模型库 (如 HF_TOKEN 导致的 137+ 模型)
+  - huggingface
+  # 冗余或未运行的端侧直连 (已由 Magpie 3425 统一调度与路由)
+  - lm-studio
+  - lmstudio
+  - ollama
+  - ollama-cloud
+  # 公有云与第三方平台 (统一走本地 Magpie 网关，防止外部密钥干扰)
+  - openai
+  - anthropic
+  - google
+  - google-vertex
+  - google-gemini-cli
+  - google-antigravity
+  - groq
+  - mistral
+  - openrouter
+  - deepseek
+  - together
+  - cohere
+  - perplexity
+  - cerebras
+  - xai
+  - moonshot
+  - minimax
+  - github-copilot
+  - azure
+  - bedrock
+  - bedrock-mantle
+  - vertex

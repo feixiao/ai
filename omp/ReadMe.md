@@ -82,59 +82,77 @@ providers:
     baseUrl: http://127.0.0.1:3425/v1
     api: openai-completions
     auth: none
+    headers:
+      User-Agent: omp
+    compat:
+      promptCacheSessionHeader: x-session-affinity
     models:
       - id: antigravity/gemini-3.8-flash
         name: Gemini 3.8 Flash · Antigravity
-        api: openai-responses
         reasoning: true
         contextWindow: 1048576
         maxTokens: 65536
         input: [text, image]
-      - id: antigravity/claude-opus-4-6-thinking
-        name: Claude Opus 4.6 Thinking · Antigravity
-        api: openai-responses
-        reasoning: true
-        contextWindow: 256000
-        maxTokens: 65536
-        input: [text, image]
-      - id: codex/gpt-6-astra
-        name: GPT-6-Astra · Codex
+      - id: codex/gpt-6-luna
+        name: GPT-6-Luna · Codex
         api: openai-responses
         reasoning: true
         contextWindow: 272000
         maxTokens: 128000
         input: [text, image]
-
-  lmstudio:
-    baseUrl: http://127.0.0.1:1234/v1
-    api: openai-completions
-    auth: none
-    models:
-      - id: deepseek-r1-qwen-32b
-        name: DeepSeek R1 Distill Qwen 32B (Local)
+      - id: group/smart-split
+        name: 智能分流路由组
         reasoning: true
-        contextWindow: 65536
-        maxTokens: 16384
+        contextWindow: 1048576
+        maxTokens: 128000
+        input: [text, image]
+      - id: lmstudio/qwen3.8-27b-splash
+        name: qwen3.8-27b-splash · LM Studio
+        input: [text, image]
 ```
 
-### 3.2 `config.yml` (系统与角色行为配置)
+### 3.2 `config.yml` (系统行为、角色路由与 Provider 禁用策略)
 
 ```yaml
 setupVersion: 2
 
-# 模型角色映射
+# 模型角色映射 (统一收拢至 Magpie 本地网关)
 modelRoles:
   default: magpie/antigravity/gemini-3.8-flash # 默认日常对话与轻量修改
   smol: magpie/antigravity/gemini-3.8-flash    # 快速辅助与简单执行
-  slow: magpie/antigravity/claude-opus-4-6-thinking # 复杂重构与深度推理
-  plan: magpie/codex/gpt-6-astra              # 顶层架构设计与任务拆解
+  slow: magpie/codex/gpt-6-luna               # 复杂重构与深度推理
+  plan: magpie/codex/gpt-6-luna               # 顶层架构设计与任务拆解
 
 # 思考推理预算
 defaultThinkingLevel: medium
-
-# 工具审批策略 (yolo: 全自动; write: 仅写文件提示; always-ask: 全部提示)
 tools:
   approvalMode: yolo
+
+# 核心：根据本机情况全面禁用冗余/离线 Provider
+disabledProviders:
+  - huggingface       # 禁用 HF (避免因环境 Token 暴增 130+ 模型)
+  - lm-studio         # 禁用内置端侧探测 (已由 Magpie 统一调度)
+  - lmstudio
+  - ollama            # 禁用未运行的本地后端
+  - ollama-cloud
+  - openai            # 禁用外部公有云接口 (防止外部 Key 污染)
+  - anthropic
+  - google
+  - groq
+  - mistral
+  - openrouter
+  - deepseek
+  - together
+  - cohere
+  - perplexity
+  - cerebras
+  - xai
+  - moonshot
+  - minimax
+  - github-copilot
+  - azure
+  - bedrock
+  - vertex
 ```
 
 ---
