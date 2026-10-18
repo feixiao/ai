@@ -11,12 +11,12 @@
 | 维度 | 模块 1：Mac Studio 边缘中心节点 | 模块 2：Android (Pixel 10) 移动边缘节点 |
 | :--- | :--- | :--- |
 | **物理定位** | 桌面边缘工作站 / 机房边缘分析中心 | 现场便携手持终端 / 智能巡检仪 / 车载终端 |
-| **硬件架构** | Apple Silicon M 系列 (UMA 统一内存架构) | Google Tensor G5 SoC (移动芯片) |
-| **算力底盘** | **400 ~ 800 GB/s** 显存带宽 + 16 核 ANE + 30~76 核 GPU | **Google Edge TPU** + ARMv9 核心集群 + Immortalis GPU |
-| **功耗与散热** | 30W ~ 150W（主动散热，支持 7×24 小时长稳运行）| 3W ~ 12W（被动均热板散热，极度敏感于发热与降频）|
-| **接入路数** | 并发硬解拉取 **16 ~ 32 路 4K/1080P** RTSP 网络流 | 单路手机摄像头（**CameraX 60fps** 局部视场）|
-| **模型分层策略**| **两级混合架构**：<br/>- 一级：16 核 ANE 跑 YOLO（毫秒级超低功耗常驻）<br/>- 二级：Metal GPU 跑 7B~32B 多模态大模型 (Qwen2-VL) | **双轨并行架构**：<br/>- 轨 A (BYOM)：LiteRT INT8 专有视觉感知<br/>- 轨 B (OS Level)：Android AICore (Gemini Nano) 共享大模型 |
-| **核心零拷贝机制**| **VideoToolbox $\to$ CVPixelBuffer $\to$ Core ML / Metal 零拷贝**| **CameraX ImageProxy $\to$ JNI DirectByteBuffer $\to$ C++ 零拷贝**|
+| **硬件架构** | Apple Silicon M 系列（UMA 统一内存架构） | Google Pixel 10；具体 SoC、GPU/NPU 能力以设备规格和运行时枚举为准 |
+| **算力底盘** | Apple GPU / Neural Engine；带宽与核心数取决于具体 M 系列型号 | Android CPU、GPU、可能存在的 NPU/专用加速器；不可从型号推断未公开微架构 |
+| **功耗与散热** | 由具体 Mac Studio 型号、负载和环境决定 | 由具体手机配置、负载、环境和系统调度决定 |
+| **接入路数** | 取决于 VideoToolbox、网络、解码格式和应用流水线；必须实测 | 取决于摄像头、CameraX 配置和设备能力；不预设 60fps |
+| **模型分层策略** | 轻量视觉模型可评估 Core ML；大模型可评估 MLX/Metal 等后端 | BYOM 使用 LiteRT 或其他运行时；系统级模型能力按设备与 API 可用性确认 |
+| **核心零拷贝机制**| VideoToolbox/CVPixelBuffer 到 Core ML/Metal 的零拷贝需由具体 API 与模型验证 | `ImageProxy` 不是紧凑数组；先正确处理 stride，只有 Surface/AHardwareBuffer 路径在设备支持时才谈零拷贝 |
 
 ---
 
@@ -29,9 +29,8 @@
   2. **Ultralytics 实时检测**：Mac 原生窗口调用本地摄像头，实时弹窗画框，标注 60 FPS 与 5ms 硬件延迟；
   3. **Apple MLX 多模态大模型**：本地纯离线运行 Qwen2-VL-7B (4-bit)，300ms 完成工业图像多模态质检查看。
 
-### 2. [模块 2：Android (Pixel 10) 移动边缘计算落地指南与实时 Demo](02_ANDROID_PIXEL_EDGE_GUIDE_AND_DEMO.md)
-* **包含理论**：Google Tensor G5 芯片异构硬件拓扑、移动端 LMK 防 OOM 规范（`mmap` 权重映射）、CameraX YUV_420 零拷贝与 NDK 大核绑定技术（CPU Core Affinity）。
-* **包含 3 大可直观体验效果的 Demo**：
-  1. **Google 官方 MediaPipe 目标检测 App**：手机摄像头实时画框，底部抽屉支持实时切换 **CPU vs GPU vs Edge TPU**，直观见证延迟从 35ms 暴跌至 3ms；
-  2. **llama.cpp Android 纯 C++ 离线大模型**：手机开启飞行模式脱网运行 Qwen2.5-0.5B，打字机流式输出体验端侧 SLM 算力；
-  3. **MLC-LLM Android GPU 加速应用**：基于 TVM Vulkan Compute 的端侧大模型性能基准应用，实时监测显存与发热。
+* **包含理论**：音视频管线、YUV stride、CameraX/NDK 内存复用、端侧运行时和实测方法。
+* **包含 3 大可验证参考 Demo**：
+  1. Google AI Edge/MediaPipe Samples 目标检测：对比 CPU 与 GPU 后端，不预设 NNAPI 或固定延迟；
+  2. llama.cpp Android：离线 GGUF 文本生成，实际速度和内存以设备实测为准；
+  3. MLC-LLM：若目标设备和版本支持，再评估 Vulkan 后端与功耗。
