@@ -20,17 +20,12 @@
 
 ---
 
-## 二、 文档与立即可看效果的 Demo 指引
+## 二、文档导航
 
-### 1. [模块 1：Mac Studio 边缘中心节点落地指南与实时 Demo](01_MAC_STUDIO_EDGE_GUIDE_AND_DEMO.md)
-* **包含理论**：Apple Silicon 统一内存（UMA）破解 Memory-Bound、VideoToolbox 多路硬件解码零拷贝、16 核 ANE 神经引擎 100% 卸载三大军规。
-* **包含 3 大可直观体验效果的 Demo**：
-  1. **Scrypted**：流媒体多路硬解 + ANE 16核实时人/车检测（Web 界面多路实时画框）；
-  2. **Ultralytics 实时检测**：Mac 原生窗口调用本地摄像头，实时弹窗画框，标注 60 FPS 与 5ms 硬件延迟；
-  3. **Apple MLX 多模态大模型**：本地纯离线运行 Qwen2-VL-7B (4-bit)，300ms 完成工业图像多模态质检查看。
+### [Mac Studio](MAC_STUDIO.md)
+Mac Studio 作为独立边缘计算节点：音视频硬解、Core ML/Metal、MLX、多模态模型和可验证 Demo。
 
-* **包含理论**：音视频管线、YUV stride、CameraX/NDK 内存复用、端侧运行时和实测方法。
-* **包含 3 大可验证参考 Demo**：
-  1. Google AI Edge/MediaPipe Samples 目标检测：对比 CPU 与 GPU 后端，不预设 NNAPI 或固定延迟；
-  2. llama.cpp Android：离线 GGUF 文本生成，实际速度和内存以设备实测为准；
-  3. MLC-LLM：若目标设备和版本支持，再评估 Vulkan 后端与功耗。
+### [Android / Pixel 10](ANDROID_PIXEL.md)
+Android 作为移动端边缘节点：CameraX、YUV stride、Surface/AHardwareBuffer、AAudio/Oboe、端侧运行时和可验证 Demo。
+
+两份文档独立阅读，不要求 Mac Studio 与 Pixel 10 联动。性能、硬件后端和系统级 AI 能力均以目标设备实际支持与实测结果为准。
