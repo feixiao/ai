@@ -10,6 +10,7 @@
 在现场手持巡检仪、移动机器人终端或车载设备中，Android 端负责实时视觉感知与本地大模型交互：
 
 ```mermaid
+flowchart TD
     subgraph Input["1. 现场输入"]
         Cam["CameraX / Camera2（实际帧率取决于设备）"]
         Mic["AAudio / Oboe（低延迟音频采集）"]
