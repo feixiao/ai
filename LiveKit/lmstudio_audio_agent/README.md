@@ -35,11 +35,25 @@ LiveKit/lmstudio_audio_agent/
 
 ---
 
-## 3. 快速上手
+## 3. 一键启动 (推荐)
 
-### 步骤 1：激活环境并安装依赖
+项目内置了全自动化启动脚本 `start.sh`，会自动：
+1. 检查并准备 Python 虚拟环境与依赖；
+2. 探测远端 LM Studio（`100.126.144.68:1234`）可用大模型；
+3. 自动在后台拉起本地 `livekit-server --dev`；
+4. 自动生成浏览器连接所需的**免密 Access Token**；
+5. 启动 Audio Agent 并进入就绪状态。
+
 ```bash
-### 步骤 2：启动本地 LiveKit Server (无需云端)
+cd LiveKit/lmstudio_audio_agent
+./start.sh
+```
+
+终端会直接输出浏览器测试页面链接和生成好的 Access Token，复制粘贴点击 **Connect** 即可开始通话！
+
+---
+
+## 4. 手动分布启动
 
 本机已内置安装好官方 `livekit-server`，直接一行命令即可启动本地开发服务器：
 
