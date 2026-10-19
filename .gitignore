@@ -2,3 +2,7 @@
 .DS_Store
 crewai/hello_crew/report.md
 OpenCode/.remote.env
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/

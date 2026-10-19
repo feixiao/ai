@@ -1,0 +1,9 @@
+livekit-agents>=1.8.8
+livekit-plugins-openai>=1.8.8
+livekit-plugins-silero>=1.8.8
+livekit-plugins-deepgram>=1.8.8
+livekit-plugins-elevenlabs>=1.8.8
+python-dotenv>=1.0.0
+requests>=2.31.0
+pytest>=8.0.0
+pytest-asyncio>=1.4.0
