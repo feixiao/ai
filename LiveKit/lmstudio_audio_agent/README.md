@@ -39,23 +39,37 @@ LiveKit/lmstudio_audio_agent/
 
 ### 步骤 1：激活环境并安装依赖
 ```bash
-cd LiveKit/lmstudio_audio_agent
-uv venv .venv --python 3.12
-source .venv/bin/activate
-uv pip install -r requirements.txt
-```
+### 步骤 2：启动本地 LiveKit Server (无需云端)
 
-### 步骤 2：测试远端模型探测与流式推理
+本机已内置安装好官方 `livekit-server`，直接一行命令即可启动本地开发服务器：
+
 ```bash
-pytest -v -s -o asyncio_mode=auto test_agent.py
+livekit-server --dev
 ```
-若全部通过，控制台将输出测试从远端 LM Studio 节点获得的真实响应。
+* 监听地址：`ws://127.0.0.1:7880`
+* 默认开发者 Key：`devkey`
+* 默认开发者 Secret：`secret`
 
-### 步骤 3：配置并启动 Agent
+### 步骤 3：配置环境变量与启动 Agent
+
 ```bash
 cp .env.example .env
-# 填写 LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_API_SECRET 与 DEEPGRAM_API_KEY
+# 配置好 DEEPGRAM_API_KEY（本地 LiveKit 已自动配好 devkey）
 
 python agent.py dev
+```
+
+启动后，Agent 会自动注册到本机的 `ws://127.0.0.1:7880`。
+
+### 步骤 4：本地浏览器测试连接
+
+打开浏览器访问 LiveKit 官方开源客户端测试页：
+👉 [https://agents-playground.livekit.io/](https://agents-playground.livekit.io/)
+* **Server URL**: `ws://localhost:7880`
+* **Token**: 在终端生成一个测试 Token：
+  ```bash
+  lk token create --dev --join --room test-room --identity test-user
+  ```
+将生成的 Token 粘贴到网页中点击 **Connect**，即可对着麦克风与 LM Studio 大模型实时语音通话！
 ```
 启动后终端将生成 LiveKit Agent Playground 测试链接，点击进入并在浏览器允许麦克风权限即可开始语音对话。
