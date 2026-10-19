@@ -18,6 +18,7 @@ This repository is a hands-on AI engineering knowledge base and practice playgro
 - `ComfyUI/` & `media/`: Generative AI workflows (Wan2.2, Flux, Z-Image-Turbo, SadTalker, TTS), JSON workflow definitions, benchmark scripts, and Apple Silicon / Mac Studio deployment guides.
 - `intel/` & `ollama/`: Local inference setups, Intel Arc GPU (IPEX-LLM) configurations, and Ollama/ModelScope model guides.
 - `Codex/`: Configuration patterns and environment settings for connecting Codex with local models (LM Studio / Ollama).
+- `LMStudio/`: Remote connection guides, Tailscale/WireGuard peer-to-peer setup, and headless access patterns for LM Studio local LLM server.
 - `CodeBuddy/`: Skills and Agents migration, deployment scripts, and guides for Tencent CodeBuddy CLI.
 - `Antigravity/`: Skills and Agents migration, deployment scripts (`install.sh`), and CLI best practices for Google Antigravity (`agy` / Gemini).
 - `Gemini/`: Deep dive guides and practical toolkits for Google Gemini ecosystem (1M+ context window, Deep Research, NotebookLM Pro, Jules code agent, Gemini Spark, Google Flow/Veo video, and 5TB cloud AI asset hub).
