@@ -258,9 +258,15 @@ def inject_workflow_parameters(
             inputs["steps"] = steps
             inputs["seed"] = seed
             inputs["cfg"] = cfg
-            if denoise is not None:
+            # 在 TextEncodeQwenImage21 原生编辑中，latent_image 是全零空潜空间，denoise 必须为 1.0 (完整去噪)
+            is_native_edit = any(
+                isinstance(n, dict) and n.get("class_type") == "TextEncodeQwenImage21"
+                for n in workflow.values()
+            )
+            if is_native_edit:
+                inputs["denoise"] = 1.0
+            elif denoise is not None:
                 inputs["denoise"] = denoise
-
 
     return workflow
 
@@ -424,7 +430,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     args = parse_arguments(argv)
     output_dir = CURRENT_DIR / "output"
     if args.image:
-        workflow_path = CURRENT_DIR / "workflows" / "qwen_image_2.1_edit_api.json"
+        workflow_path = CURRENT_DIR / "workflows" / "qwen_image_2.1_native_edit_api.json"
     else:
         workflow_path = CURRENT_DIR / "workflows" / "qwen_image_2.1_api.json"
 

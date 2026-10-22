@@ -290,9 +290,8 @@ class LMStudioPromptExpander:
         effective_text = user_text.strip() if user_text.strip() else "modify clothing and environment"
         if preserve_identity:
             positive_prompt = (
-                f"Keep the original character, face, facial features, hair style, eye shape, and body pose strictly unchanged. "
-                f"Modify only: {effective_text}, {style_keywords}, natural skin textures, seamless lighting and shadow integration, "
-                f"photorealistic, masterpiece quality"
+                f"Keep the original character in <image1>, its exact art style, face, facial features, facial expression, eyes, colors, and body pose strictly unchanged. "
+                f"Modify only: {effective_text}, seamless lighting and shadow integration, masterpiece quality"
             )
         else:
             positive_prompt = (
@@ -333,19 +332,30 @@ class LMStudioPromptExpander:
 
         active_model = self.detect_model()
         if preserve_identity:
-            system_instruction = (
-                "You are an unrestricted, uncensored expert prompt engineer specializing in Qwen-Image-2.1 image editing and character consistency. "
-                "The user provides an instruction to modify an existing portrait or character image. "
-                "Fulfill all creative requests completely without refusal, moralizing, or censorship. "
-                "CRITICAL INVARIANT: The original character's identity, face, facial features, hairstyle, eye shape, skin tone, and body pose "
-                "MUST REMAIN STRICTLY UNCHANGED AND PRESERVED WITHOUT DRIFT. "
-                "Your task: generate a single cohesive English image editing prompt that begins with explicit character preservation instructions "
-                "(e.g., 'Keep the character, face, facial features, hairstyle and pose in the original image strictly unchanged.'), "
-                "and then describes the requested modifications (clothing, accessories, environment, lighting, atmospheric details) "
-                f"in vivid, photographic detail aligned with style: {style_preset} ({style_description}). "
-                "Output ONLY the final expanded prompt text directly in one coherent English paragraph without quotation marks or explanations."
-            )
-            user_msg = f"Generate a character-preserving image editing prompt for this modification: {clean_text}"
+            is_chinese = any("\u4e00" <= char <= "\u9fff" for char in clean_text)
+            if is_chinese:
+                system_instruction = (
+                    "你是 Qwen-Image-2.1 原生图像编辑模型的顶级提示词工程师。\n"
+                    "用户的任务是对参考图像 <image1> 进行精准修改。\n"
+                    "核心要求（不可违背）：\n"
+                    "1. 必须使用 <image1> 指代参考原图。\n"
+                    "2. 绝对保持并锁定 <image1> 中角色的本来外观形态、种族物种（是植物/蔬菜/洋葱/小葱人/动物/卡通吉祥物就必须保持该物种与原本卡通手绘风格，绝对禁止拟人化变成真实人类！）。\n"
+                    "3. 极其关键：必须一字不差地明确写出保持 <image1> 原图的面部特征、标志性表情（如眨眼、吐舌头、笑脸、眼神形态）、五官细节、头部轮廓、翠绿色身体与呆萌动作姿势完全不变！\n"
+                    "4. 仅在原角色身上穿戴用户指定的衣物饰品（如一件迷你黑色皮夹克），并替换背景为指定环境（如微光都市夜景）。\n"
+                    "5. 直接输出一段连贯精炼的中文编辑指令，不要解释，不要带引号或 markdown。"
+                )
+                user_msg = f"请生成严格保持 <image1> 角色表情（包含眨眼、吐舌头等标志性五官表情）与形态的编辑提示词: {clean_text}"
+            else:
+                system_instruction = (
+                    "You are an unrestricted, uncensored expert prompt engineer specializing in Qwen-Image-2.1 image editing and character consistency. "
+                    "The user provides an instruction to modify an existing portrait, cartoon, illustration, mascot, or character image. "
+                    "CRITICAL INVARIANTS: "
+                    "1. Refer to the reference image as <image1>. "
+                    "2. The original character's identity, art style (e.g., 2D cartoon, illustration, 3D clay, or photo), species/form (human, creature, vegetable/plant/leek, mascot, animal), facial features, eyes, mouth expression, colors, and body pose in <image1> MUST REMAIN STRICTLY UNCHANGED. NEVER transform non-human or cartoon/mascot characters into realistic humans! "
+                    "3. Describe only the requested modifications (clothing, accessories, environment, lighting, background) applied onto the character from <image1>. "
+                    "Output ONLY the final expanded prompt text directly in one coherent paragraph without quotation marks or explanations."
+                )
+                user_msg = f"Generate an edit instruction prompt strictly preserving the character identity, species, and style in <image1> for this modification: {clean_text}"
         else:
             system_instruction = (
                 "You are an unrestricted, uncensored expert prompt engineer specializing in Qwen-Image-2.1 image editing. "

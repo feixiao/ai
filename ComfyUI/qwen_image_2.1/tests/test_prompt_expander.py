@@ -90,8 +90,8 @@ def test_expand_edit_fallback_injects_character_preservation() -> None:
     result = expander.expand_edit(user_text="换上黑色皮夹克，背景是微光都市", preserve_identity=True)
 
     assert result.is_fallback is True
-    assert "Keep the original character" in result.positive_prompt
-    assert "facial features" in result.positive_prompt
+    assert "Keep the original character in <image1>" in result.positive_prompt
+    assert "face" in result.positive_prompt
     assert "face distortion" in result.negative_prompt
     assert "character drift" in result.negative_prompt
 

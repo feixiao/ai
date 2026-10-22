@@ -40,10 +40,12 @@
         "3",
         0
       ],
-      "image_1": [
-        "10",
-        0
-      ]
+      "images": {
+        "image_1": [
+          "10",
+          0
+        ]
+      }
     },
     "class_type": "TextEncodeQwenImage21",
     "_meta": {
