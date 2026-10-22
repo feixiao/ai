@@ -1,0 +1,121 @@
+{
+  "1": {
+    "inputs": {
+      "unet_name": "qwen-image-2.1-UC-Q4_K_M.gguf"
+    },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": {
+      "title": "Unet Loader (GGUF) - Qwen-Image-2.1 UC 非限制版 (Q4_K_M)"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "Qwen3-VL-8B-Instruct-Q4_K_M.gguf",
+      "type": "qwen_image"
+    },
+    "class_type": "CLIPLoaderGGUF",
+    "_meta": {
+      "title": "CLIP Loader (GGUF) - Qwen3-VL"
+    }
+  },
+  "3": {
+    "inputs": {
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE - Qwen-Image-2.1"
+    }
+  },
+  "4": {
+    "inputs": {
+      "prompt": "Keep the character and pose in <image1> unchanged, replace the clothing with a stylish black leather jacket, preserve original facial features and hair style",
+      "negative_prompt": "face distortion, character drift, identity shift, deformed anatomy, blurry, low quality",
+      "resolution": 1024,
+      "clip": [
+        "2",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ],
+      "image_1": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "TextEncodeQwenImage21",
+    "_meta": {
+      "title": "Text Encode Qwen Image 2.1 (Native Multi-Reference Edit)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "seed": 42,
+      "steps": 16,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "4",
+        1
+      ],
+      "latent_image": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler (Native Edit Conditioning)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "7",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "qwen_image_2.1_native_edit",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Edited Image"
+    }
+  },
+  "10": {
+    "inputs": {
+      "image": "input_character.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Input Reference Image (<image1>)"
+    }
+  }
+}

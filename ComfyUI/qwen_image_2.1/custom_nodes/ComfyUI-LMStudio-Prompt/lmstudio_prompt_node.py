@@ -33,6 +33,14 @@ class LMStudioPromptExpanderNode:
                         "default": "雨夜小巷里的机甲猫",
                     },
                 ),
+                "task_mode": (
+                    ["image_edit", "text_to_image"],
+                    {"default": "image_edit"},
+                ),
+                "preserve_identity": (
+                    ["yes", "no"],
+                    {"default": "yes"},
+                ),
                 "style_preset": (
                     ["cinematic", "photorealistic", "anime", "cyberpunk", "general"],
                     {"default": "cinematic"},
@@ -64,6 +72,8 @@ class LMStudioPromptExpanderNode:
         temperature: float = 0.7,
         lmstudio_host: str = "127.0.0.1:1234",
         aspect_ratio: str = "auto",
+        task_mode: str = "image_edit",
+        preserve_identity: str = "yes",
     ) -> Tuple[str, str, int, int]:
         """执行扩写并返回各参数。
 
@@ -85,11 +95,19 @@ class LMStudioPromptExpanderNode:
         target_ratio: Optional[str] = None if aspect_ratio == "auto" else aspect_ratio
 
         expander = LMStudioPromptExpander(base_url=base_url)
-        res: ExpandedPromptResult = expander.expand(
-            user_text=user_short_desc,
-            style_preset=style_preset,
-            target_aspect=target_ratio,
-            temperature=temperature,
-        )
-
+        if task_mode == "image_edit":
+            res: ExpandedPromptResult = expander.expand_edit(
+                user_text=user_short_desc,
+                preserve_identity=(preserve_identity == "yes"),
+                style_preset=style_preset,
+                target_aspect=target_ratio,
+                temperature=temperature,
+            )
+        else:
+            res = expander.expand(
+                user_text=user_short_desc,
+                style_preset=style_preset,
+                target_aspect=target_ratio,
+                temperature=temperature,
+            )
         return (res.positive_prompt, res.negative_prompt, res.width, res.height)

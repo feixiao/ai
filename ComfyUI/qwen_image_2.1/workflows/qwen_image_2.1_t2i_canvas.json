@@ -24,7 +24,7 @@
       "widgets_values": [
         "qwen-image-2.1-UC-Q4_K_M.gguf"
       ],
-      "title": "Unet Loader (GGUF) - Qwen-Image-2.1 (Q4_K_M)"
+      "title": "Unet Loader (GGUF) - Qwen-Image-2.1 UC 非限制版 (Q4_K_M)"
     },
     {
       "id": 2,

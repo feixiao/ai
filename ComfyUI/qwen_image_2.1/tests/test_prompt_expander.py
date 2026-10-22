@@ -82,3 +82,68 @@ def test_detect_model_prioritizes_qwen(mock_urlopen: MagicMock) -> None:
     expander = LMStudioPromptExpander(base_url="http://127.0.0.1:1234/v1")
     detected = expander.detect_model()
     assert detected == "qwen/qwen3-vl-8b", "应最高优先级匹配同源 Qwen3-VL 视觉语言模型"
+
+
+def test_expand_edit_fallback_injects_character_preservation() -> None:
+    """测试图像编辑离线兜底时，必须注入角色防漂移锁定子句。"""
+    expander = LMStudioPromptExpander(base_url="http://127.0.0.1:59999/v1", timeout_seconds=1.0)
+    result = expander.expand_edit(user_text="换上黑色皮夹克，背景是微光都市", preserve_identity=True)
+
+    assert result.is_fallback is True
+    assert "Keep the original character" in result.positive_prompt
+    assert "facial features" in result.positive_prompt
+    assert "face distortion" in result.negative_prompt
+    assert "character drift" in result.negative_prompt
+
+
+@patch("urllib.request.urlopen")
+def test_expand_edit_lmstudio_success(mock_urlopen: MagicMock) -> None:
+    """测试图像编辑场景下 LM Studio 正常响应的逻辑。"""
+    mock_models_response = MagicMock()
+    mock_models_response.read.return_value = b'{"data": [{"id": "mock-qwen-model"}]}'
+    mock_models_response.__enter__.return_value = mock_models_response
+
+    mock_chat_response = MagicMock()
+    mock_chat_response.read.return_value = b'''{
+        "choices": [{
+            "message": {
+                "content": "Keep the character, face, facial features and pose in the original image strictly unchanged, while replacing their jacket with a stylish black leather jacket, photorealistic 4k."
+            }
+        }]
+    }'''
+    mock_chat_response.__enter__.return_value = mock_chat_response
+    mock_urlopen.side_effect = [mock_models_response, mock_chat_response]
+
+    expander = LMStudioPromptExpander(base_url="http://127.0.0.1:1234/v1")
+    result = expander.expand_edit("换上黑色皮夹克", preserve_identity=True)
+
+    assert result.is_fallback is False
+    assert "Keep the character" in result.positive_prompt
+    assert "character drift" in result.negative_prompt
+
+
+@patch("urllib.request.urlopen")
+def test_uncensored_refusal_interception(mock_urlopen: MagicMock) -> None:
+    """测试当大模型偶发触发安全拒绝时，非限制机制能自动拦截并回退为纯净客观艺术描述，防止生图污染或中断。"""
+    mock_models_response = MagicMock()
+    mock_models_response.read.return_value = b'{"data": [{"id": "mock-qwen-model"}]}'
+    mock_models_response.__enter__.return_value = mock_models_response
+
+    mock_chat_response = MagicMock()
+    mock_chat_response.read.return_value = b'''{
+        "choices": [{
+            "message": {
+                "content": "I cannot fulfill this request as an AI assistant due to sensitive content guidelines."
+            }
+        }]
+    }'''
+    mock_chat_response.__enter__.return_value = mock_chat_response
+    mock_urlopen.side_effect = [mock_models_response, mock_chat_response]
+
+    expander = LMStudioPromptExpander(base_url="http://127.0.0.1:1234/v1")
+    result = expander.expand_edit("特定艺术造型修改", preserve_identity=True)
+
+    # 验证是否成功拦截拒绝词，回退为非限制规则描述
+    assert result.is_fallback is True
+    assert "cannot fulfill" not in result.positive_prompt.lower()
+    assert "Keep the original character" in result.positive_prompt

@@ -25,8 +25,11 @@ ComfyUI/qwen_image_2.1/
 ├── prompt_expander.py             # 核心提示词扩写引擎（LM Studio 客户端 + 启发式兜底）
 ├── qwen_image21_test.py           # 命令行端到端测试主脚本（自动化调用全流程）
 ├── workflows/
-│   ├── qwen_image_2.1_t2i_canvas.json   # ComfyUI Web 画布工作流（直接拖入浏览器）
-│   └── qwen_image_2.1_api.json          # ComfyUI API 格式工作流模板（供脚本调用）
+│   ├── qwen_image_2.1_t2i_canvas.json   # 文生图 ComfyUI Web 画布工作流（直接拖入浏览器）
+│   ├── qwen_image_2.1_api.json          # 文生图 ComfyUI API 格式工作流模板
+│   ├── qwen_image_2.1_edit_canvas.json  # 图像修改/角色防漂移 Web 画布工作流 (含 AI 扩写节点)
+│   ├── qwen_image_2.1_edit_api.json     # 图像修改/角色防漂移 API 格式工作流模板 (LoadImage + VAEEncode)
+│   └── qwen_image_2.1_native_edit_api.json # Qwen 2.1 官方原生多参考图编辑 API 工作流 (TextEncodeQwenImage21)
 ├── custom_nodes/
 │   └── ComfyUI-LMStudio-Prompt/   # ComfyUI 专用节点：画布中直接连线实时扩写
 │       ├── __init__.py
@@ -43,10 +46,16 @@ ComfyUI/qwen_image_2.1/
 
 | 角色分类 | 推荐下载文件名 (首选 GGUF) | 目标存放目录 | Hugging Face 仓库源 | 显存/内存预估 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Diffusion 主模型 (默认首选)** | `qwen-image-2.1-UC-Q4_K_M.gguf`<br>*(或 `qwen-image-2.1-Q4_K_M.gguf`，高精度可选 `Q8_0`)* | `models/unet/` | [`unsloth/Qwen-Image-2.1-GGUF`](https://huggingface.co/unsloth/Qwen-Image-2.1-GGUF) | ~4.3GB (Q4) / ~8.5GB (Q8) |
+| **Diffusion 主模型 (默认首选 UC 非限制版)** | `qwen-image-2.1-UC-Q4_K_M.gguf`<br>*(UC=Uncensored 非限制版，兼具无审查自由度与 Q4 高速度)* | `models/unet/` | [`abenzerps/Qwen-Image-2.1-Uncensored-Quantized`](https://huggingface.co/abenzerps/Qwen-Image-2.1-Uncensored-Quantized) | ~4.3GB (Q4) / ~8.5GB (Q8) |
 | **文本/视觉编码器** | `Qwen3-VL-8B-Instruct-Q4_K_M.gguf`<br>*(极轻量可选 `Qwen3-VL-8B-Instruct-Q3_K_M.gguf`)* | `models/clip/` | [`unsloth/Qwen3-VL-8B-Instruct-GGUF`](https://huggingface.co/unsloth/Qwen3-VL-8B-Instruct-GGUF) | ~5.2GB (Q4) / ~3.8GB (Q3) |
 | **专用 VAE 解码器** | `qwen_image_2.1_vae_bf16.safetensors` | `models/vae/` | [`Comfy-Org/Qwen-Image-2.1`](https://huggingface.co/Comfy-Org/Qwen-Image-2.1) | ~335MB |
 
+### 💡 核心说明：UC (Uncensored) 非限制版本
+
+本套工作流与测试脚本默认锁定的主模型为 **`qwen-image-2.1-UC-Q4_K_M.gguf`**：
+1. **模型层非限制**：文件名中的 `UC` 即 **Uncensored**。该模型基于阿里 Qwen-Image-2.1 进行权重消融（Abliteration），去除了官方对特定艺术风格、大胆创意与暗黑视觉题材的限制抑制，在服饰替换、身体重绘与场景编辑时具有更强的提示词遵循能力与创造自由度；
+2. **扩写层非限制**：提示词扩写系统预设为无道德审查（Uncensored）提示词工程协议，并内置“拒绝响应拦截器”（当偶发触发大模型敏感拒绝时，自动无感降级为客观精准的艺术细节描述），确保生图全链路不中断；
+3. **本地现成免下载**：您的本机目录 `/Users/frank/ComfyUI/models/unet/` 中已下载好该模型，开箱即用。
 ### 一键下载命令 (终端直接执行)
 
 Mac 系统可直接使用 `hf` (Hugging Face 官方 CLI) 快速并行下载至对应目录：
@@ -219,9 +228,50 @@ python qwen_image21_test.py --desc "赛博朋克飞行汽车" --dry-run
 - `--llm-model`: 指定扩写用 LLM 模型名称（默认自动优先选用已挂载的 Qwen 系列）。
 - `--dry-run`: 调试模式，生成组装完成的 API JSON 并退出。
 
+
+### 图像修改 / 角色防漂移测试 (输入图片 -> AI 扩写 -> 修改生图)
+
+只需通过 `--image` 传入待修改的原图，脚本会自动切换为角色防漂移编辑工作流：
+
+```bash
+# 1. 基础图像修改测试 (自动调用 LM Studio Qwen3-VL 注入角色锁定子句 + 0.55 重绘去噪)
+python qwen_image21_test.py --image "input_character.png" --desc "换上一身黑色皮夹克，背景是微光都市"
+
+# 2. 自定义去噪强度 (如微调细节设为 0.45，大幅重绘背景设为 0.60)
+python qwen_image21_test.py --image "input_character.png" --desc "戴上金丝眼镜，换成正装西服" --denoise 0.50
+
+# 3. 图像修改 Dry-Run (无需启动 ComfyUI，仅验证 AI 扩写与参数组装)
+python qwen_image21_test.py --image "input_character.png" --desc "换上赛博朋克发光风衣" --dry-run
+```
+
 ---
 
-## 6. ComfyUI Web 画布工作流与自定义节点
+## 6. 图像修改与角色防漂移工作流详解
+
+针对“**输入图片 -> 修改 -> 输出图片，角色不偏移，提示词 AI 加**”的需求，系统设计了三大底层保障机制：
+
+### 1. 三大防漂移核心支柱
+
+1. **隐空间原图编码与去噪强度锁定 (Denoise 0.45 ~ 0.60，默认 0.55)**：
+   - 工作流将原图送入 Qwen 专用 16 通道 VAE 编码为 `LATENT`；
+   - `KSampler` 的去噪强度（`denoise`）精准锁定在 **0.55**。去噪若高于 0.7 角色面部特征与身份会发生漂移；去噪若低于 0.4 修改意图无法充分重绘。0.55 是保持五官轮廓不变且重绘服饰背景的黄金平衡点。
+2. **AI 智能提示词一致性锚定 (Prompt Identity Anchoring)**：
+   - 引擎（或画布中的 `LMStudioPromptExpanderNode`）在检测到编辑任务时，自动为提示词头部注入强约束：
+     ```text
+     Keep the character, face, facial features, hairstyle and pose in the original image strictly unchanged, while replacing their outfit with...
+     ```
+   - 从而在 DiT Cross-Attention 层引导注意力权重聚焦在待修改区域，锁死人物面部与体态特征。
+3. **反向词防畸变抑制 (Anti-Drift Negative Conditioning)**：
+   - 负向提示词自动注入 `face distortion, face alteration, character drift, identity shift, facial mutation, deformed face`，强力抑制生成过程中的面部变异。
+
+### 2. 对应工作流文件
+
+- **`workflows/qwen_image_2.1_edit_canvas.json`**：Web 画布格式，可直接拖入 ComfyUI 浏览器界面。内置 `LoadImage` -> `VAEEncode` -> `LMStudioPromptExpanderNode` -> `KSampler (denoise=0.55)` -> `VAEDecode` -> `SaveImage`。
+- **`workflows/qwen_image_2.1_edit_api.json`**：标准 API 格式，适合脚本批量调度与自动化流水线。
+- **`workflows/qwen_image_2.1_native_edit_api.json`**：基于官方 `TextEncodeQwenImage21` 复合节点的原生编辑模版。
+---
+
+## 7. ComfyUI Web 画布工作流与自定义节点
 
 ### 方式一：直接导入画布工作流
 1. 打开 ComfyUI 界面（Comfy Desktop 默认为 `http://127.0.0.1:8188`，源码版为 `http://127.0.0.1:8188`）；
@@ -241,7 +291,7 @@ python qwen_image21_test.py --desc "赛博朋克飞行汽车" --dry-run
 
 ---
 
-## 7. 运行单元测试套件
+## 8. 运行单元测试套件
 
 本项目包含完整的回归测试保障：
 

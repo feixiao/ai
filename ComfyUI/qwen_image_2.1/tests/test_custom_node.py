@@ -40,3 +40,18 @@ def test_node_execution_fallback() -> None:
     assert isinstance(neg, str) and len(neg) > 0
     assert w == 1280
     assert h == 768
+
+
+def test_node_execution_image_edit_mode() -> None:
+    """测试节点在图像编辑任务模式下的扩写逻辑与角色防漂移锁定。"""
+    node = LMStudioPromptExpanderNode()
+    pos, neg, w, h = node.expand_prompt(
+        user_short_desc="换上黑色皮夹克",
+        task_mode="image_edit",
+        preserve_identity="yes",
+        style_preset="photorealistic",
+        lmstudio_host="127.0.0.1:59999",
+    )
+    assert "Keep the original character" in pos
+    assert "facial features" in pos
+    assert "character drift" in neg

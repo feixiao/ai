@@ -57,6 +57,24 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
         help="Classifier-Free Guidance 引导系数 (默认 1.0 启用单前向极速生图，耗时减半；>1.0 启用双前向对比引导)",
     )
     parser.add_argument(
+        "--image",
+        type=str,
+        default=None,
+        help="待修改的原图路径 (若指定则自动载入图像修改工作流并锁定角色不偏移)",
+    )
+    parser.add_argument(
+        "--denoise",
+        type=float,
+        default=0.55,
+        help="图生图重绘去噪强度 (默认 0.55，区间 0.45~0.60 确保角色不偏移)",
+    )
+    parser.add_argument(
+        "--preserve-identity",
+        action="store_true",
+        default=True,
+        help="是否强制注入角色防漂移锁定提示词 (默认开启)",
+    )
+    parser.add_argument(
         "--size",
         type=str,
         default=None,
@@ -144,6 +162,8 @@ def inject_workflow_parameters(
     seed: int,
     cfg: float = 1.0,
     size_override: Optional[str] = None,
+    image_path: Optional[str] = None,
+    denoise: Optional[float] = None,
 ) -> Dict[str, object]:
     """将提示词扩写结果与采样参数深度注入到工作流字典中。
 
@@ -199,6 +219,10 @@ def inject_workflow_parameters(
         elif class_type == "CLIPTextEncode" and ("negative" in title or node_id == "5"):
             inputs["text"] = prompt_res.negative_prompt
 
+        # 注入待修改输入图片 (LoadImage)
+        elif class_type == "LoadImage" and image_path:
+            inputs["image"] = os.path.basename(image_path)
+
         # 注入分辨率
         elif class_type in ("EmptyLatentImage", "EmptyQwenImageLayeredLatentImage"):
             inputs["width"] = target_w
@@ -209,6 +233,9 @@ def inject_workflow_parameters(
             inputs["steps"] = steps
             inputs["seed"] = seed
             inputs["cfg"] = cfg
+            if denoise is not None:
+                inputs["denoise"] = denoise
+
 
     return workflow
 
@@ -322,7 +349,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     """
     args = parse_arguments(argv)
     output_dir = CURRENT_DIR / "output"
-    workflow_path = CURRENT_DIR / "workflows" / "qwen_image_2.1_api.json"
+    if args.image:
+        workflow_path = CURRENT_DIR / "workflows" / "qwen_image_2.1_edit_api.json"
+    else:
+        workflow_path = CURRENT_DIR / "workflows" / "qwen_image_2.1_api.json"
 
     print("=" * 70)
     print("🚀 Qwen-Image-2.1 本地测试套件启动")
@@ -331,6 +361,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"⚙️ 采样配置: 步数={args.steps}, CFG={args.cfg}")
     if args.size:
         print(f"📐 分辨率覆盖: {args.size}")
+    if args.image:
+        print(f"🖼️ 输入图片: {args.image} (已切换为图像修改模式, Denoise={args.denoise})")
     print("=" * 70)
 
     # 1. 检查工作流模板
@@ -353,7 +385,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     print("\n🔍 正在进行智能提示词扩写...")
     expand_start = time.time()
     expander = LMStudioPromptExpander(base_url=f"http://{lmstudio_host}/v1", preferred_model=args.llm_model)
-    prompt_result = expander.expand(user_text=args.desc, style_preset=args.style, target_aspect=args.aspect)
+    if args.image:
+        prompt_result = expander.expand_edit(
+            user_text=args.desc,
+            preserve_identity=args.preserve_identity,
+            style_preset=args.style,
+            target_aspect=args.aspect,
+        )
+    else:
+        prompt_result = expander.expand(user_text=args.desc, style_preset=args.style, target_aspect=args.aspect)
     expand_duration = time.time() - expand_start
 
     print("-" * 70)
@@ -372,6 +412,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         seed=chosen_seed,
         cfg=args.cfg,
         size_override=args.size,
+        image_path=args.image,
+        denoise=args.denoise if args.image else None,
     )
 
     # 5. 若为 dry-run 模式，直接保存测试组装结果并退出

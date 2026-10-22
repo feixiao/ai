@@ -100,3 +100,51 @@ def test_workflow_parameter_injection() -> None:
     assert found_pos, "正向提示词未成功注入"
     assert found_sampler, "采样参数未成功注入"
     assert found_latent, "分辨率未成功注入"
+
+
+def test_cli_argument_parsing_image_edit() -> None:
+    """测试命令行图像编辑参数解析。"""
+    args = parse_arguments(["--image", "my_character.png", "--desc", "换上黑色夹克", "--denoise", "0.50"])
+    assert args.image == "my_character.png"
+    assert args.desc == "换上黑色夹克"
+    assert args.denoise == 0.50
+
+
+def test_workflow_parameter_injection_image_edit() -> None:
+    """测试图像编辑工作流中图片名、重绘去噪度及角色防漂移提示词的动态注入。"""
+    workflow_path = Path("ComfyUI/qwen_image_2.1/workflows/qwen_image_2.1_edit_api.json")
+    with open(workflow_path, "r", encoding="utf-8") as f:
+        template = json.load(f)
+
+    prompt_res = ExpandedPromptResult(
+        positive_prompt="Keep the original character strictly unchanged. Modify only clothing to black leather jacket.",
+        negative_prompt="face distortion, character drift, low quality",
+        aspect_ratio="1:1",
+        width=1024,
+        height=1024,
+        model_used="test-model",
+        is_fallback=False,
+    )
+
+    injected = inject_workflow_parameters(
+        template,
+        prompt_res,
+        steps=18,
+        seed=99999,
+        cfg=1.0,
+        image_path="/path/to/my_avatar.png",
+        denoise=0.52,
+    )
+
+    found_image = False
+    found_denoise = False
+    for node in injected.values():
+        if isinstance(node, dict):
+            if node.get("class_type") == "LoadImage" and node["inputs"].get("image") == "my_avatar.png":
+                found_image = True
+            if node.get("class_type") == "KSampler":
+                if node["inputs"].get("denoise") == 0.52 and node["inputs"].get("steps") == 18:
+                    found_denoise = True
+
+    assert found_image, "待修改原图名称未成功注入 LoadImage"
+    assert found_denoise, "去噪强度 (denoise=0.52) 未成功注入 KSampler"

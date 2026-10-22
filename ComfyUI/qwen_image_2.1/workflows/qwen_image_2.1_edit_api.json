@@ -1,0 +1,140 @@
+{
+  "1": {
+    "inputs": {
+      "unet_name": "qwen-image-2.1-UC-Q4_K_M.gguf"
+    },
+    "class_type": "UnetLoaderGGUF",
+    "_meta": {
+      "title": "Unet Loader (GGUF) - Qwen-Image-2.1 UC 非限制版 (Q4_K_M)"
+    }
+  },
+  "2": {
+    "inputs": {
+      "clip_name": "Qwen3-VL-8B-Instruct-Q4_K_M.gguf",
+      "type": "qwen_image"
+    },
+    "class_type": "CLIPLoaderGGUF",
+    "_meta": {
+      "title": "CLIP Loader (GGUF) - Qwen3-VL"
+    }
+  },
+  "3": {
+    "inputs": {
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE - Qwen-Image-2.1 (16 通道专用 VAE)"
+    }
+  },
+  "4": {
+    "inputs": {
+      "text": "Keep the original character, face, facial features, hair style, eye shape and body pose strictly unchanged. Modify only the clothing to a stylish black leather jacket, with subtle warm cinematic rim lighting, highly detailed fabric texture, photorealistic 4k, seamless natural composition",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive Prompt (AI 增强扩写 + 角色一致性锁定)"
+    }
+  },
+  "5": {
+    "inputs": {
+      "text": "face distortion, face alteration, character drift, identity shift, facial mutation, deformed face, unnatural expression, bad anatomy, deformed limbs, extra fingers, poorly drawn hands, low resolution, bad proportions, watermark, signature, ugly, blurry, out of focus",
+      "clip": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt (抑制面部变形与角色漂移)"
+    }
+  },
+  "6": {
+    "inputs": {
+      "pixels": [
+        "10",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Encode (原图编码入隐空间)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "seed": 42,
+      "steps": 16,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 0.55,
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "4",
+        0
+      ],
+      "negative": [
+        "5",
+        0
+      ],
+      "latent_image": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler (Euler / Simple, Steps: 16, CFG: 1.0, Denoise: 0.55 角色防漂移)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "7",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode (解码输出)"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "qwen_image_2.1_edit",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Edited Image (保存修改后的图像)"
+    }
+  },
+  "10": {
+    "inputs": {
+      "image": "input_character.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Input Image (待修改的原角色图像)"
+    }
+  }
+}
