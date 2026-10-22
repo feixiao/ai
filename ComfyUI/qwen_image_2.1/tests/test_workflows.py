@@ -133,6 +133,12 @@ def test_edit_canvas_workflow_structure() -> None:
     )
     assert any("UC" in str(val) for val in canvas_unet.get("widgets_values", [])), "编辑画布必须采用 UC 非限制版本"
 
+    # 验证全部节点输入槽位连线完整性
+    link_ids = {l[0] for l in canvas_payload["links"]}
+    for node in canvas_payload["nodes"]:
+        for inp in node.get("inputs", []):
+            assert inp.get("link") is not None, f"节点 {node['id']} ({node['type']}) 的输入槽位 {inp['name']} 未连线"
+            assert inp["link"] in link_ids, f"节点 {node['id']} ({node['type']}) 的输入槽位 {inp['name']} 引用的连线 {inp['link']} 不存在"
 
 def test_edit_ai_canvas_workflow_structure() -> None:
     """验证包含 AI 扩写节点的进阶画布工作流结构。"""
