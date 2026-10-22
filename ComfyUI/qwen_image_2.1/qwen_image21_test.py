@@ -41,7 +41,7 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
         description="Qwen-Image-2.1 本地自动化测试脚本 (集成 LM Studio 智能提示词扩写)",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--desc", type=str, default="雨夜小巷里的机甲猫", help="用户极简描述输入")
+    parser.add_argument("--prompt", "--desc", dest="desc", type=str, default="雨夜小巷里的机甲猫", help="用户描述输入 (兼容 --prompt 和 --desc)")
     parser.add_argument(
         "--style",
         type=str,
@@ -58,9 +58,11 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--image",
+        "--input-image",
+        dest="image",
         type=str,
         default=None,
-        help="待修改的原图路径 (若指定则自动载入图像修改工作流并锁定角色不偏移)",
+        help="待修改的原图路径 (若指定则自动载入图像修改工作流并锁定角色不偏移，兼容 --input-image)",
     )
     parser.add_argument(
         "--denoise",
@@ -101,6 +103,17 @@ def parse_arguments(argv: Optional[List[str]] = None) -> argparse.Namespace:
         type=float,
         default=300.0,
         help="等待 ComfyUI 生图完成的最大秒数 (Apple Silicon 建议 600 以上)",
+    )
+    parser.add_argument(
+        "--unet",
+        type=str,
+        default=None,
+        help="指定 UNet 模型文件 (默认自动选用本地非限制版本: qwen-image-2.1-UC-Q4_K_M.gguf 或 qwen-image-2.1-UC-bf16.safetensors)",
+    )
+    parser.add_argument(
+        "--raw",
+        action="store_true",
+        help="原生直传模式，直接使用输入提示词，不经过大模型扩写",
     )
     return parser.parse_args(argv)
 
@@ -164,6 +177,7 @@ def inject_workflow_parameters(
     size_override: Optional[str] = None,
     image_path: Optional[str] = None,
     denoise: Optional[float] = None,
+    unet_name: Optional[str] = None,
 ) -> Dict[str, object]:
     """将提示词扩写结果与采样参数深度注入到工作流字典中。
 
@@ -204,8 +218,19 @@ def inject_workflow_parameters(
         if isinstance(meta, dict):
             title = str(meta.get("title", "")).lower()
 
+        # 注入 UNet 模型名称 (支持 GGUF 与 safetensors 非限制模型自动切换)
+        if class_type in ("UnetLoaderGGUF", "UNETLoader"):
+            target_unet = unet_name or os.environ.get("COMFYUI_UNET_NAME")
+            if target_unet:
+                if target_unet.lower().endswith(".gguf"):
+                    node["class_type"] = "UnetLoaderGGUF"
+                    inputs.pop("weight_dtype", None)
+                else:
+                    node["class_type"] = "UNETLoader"
+                inputs["unet_name"] = target_unet
+
         # 注入 TextEncodeQwenImage21 (官方 Qwen 2.1 复合编码节点)
-        if class_type == "TextEncodeQwenImage21":
+        elif class_type == "TextEncodeQwenImage21":
             inputs["prompt"] = prompt_res.positive_prompt
             inputs["negative_prompt"] = prompt_res.negative_prompt
             # 分辨率设为两者最大边或基准，至少为 512
@@ -434,7 +459,18 @@ def main(argv: Optional[List[str]] = None) -> int:
     print("\n🔍 正在进行智能提示词扩写...")
     expand_start = time.time()
     expander = LMStudioPromptExpander(base_url=f"http://{lmstudio_host}/v1", preferred_model=args.llm_model)
-    if args.image:
+    if args.raw or args.desc.startswith("/raw ") or args.desc.startswith("--raw "):
+        clean_raw = args.desc.replace("/raw ", "").replace("--raw ", "").strip()
+        prompt_result = ExpandedPromptResult(
+            positive_prompt=clean_raw,
+            negative_prompt=expander.EDIT_NEGATIVE_PROMPT if args.image else expander.DEFAULT_NEGATIVE_PROMPT,
+            aspect_ratio="1:1" if not args.aspect else args.aspect,
+            width=1024,
+            height=1024,
+            model_used="raw-passthrough",
+            is_fallback=False,
+        )
+    elif args.image:
         prompt_result = expander.expand_edit(
             user_text=args.desc,
             preserve_identity=args.preserve_identity,
@@ -444,7 +480,6 @@ def main(argv: Optional[List[str]] = None) -> int:
     else:
         prompt_result = expander.expand(user_text=args.desc, style_preset=args.style, target_aspect=args.aspect)
     expand_duration = time.time() - expand_start
-
     print("-" * 70)
     print(f"✨ 扩写耗时: {expand_duration:.2f}s (引擎: {prompt_result.model_used})")
     print(f"📐 推荐尺寸: {prompt_result.width}x{prompt_result.height} ({prompt_result.aspect_ratio})")
@@ -463,6 +498,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         size_override=args.size,
         image_path=args.image,
         denoise=args.denoise if args.image else None,
+        unet_name=args.unet,
     )
 
     # 5. 若为 dry-run 模式，直接保存测试组装结果并退出
