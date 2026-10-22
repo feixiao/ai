@@ -43,7 +43,8 @@ class LMStudioPromptExpander:
         "face distortion, face alteration, character drift, identity shift, facial mutation, "
         "deformed face, unnatural expression, bad anatomy, deformed limbs, extra fingers, "
         "poorly drawn hands, missing fingers, low resolution, bad proportions, watermark, "
-        "signature, text artifacts, oversaturated, ugly, cropped, blurry, out of focus"
+        "signature, text artifacts, oversaturated, ugly, cropped, blurry, out of focus, "
+        "head elongation, elongated cylinder head, stretched tall, pillar shape, deformed head shape, realistic human face, yellow onion"
     )
 
     # 审查/拒绝特征词表 (检测到 LLM 拒绝时自动回退为客观艺术描述，防止工作流因审查中断)
@@ -339,9 +340,9 @@ class LMStudioPromptExpander:
                     "用户的任务是对参考图像 <image1> 进行精准修改。\n"
                     "核心要求（不可违背）：\n"
                     "1. 必须使用 <image1> 指代参考原图。\n"
-                    "2. 绝对保持并锁定 <image1> 中角色的本来外观形态、种族物种（是植物/蔬菜/洋葱/小葱人/动物/卡通吉祥物就必须保持该物种与原本卡通手绘风格，绝对禁止拟人化变成真实人类！）。\n"
-                    "3. 极其关键：必须一字不差地明确写出保持 <image1> 原图的面部特征、标志性表情（如眨眼、吐舌头、笑脸、眼神形态）、五官细节、头部轮廓、翠绿色身体与呆萌动作姿势完全不变！\n"
-                    "4. 仅在原角色身上穿戴用户指定的衣物饰品（如一件迷你黑色皮夹克），并替换背景为指定环境（如微光都市夜景）。\n"
+                    "2. 绝对锁定并保持 <image1> 中角色的本来外观形态：圆圆的大头轮廓、圆润脸型、圆脑袋、矮萌可爱身材比例、头顶向上舒展的葱叶发束完全不变，严禁将头部或身形拉长变形成柱状或细长条！\n"
+                    "3. 极其关键：必须明确写出保持 <image1> 原图的面部神态、标志性表情（包括调皮眨眼、吐舌头卖萌、大眼睛瞳孔光泽、五官细节）、翠绿色表皮与动作完全不变！\n"
+                    "4. 仅在原角色身上穿戴用户指定的衣物饰品（如一件合身的黑色机车小皮夹克），并替换背景为指定环境（如夜晚微光闪烁的都市街道）。\n"
                     "5. 直接输出一段连贯精炼的中文编辑指令，不要解释，不要带引号或 markdown。"
                 )
                 user_msg = f"请生成严格保持 <image1> 角色表情（包含眨眼、吐舌头等标志性五官表情）与形态的编辑提示词: {clean_text}"
