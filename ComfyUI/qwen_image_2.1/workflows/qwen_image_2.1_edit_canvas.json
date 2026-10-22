@@ -104,7 +104,7 @@
         "input_character.png",
         "image"
       ],
-      "title": "Load Input Image (待修改原角色图)"
+      "title": "🟢 步骤1：在此上传待修改原图 (Load Image)"
     },
     {
       "id": 4,
@@ -133,9 +133,9 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Keep the original character, face, facial features, hair style, eye shape and body pose strictly unchanged. Modify only the clothing to a stylish black leather jacket, with subtle warm cinematic rim lighting, highly detailed fabric texture, photorealistic 4k, seamless natural composition"
+        "Keep the original character, face, facial features, hair style, eye shape and body pose strictly unchanged.\nModify only: 【在这里写你的修改描述，例如：换上一身黑色皮夹克，戴上墨镜，背景换成黄昏海滩】,\nseamless natural lighting, photorealistic 4k, masterpiece."
       ],
-      "title": "Positive Prompt (AI 扩写 + 角色锁定)"
+      "title": "🟢 步骤2：在此输入修改描述 (在 Modify only: 后面写中文即可)"
     },
     {
       "id": 5,
@@ -251,7 +251,7 @@
         "simple",
         0.55
       ],
-      "title": "KSampler (Euler / Simple, Steps: 16, CFG: 1.0, Denoise: 0.55)"
+      "title": "🟢 步骤3：去噪采样控制 (KSampler: Denoise 0.55 角色防漂移)"
     },
     {
       "id": 8,
@@ -307,7 +307,7 @@
       "widgets_values": [
         "qwen_image_2.1_edit"
       ],
-      "title": "Save Edited Image"
+      "title": "🟢 步骤4：查看与保存生成图片 (Save Image)"
     },
     {
       "id": 11,
@@ -319,10 +319,10 @@
       "mode": 0,
       "inputs": [],
       "outputs": [],
-      "title": "💡 角色不偏移关键调参说明",
+      "title": "👉【修改描述填写指南】",
       "properties": {},
       "widgets_values": [
-        "## 角色不偏移 (Character Consistency) 核心要点：\n1. **去噪强度 (denoise)**：默认设为 **0.55**（黄金区间 0.45 ~ 0.60）。若低于 0.4 修改不明显；若高于 0.7 角色特征会发生漂移。\n2. **AI 提示词锁定**：正向词头部必须保留 `Keep the original character, face, facial features... strictly unchanged`；修改内容置于其后。\n3. **负向词抑制**：负向词已默认包含抑制面部变形与漂移的专用词组。"
+        "## ✏️ 怎么修改？修改描述写在哪里？\n\n1. **第 1 步【上传原图】**：\n   在左侧 `🟢 步骤1：在此上传待修改原图` 节点中点击上传您要修改的角色图片。\n\n2. **第 2 步【填写修改要求】**：\n   在中间 `🟢 步骤2：在此输入修改描述` 框中，找到 `Modify only:` 后面：\n   - 把中括号里的字替换为您想修改的内容；\n   - **直接写中文即可**（Qwen3-VL 视觉语言大模型原生支持中文理解！）；\n   - 例如：`Modify only: 换上机甲战袍，背景变成雨夜霓虹街景`；\n   - ⚠️ 前面的 `Keep the original character... strictly unchanged` 请务必保留，它是**锁死角色面部与体态不发生漂移**的核心！\n\n3. **第 3 步【一键出图】**：\n   点击右侧面板的 **Queue** 按钮（或快捷键 `Cmd/Ctrl + Enter`）即可出图，右侧 `步骤4` 会保存结果。\n\n4. **调参要点**：\n   - 改变更明显：将步骤3的 `denoise` 微调至 `0.60`；\n   - 更贴近原图：将 `denoise` 微调至 `0.48 ~ 0.50`。"
       ]
     }
   ],
