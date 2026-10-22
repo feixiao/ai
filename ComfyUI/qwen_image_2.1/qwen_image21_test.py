@@ -239,7 +239,56 @@ def inject_workflow_parameters(
 
     return workflow
 
+def upload_image_to_comfyui(comfy_host: str, local_image_path: str) -> Optional[str]:
+    """通过 ComfyUI /upload/image 接口将本地图片上传至服务器 input 目录。
 
+    参数:
+        comfy_host: ComfyUI 服务地址 (host:port)
+        local_image_path: 本地待上传图片路径
+    返回值:
+        上传后的远程文件名 (由 ComfyUI 返回，如重名会自动加上后缀)；若失败则返回 None
+    """
+    image_file = Path(local_image_path).expanduser().resolve()
+    if not image_file.exists():
+        logger.error(f"待上传的输入图片不存在: {image_file}")
+        return None
+
+    import uuid
+
+    boundary = f"----WebKitFormBoundary{uuid.uuid4().hex}"
+    filename = image_file.name
+
+    with open(image_file, "rb") as f:
+        file_bytes = f.read()
+
+    # 简易构造 multipart/form-data
+    body = (
+        f"--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="image"; filename="{filename}"\r\n'
+        f"Content-Type: image/png\r\n\r\n"
+    ).encode("utf-8") + file_bytes + (
+        f"\r\n--{boundary}\r\n"
+        f'Content-Disposition: form-data; name="overwrite"\r\n\r\n'
+        f"true\r\n"
+        f"--{boundary}--\r\n"
+    ).encode("utf-8")
+
+    upload_url = f"http://{comfy_host}/upload/image"
+    req = urllib.request.Request(
+        upload_url,
+        data=body,
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=30.0) as resp:
+            resp_data = json.loads(resp.read().decode("utf-8"))
+            uploaded_name = resp_data.get("name", filename)
+            logger.info(f"原图已成功上传至 ComfyUI input 目录: {uploaded_name}")
+            return str(uploaded_name)
+    except Exception as err:
+        logger.error(f"上传原图至 ComfyUI 失败 ({upload_url}): {err}")
+        return None
 def submit_comfyui_prompt(comfy_host: str, workflow_dict: Dict[str, object]) -> Optional[str]:
     """向 ComfyUI 提交推理任务。
 
@@ -433,6 +482,16 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("   2. 如果使用开源源码版: 可通过 --comfy-host 127.0.0.1:8188 指定 8188 端口")
         print("   3. 命令行直接启动实例: /Users/frank/ComfyUI/.venv/bin/python /Users/frank/ComfyUI-Installs/ComfyUI/ComfyUI/main.py --port 8188")
         return 2
+
+    # 若包含本地原图，先自动上传至 ComfyUI input 目录
+    if args.image:
+        remote_filename = upload_image_to_comfyui(comfy_host, args.image)
+        if not remote_filename:
+            return 3
+        # 确保工作流中的 LoadImage 节点使用上传后的文件名
+        for node_val in injected_workflow.values():
+            if isinstance(node_val, dict) and node_val.get("class_type") == "LoadImage":
+                node_val.setdefault("inputs", {})["image"] = remote_filename
 
     print("\n📦 正在推送任务至 ComfyUI...")
     gen_start = time.time()
