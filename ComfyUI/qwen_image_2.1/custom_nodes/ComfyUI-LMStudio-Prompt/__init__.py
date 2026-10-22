@@ -7,10 +7,12 @@ from .lmstudio_prompt_node import LMStudioPromptExpanderNode
 
 NODE_CLASS_MAPPINGS = {
     "LMStudioPromptExpander": LMStudioPromptExpanderNode,
+    "LMStudioPromptExpanderNode": LMStudioPromptExpanderNode,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "LMStudioPromptExpander": "LM Studio Prompt Expander (Qwen-Image)",
+    "LMStudioPromptExpanderNode": "LM Studio Prompt Expander (Qwen-Image)",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

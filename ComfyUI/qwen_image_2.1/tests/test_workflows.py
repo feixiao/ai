@@ -118,7 +118,7 @@ def test_edit_canvas_workflow_structure() -> None:
     node_types = [node.get("type") for node in canvas_payload["nodes"]]
     assert "LoadImage" in node_types
     assert "VAEEncode" in node_types
-    assert "LMStudioPromptExpanderNode" in node_types
+    assert "CLIPTextEncode" in node_types
     assert "KSampler" in node_types
 
     canvas_sampler = next(
@@ -132,6 +132,20 @@ def test_edit_canvas_workflow_structure() -> None:
         if node.get("type") in ("UnetLoaderGGUF", "UNETLoader")
     )
     assert any("UC" in str(val) for val in canvas_unet.get("widgets_values", [])), "编辑画布必须采用 UC 非限制版本"
+
+
+def test_edit_ai_canvas_workflow_structure() -> None:
+    """验证包含 AI 扩写节点的进阶画布工作流结构。"""
+    canvas_path = Path("ComfyUI/qwen_image_2.1/workflows/qwen_image_2.1_edit_ai_canvas.json")
+    assert canvas_path.exists(), "AI 画布工作流文件必须存在"
+
+    with open(canvas_path, "r", encoding="utf-8") as f:
+        canvas_payload = json.load(f)
+
+    node_types = [node.get("type") for node in canvas_payload["nodes"]]
+    assert any("LMStudioPromptExpander" in str(nt) for nt in node_types), "需包含 LM Studio 扩写节点"
+    assert "LoadImage" in node_types
+    assert "VAEEncode" in node_types
 
 
 def test_native_edit_api_workflow_structure() -> None:

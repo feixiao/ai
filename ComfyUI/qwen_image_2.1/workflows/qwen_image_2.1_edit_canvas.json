@@ -140,54 +140,6 @@
       "title": "VAE Encode (原图编码入隐空间)"
     },
     {
-      "id": 12,
-      "type": "LMStudioPromptExpanderNode",
-      "pos": [480, -200],
-      "size": [400, 260],
-      "flags": {},
-      "order": 5,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "positive_prompt",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "negative_prompt",
-          "type": "STRING",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "width",
-          "type": "INT",
-          "links": null,
-          "shape": 3
-        },
-        {
-          "name": "height",
-          "type": "INT",
-          "links": null,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LMStudioPromptExpanderNode"
-      },
-      "widgets_values": [
-        "换上一身黑色皮夹克，背景是微光都市",
-        "image_edit",
-        "yes",
-        "photorealistic",
-        0.7,
-        "auto",
-        "127.0.0.1:1234"
-      ],
-      "title": "AI Prompt Expander (角色防漂移扩写)"
-    },
-    {
       "id": 4,
       "type": "CLIPTextEncode",
       "pos": [480, 100],

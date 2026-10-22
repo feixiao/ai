@@ -27,8 +27,9 @@ ComfyUI/qwen_image_2.1/
 ├── workflows/
 │   ├── qwen_image_2.1_t2i_canvas.json   # 文生图 ComfyUI Web 画布工作流（直接拖入浏览器）
 │   ├── qwen_image_2.1_api.json          # 文生图 ComfyUI API 格式工作流模板
-│   ├── qwen_image_2.1_edit_canvas.json  # 图像修改/角色防漂移 Web 画布工作流 (含 AI 扩写节点)
-│   ├── qwen_image_2.1_edit_api.json     # 图像修改/角色防漂移 API 格式工作流模板 (LoadImage + VAEEncode)
+│   ├── qwen_image_2.1_edit_canvas.json     # 图像修改/角色防漂移 纯原生 Web 画布（零插件依赖，直接拖入即用）
+│   ├── qwen_image_2.1_edit_ai_canvas.json  # 图像修改/角色防漂移 进阶 Web 画布（含内置 AI 实时扩写节点）
+│   ├── qwen_image_2.1_edit_api.json        # 图像修改/角色防漂移 API 格式工作流模板 (LoadImage + VAEEncode)
 │   └── qwen_image_2.1_native_edit_api.json # Qwen 2.1 官方原生多参考图编辑 API 工作流 (TextEncodeQwenImage21)
 ├── custom_nodes/
 │   └── ComfyUI-LMStudio-Prompt/   # ComfyUI 专用节点：画布中直接连线实时扩写
@@ -266,8 +267,9 @@ python qwen_image21_test.py --image "input_character.png" --desc "换上赛博�
 
 ### 2. 对应工作流文件
 
-- **`workflows/qwen_image_2.1_edit_canvas.json`**：Web 画布格式，可直接拖入 ComfyUI 浏览器界面。内置 `LoadImage` -> `VAEEncode` -> `LMStudioPromptExpanderNode` -> `KSampler (denoise=0.55)` -> `VAEDecode` -> `SaveImage`。
-- **`workflows/qwen_image_2.1_edit_api.json`**：标准 API 格式，适合脚本批量调度与自动化流水线。
+- **`workflows/qwen_image_2.1_edit_canvas.json` (首选推荐 ⭐️)**：**100% 官方原生内置节点版**。全流程仅使用 ComfyUI 原生标准节点（`LoadImage` -> `VAEEncode` -> `CLIPTextEncode` -> `KSampler (denoise=0.55)` -> `VAEDecode` -> `SaveImage`），**绝无任何 Missing node 或缺少插件报错，直接拖入浏览器即开即用**！
+- **`workflows/qwen_image_2.1_edit_ai_canvas.json`**：**内置 AI 扩写节点进阶版**。在画布中包含 `LMStudioPromptExpander` 节点（需按下方方式二加载自定义节点插件），可在 Web 界面输入中文实时让大模型自动扩写。
+- **`workflows/qwen_image_2.1_edit_api.json`**：标准 API 格式，供 Python 脚本或自动化流水线直接调用。
 - **`workflows/qwen_image_2.1_native_edit_api.json`**：基于官方 `TextEncodeQwenImage21` 复合节点的原生编辑模版。
 ---
 
