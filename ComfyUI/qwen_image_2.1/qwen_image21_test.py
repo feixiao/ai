@@ -283,16 +283,31 @@ def upload_image_to_comfyui(comfy_host: str, local_image_path: str) -> Optional[
     if not image_file.exists():
         logger.error(f"待上传的输入图片不存在: {image_file}")
         return None
-
+    import io
     import uuid
+    from PIL import Image
 
     boundary = f"----WebKitFormBoundary{uuid.uuid4().hex}"
     filename = image_file.name
 
-    with open(image_file, "rb") as f:
-        file_bytes = f.read()
-
-    # 简易构造 multipart/form-data
+    try:
+        with Image.open(image_file) as img:
+            # 若包含透明通道 (RGBA)，垫入纯白底消除黑边和视觉编码误判
+            if img.mode in ("RGBA", "LA") or (img.mode == "P" and "transparency" in img.info):
+                rgba_img = img.convert("RGBA")
+                white_bg = Image.new("RGBA", rgba_img.size, (255, 255, 255, 255))
+                composed = Image.alpha_composite(white_bg, rgba_img).convert("RGB")
+                buf = io.BytesIO()
+                composed.save(buf, format="PNG")
+                file_bytes = buf.getvalue()
+                filename = f"{image_file.stem}_wb.png"
+            else:
+                with open(image_file, "rb") as f:
+                    file_bytes = f.read()
+    except Exception as read_err:
+        logger.warning(f"读取图片优化处理失败，回退为二进制读取: {read_err}")
+        with open(image_file, "rb") as f:
+            file_bytes = f.read()
     body = (
         f"--{boundary}\r\n"
         f'Content-Disposition: form-data; name="image"; filename="{filename}"\r\n'
