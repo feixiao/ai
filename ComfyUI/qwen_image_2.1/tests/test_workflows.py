@@ -120,7 +120,7 @@ def test_edit_canvas_workflow_structure() -> None:
     assert "VAEEncode" in node_types
     assert "CLIPTextEncode" in node_types
     assert "KSampler" in node_types
-
+    assert "ImageScaleToTotalPixels" in node_types
     canvas_sampler = next(
         node for node in canvas_payload["nodes"]
         if node.get("type") == "KSampler"

@@ -1,6 +1,6 @@
 {
-  "last_node_id": 12,
-  "last_link_id": 11,
+  "last_node_id": 13,
+  "last_link_id": 12,
   "nodes": [
     {
       "id": 1,
@@ -79,7 +79,7 @@
       "id": 10,
       "type": "LoadImage",
       "pos": [60, 440],
-      "size": [340, 380],
+      "size": [340, 310],
       "flags": {},
       "order": 3,
       "mode": 0,
@@ -133,7 +133,7 @@
         "Node name for S&R": "CLIPTextEncode"
       },
       "widgets_values": [
-        "Keep the original character, face, facial features, hair style, eye shape and body pose strictly unchanged.\nModify only: 【在这里写你的修改描述，例如：换上一身黑色皮夹克，戴上墨镜，背景换成黄昏海滩】,\nseamless natural lighting, photorealistic 4k, masterpiece."
+        "Keep the original character, face, facial features, hair style, eye shape and body pose strictly unchanged.\nModify only: 【在这里写你的修改描述，例如：换上一身黑色皮夹克，戴上墨镜，背景换成黄昏海滩】,\nseamless natural lighting, photorealistic, masterpiece."
       ],
       "title": "🟢 步骤2：在此输入修改描述 (在 Modify only: 后面写中文即可)"
     },
@@ -180,7 +180,7 @@
         {
           "name": "pixels",
           "type": "IMAGE",
-          "link": 10
+          "link": 12
         },
         {
           "name": "vae",
@@ -324,6 +324,39 @@
       "widgets_values": [
         "## ✏️ 怎么修改？修改描述写在哪里？\n\n1. **第 1 步【上传原图】**：\n   在左侧 `🟢 步骤1：在此上传待修改原图` 节点中点击上传您要修改的角色图片。\n\n2. **第 2 步【填写修改要求】**：\n   在中间 `🟢 步骤2：在此输入修改描述` 框中，找到 `Modify only:` 后面：\n   - 把中括号里的字替换为您想修改的内容；\n   - **直接写中文即可**（Qwen3-VL 视觉语言大模型原生支持中文理解！）；\n   - 例如：`Modify only: 换上机甲战袍，背景变成雨夜霓虹街景`；\n   - ⚠️ 前面的 `Keep the original character... strictly unchanged` 请务必保留，它是**锁死角色面部与体态不发生漂移**的核心！\n\n3. **第 3 步【一键出图】**：\n   点击右侧面板的 **Queue** 按钮（或快捷键 `Cmd/Ctrl + Enter`）即可出图，右侧 `步骤4` 会保存结果。\n\n4. **调参要点**：\n   - 改变更明显：将步骤3的 `denoise` 微调至 `0.60`；\n   - 更贴近原图：将 `denoise` 微调至 `0.48 ~ 0.50`。"
       ]
+    },
+    {
+      "id": 12,
+      "type": "ImageScaleToTotalPixels",
+      "pos": [60, 780],
+      "size": [340, 106],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 10
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [12],
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageScaleToTotalPixels"
+      },
+      "widgets_values": [
+        "lanczos",
+        1.0,
+        32
+      ],
+      "title": "📏 步骤1.5：分辨率缩放 (ImageScaleToTotalPixels: 默认 1.0 MP，防止 4K 原图拖慢生成)"
     }
   ],
   "links": [
@@ -335,11 +368,10 @@
     [6, 6, 0, 7, 3, "LATENT"],
     [7, 7, 0, 8, 0, "LATENT"],
     [8, 3, 0, 8, 1, "VAE"],
-    [9, 8, 0, 9, 0, "IMAGE"],
-    [10, 10, 0, 6, 0, "IMAGE"],
-    [11, 3, 0, 6, 1, "VAE"]
+    [10, 10, 0, 12, 0, "IMAGE"],
+    [11, 3, 0, 6, 1, "VAE"],
+    [12, 12, 0, 6, 0, "IMAGE"]
   ],
-  "groups": [],
   "config": {},
   "extra": {},
   "version": 0.4
