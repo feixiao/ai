@@ -2,14 +2,14 @@
 
 > **本书作者**：李博杰（Pine AI 联合创始人兼首席架构师，前微软亚洲研究院研究员，中国科学技术大学博士）  
 > **核心定位**：专为**懂技术的 AI 产品经理（Technical PM）、系统架构师与技术负责人**编写。  
-> **设计目标**：**不看原书也能建立从代码、协议、算法到业务架构、成本核算、评测指标的完整认知。**  
+> **设计目标**：**不看原书也能建立从底层原理、开发实战到产品架构、成本核算与评测上线的全景认知框架。**  
 > **篇章结构**：
-> - **【第一篇 · 技术底层科普】**：拆解大模型物理运行机制、KV Cache、Function Calling、MCP、RAG 向量算法、Coding Agent 与强化学习底层，用**生动比喻 + 系统时序图 + 真实代码**软化晦涩概念。
+> - **【第一篇 · 技术底层与工程开发实战】**：拆解大模型物理运行机制、KV Cache、Function Calling、MCP、RAG 向量算法、Coding Agent、后训练，以及**现代 Agent 的完整开发流程与核心代码（框架选型、状态机编程、持久化检查点、人在回路断点、Langfuse 链路追踪与 FastAPI 高并发架构）**。
 > - **【第二篇 · 产品架构与业务落地】**：拆解业务决策树、Skills 渐进式披露、状态栏模式、记忆治理 PR 闭环、人在回路（HITL）、安全防御与 20 条 PRD 自查清单。
 
 ---
 
-# 【第一篇 · 技术底层科普】
+# 【第一篇 · 技术底层与工程开发实战】
 
 ---
 
@@ -96,71 +96,15 @@ sequenceDiagram
 
 ---
 
-### 1.4 最小 Agent 运行时（The ReAct Loop）30 行代码骨架
-
-抛开 LangChain、AutoGen 等复杂框架的花哨外衣，工业级 Agent 的核心循环本质上就是一个 `while` 循环：
-
-```python
-import json
-from openai import OpenAI
-
-client = OpenAI()
-
-def run_react_agent(user_prompt: str, system_prompt: str, tools_schema: list, tool_map: dict):
-    # 1. 组装初始上下文
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
-    
-    # 2. 启动 ReAct 闭环（防死循环上限 10 步）
-    for step in range(10):
-        # 2.1 呼叫大模型进行推理决策
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=messages,
-            tools=tools_schema,
-            temperature=0.0
-        )
-        assistant_msg = response.choices[0].message
-        messages.append(assistant_msg)  # 把模型的输出立刻追加进历史
-
-        # 2.2 判断是否达到终止状态（没有触发任何工具调用）
-        if not assistant_msg.tool_calls:
-            return assistant_msg.content  # 任务完成，返回最终自然语言结论
-
-        # 2.3 触发工具调用：Harness 层代表模型向物理世界出手
-        for tool_call in assistant_msg.tool_calls:
-            func_name = tool_call.function.name
-            args = json.loads(tool_call.function.arguments)
-            
-            # 执行底层 Python 函数（比如查库、请求外部 API）
-            executor = tool_map.get(func_name)
-            result = executor(**args) if executor else f"Error: 未找到工具 {func_name}"
-            
-            # 2.4 把工具执行的观察结果（Observation）作为 'tool' 角色塞回上下文
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": json.dumps(result, ensure_ascii=False)
-            })
-
-    return "Error: 超过步数熔断上限，可能陷入了死循环。"
-```
-
----
-
 ## 模块二：工具调用（Function Calling）、MCP 与沙箱工程
 
 ### 2.1 大模型到底怎么学会调工具的？（Grammar 约束解码）
 
-很多产品经理以为大模型是“像写代码一样，在内存里直接调用了那个函数”。
-**完全不是！模型本质上只能吐字（生成文本）。**
+大模型物理上只能做一件事：**根据前文预测下一个 Token 的概率分布**。那么它为什么能输出完美合法的 JSON 格式工具调用？
 
-#### 真实的技术全貌：
-1. **模型输出特殊标记**：模型在训练中学会了：当缺少信息时，不要直接说人话，而是输出一个符合约定的标记（如 `<tool_call>`）加上一段 JSON 字符串。
-2. **Grammar 约束解码（GBNF 状态机）**：
-   为什么模型输出的参数绝对不会少个括号或漏个逗号？
+1. **特殊 Token 标记（Special Tokens）**：
+   在模型微调（SFT）阶段，厂商加入了类似 `<tool_call>` 和 `</tool_call>` 的特殊标记。当模型判定需要外部信息时，它会优先生成这些标记。
+2. **约束解码（Grammar-based Constrained Decoding）**：
    推理引擎（vLLM / llama.cpp）把你的 JSON Schema 编译成了一张**语法有限状态机（BNF Grammar）**。模型每生成一个字符，状态机就会**强行将所有不符合 JSON 语法的字符概率直接抹为 0**！模型哪怕想胡说八道，物理上也只能从合法的 JSON 字符中挑选下一个 Token。
 3. **框架拦截与执行**：推理框架在接收流式输出时，一旦检测到闭合的 JSON，立即暂停大模型生成，由外部工程代码（Python/Go）拿着参数去调用真实的后端服务，拿到结果后再塞回给大模型。
 
@@ -168,7 +112,7 @@ def run_react_agent(user_prompt: str, system_prompt: str, tools_schema: list, to
 
 ### 2.2 MCP（Model Context Protocol）协议：AI 时代的 USB 接口
 
-在过去，给每个 Agent 挂载工具都要写死一堆适配器代码。2024 年底 Anthropic 开源的 **MCP（模型上下文协议）** 正在统一整个行业。
+传统做法是为每个 Agent 编写特定的 API 客户端代码。Anthropic 推出的 **MCP（模型上下文协议）** 正在成为工具生态的标准：
 
 ```mermaid
 flowchart LR
@@ -198,8 +142,6 @@ flowchart LR
 
 ### 2.3 工具执行沙箱：如何防止 Agent 把服务器删库？
 
-当 Agent 拥有执行 Shell 或 Python 代码的能力时，它就变成了一把双刃剑（比如执行了 `rm -rf /`，或者遭遇提示词注入被黑客操控向外发包）。
-
 ```
 Agent 发起代码执行请求: "python script.py"
          │
@@ -226,26 +168,7 @@ Agent 发起代码执行请求: "python script.py"
 
 ## 模块三：检索增强（RAG）与向量检索算法工程通俗解
 
-传统产品文档里常说“做个知识库就是把文档向量化存进向量数据库”。**在工业界，这种简陋的方案准确率通常只有 40%~60%，属于完全不能交付的半成品。**
-
-### 3.1 什么是 Embedding 向量？空间几何直观理解
-
-计算机看不懂“猫”和“狗”，但看得懂数字。
-**Embedding 模型的作用，就是把自然语言映射到几千维的高维数学空间里。**
-
-- **余弦相似度（Cosine Similarity）**：
-  两句话在空间里的向量夹角越小（夹角余弦越接近 1），说明它们**语义越接近**：
-
-$$\cos(\theta) = \frac{\vec{A} \cdot \vec{B}}{\|\vec{A}\| \|\vec{B}\|}$$
-
-- **致命弱点：Bi-Encoder（双编码器）的“相亲简历盲区”**
-  向量检索是分别把 Query 和文档转化成向量。这就像相亲时“只拿双方的个人简历打分”，看不到两个人坐在一起聊天时微妙的“化学反应”（无法理解精确条件、逻辑反转、零件型号）。
-
----
-
-### 3.2 工业级混合检索：BM25（老中医）+ 向量检索（新潮派）+ RRF
-
-为了解决上述问题，工业界必须采用**双路召回 + 重排流水线**：
+### 3.1 工业级混合检索：BM25（老中医）+ 向量检索（新潮派）+ RRF
 
 ```mermaid
 flowchart TD
@@ -265,106 +188,278 @@ flowchart TD
     CrossEncoder --> Top3[最终精准 Top 3 注入 Agent 上下文]
 ```
 
-#### RRF（倒数排名融合）公式怎么理解？
-$$RRF\_Score(d) = \sum_{m \in \{\text{向量}, \text{BM25}\}} \frac{1}{60 + \text{在该路检索里的排名}}$$
-- **直观理解**：不管两路检索的分数机制有多大差异（向量分数是 0.85，BM25 分数是 14.2），RRF 只看**排名顺序**。如果一篇文档在两路检索里都排进了前 5，它的分数会成倍暴增，稳稳进入精排。
+- **RRF（倒数排名融合）公式**：
+  $$RRF\_Score(d) = \sum_{m \in \{\text{向量}, \text{BM25}\}} \frac{1}{60 + \text{在该路检索里的排名}}$$
+  只看排名顺序，不看分数量纲。如果一篇文档在两路检索里都排进了前 5，它的分数会成倍暴增，稳稳进入精排。
 
----
-
-### 3.3 Contextual Chunking（上下文感知切分技术）
-
-很多 RAG 系统搜不出结果，问题出在切块上。
-如果一本书被硬生生按 500 字切开，很多切片会变成这样：
-> *"第三季度，由于市场竞争加剧，该业务的毛利率同比下滑了 4.2%..."*
-
-**模型拿这段话去匹配时根本不知道“该业务”是哪个业务，搜出来也是废话。**
-
-- **工程解决方案**：在切块时，用轻量级小模型（如 Qwen-2.5-7B）通读全文，强制在每个切块的最前方嵌入 50 个字的背景说明：
-  > `[文档背景：本文档来自特斯拉 2024 年财报，本节讨论能源存储业务]`  
-  > *"第三季度，由于市场竞争加剧，该业务的毛利率同比下滑了 4.2%..."*
-- **效果**：检索召回率直接拉升 30% 以上，彻底根治代词指代丢失。
+- **Contextual Chunking（上下文感知切分）**：切块时用小模型给每个切片头部注入 50~100 字文档背景，解决“代词指代丢失”问题，召回率提升 30% 以上。
 
 ---
 
 ## 模块四：Coding Agent 与 GUI 操作底层工程
 
-为什么全球最强的通用 Agent（Manus、OpenClaw、Claude Code、Cursor）底层全都在**写代码、跑终端**？
-
 ### 4.1 代码编辑工具：为什么行号定位是灾难，必须用唯一子串匹配？
 
-初级工程师做代码 Agent，喜欢让大模型输出行号：`在第 45 行把变量 x 改为 y`。
-- **灾难原因**：模型在第 10 行加了一行代码，导致后续所有原定行号全部下移（行号漂移，Line Drift），接下来修改的代码全部错位。
+初级工程师做代码 Agent，喜欢让大模型输出行号：`在第 45 行把变量 x 改为 y`。这会导致严重的**行号漂移（Line Drift）**。
 - **工业级解法：Search-and-Replace 块（块级原位替换）**：
-
-```text
-<<<<<<< SEARCH
-def get_user_status(user_id):
-    return "active"
-=======
-def get_user_status(user_id):
-    user = db.find(user_id)
-    return user.status if user else "not_found"
->>>>>>> REPLACE
-```
-底层脚本通过在文件全文中搜索唯一匹配的代码块执行替换，就算文件增删了 1000 行，也能精准手术式定位。
-
----
-
-### 4.2 GUI 视觉定位（Grounding）：大模型如何看懂屏幕？
-
-当 Agent 操作浏览器、电脑桌面或手机 App 时，底层有两种主流定位路径：
-
-```
-方案 A: Set-of-Mark (SoM) 图像打标流
-[屏幕截屏] ──> [OpenCV / 控件识别模型] ──> 在按钮上画半透明红框并标号 [1] [2] [3]
-          ──> 送给视觉大模型 (VLM) ──> 模型输出: "点击数字 [2] 对应的搜索框"
-
-方案 B: Accessibility Tree (无障碍语义树) 纯文本流
-[网页或移动端系统] ──> 导出无障碍辅助树 (去掉所有无用样式，只保留核心结构)
-                   ──> 转换成极简文本:
-                       - <button id="login" coord="450,230">登录</button>
-                   ──> 送给大模型 ──> 模型输出: "click(450, 230)"
-```
-
-- **PM 选型指南**：网页端首选 **方案 B**（省 Token、速度快、精度 100%）；遇到 Canvas 画布、3D 游戏或无源码的旧软件，被迫降级采用 **方案 A**。
+  ```text
+  <<<<<<< SEARCH
+  def get_user_status(user_id):
+      return "active"
+  =======
+  def get_user_status(user_id):
+      user = db.find(user_id)
+      return user.status if user else "not_found"
+  >>>>>>> REPLACE
+  ```
+  通过在全文中搜索唯一的原始代码块进行替换，即使文件增删了 1000 行，也能精准手术式定位。
 
 ---
 
 ## 模块五：模型后训练（Post-Training）技术栈：SFT 与强化学习
 
-很多产品经理以为做模型就是“微调一下”。在工业界，后训练有一套极其严谨的科学分工。
-
-### 5.1 通俗拆解：预训练、SFT 与强化学习
-
 ```
 1. 预训练 (Pre-training)
-   目标: 通读全人类几百 TB 的互联网文本，学会语言规律与世界通识。
-   形象比喻: 饱读诗书，但不懂规矩，你问他一句他只知道顺着文字往下胡乱接龙的书呆子。
+   目标: 通读全人类互联网文本，成为“什么都会接龙的书呆子”。
 
 2. 监督微调 (SFT, Supervised Fine-Tuning)
-   目标: 给它 1 万条高质量标准问答/工具调用模板，学习对话礼仪与输出格式。
-   形象比喻: 上岗培训，发了一本《客服标准化话术手册》，教他什么情况下输出什么格式。
-   技术细节: 训练时采用 Loss Masking（只给答案打分，不给题目打分）。
+   目标: 给它 1 万条高质量标准问答/工具调用模板，进行“客服上岗培训”。
+   技术细节: 采用 Loss Masking（只给答案算分，不给题目算分）。
 
 3. 强化学习 (RL, Reinforcement Learning)
-   目标: 不给标准答案，只给胜负规则（考官与沙箱），让它自己做成千上万次探索。
-   形象比喻: 驾校练车，教练坐在副驾不说话，开进坑里扣分，顺畅停入车库给糖吃。
+   目标: 丢进具有确定性验证器（编译器/沙箱）的考场，自己探索试错寻优。
+   DeepSeek-R1 秘诀: RLVR（以代码/数学确定性结果为裁判）+ GRPO（摒弃庞大的 Critic 模型，让 8 个回答同场竞技卷相对得分）。
 ```
 
 ---
 
-### 5.2 RLVR 与 DeepSeek-R1 的核心秘密：GRPO 算法
+## 模块六：Agent 工程开发实战：框架选型、状态机编程与生产闭环
 
-为什么过去的强化学习很慢很难训，而 2025 年以 DeepSeek-R1 为代表的推理模型突然爆发？
+这是所有想亲手开发 Agent 的技术人员和技术 PM 必须掌握的**落地实战模块**。
 
-#### 核心秘密 1：可验证奖励（RLVR，Reinforcement Learning with Verified Rewards）
-- **传统写散文/写诗**：好不好看必须靠人类专家主观打分，容易产生偏见和讨好评委（Reward Hacking）。
-- **数学与代码 Agent**：好不好有**冷酷无情的编译器当裁判**！代码跑通了测试用例，奖励就是 +1；报错崩溃，奖励就是 -1。大模型通过上百万次疯狂试错，自主学会了长链条规划与自我纠错（`<think>` 机制的本质）。
+### 6.1 主流开发框架横向技术选型
 
-#### 核心秘密 2：GRPO 彻底丢弃了“打分员模型（Critic）”
-传统强化学习算法（PPO）需要两个巨大的模型常驻显存：一个负责做题（Actor），一个负责打分估计（Critic），显存开销极大。  
-**GRPO（群组相对策略优化）的优雅解法**：  
-根本不需要打分模型！针对一道题，让当前模型一口气生成 8 条不同的解答路径。计算这 8 条路径的平均得分，哪一条比平均水平好就奖励，比平均水平差就惩罚。**训练显存直接砍掉一半，训练吞吐提升 3 倍！**
+不要听到 Agent 就无脑上 LangChain，现代工业界有一套清晰的技术选型谱系：
+
+```
+                    ┌────────────────────────┐
+                    │      任务复杂度评估    │
+                    └───────────┬────────────┘
+                                │
+        ┌───────────────────────┴───────────────────────┐
+        ▼                                               ▼
+简单线性/单 Agent 自由探索                       复合分支/多角色/高可靠生产业务
+【原生手写 While 循环 或 OpenAI Swarm】          【状态图框架: LangGraph】
+- 零框架心智负担                                 - 严格图状态机 (StateGraph)
+- 适合 < 5 步的轻量助手                           - 支持检查点持久化 (Time-travel)
+- 成本和排查最透明                               - 原生支持人在回路 (Human-in-the-Loop)
+```
+
+| 框架 | 核心机制 | 致命缺陷 / 局限 | 推荐使用场景 |
+|:---|:---|:---|:---|
+| **原生手写 (Native Loop)** | 一个 Python While 循环 + 原生 API | 状态全靠自己管，缺乏现成的回滚与打断机制 | 极简原型验证、延迟极致敏感场景 |
+| **LangChain (早期 AgentExecutor)** | 黑盒 ReAct 驱动 | 极度黑盒，死循环难以中断，生产调试极其痛苦（官方已废弃） | **坚决不要在生产环境使用** |
+| **LangGraph (当前工业标准)** | 基于 Pregel 算法的**有向图状态机** | 有一定的学习曲线，概念较多 | **复杂企业业务、带审批流、需要故障恢复的严谨 Agent** |
+| **CrewAI / AutoGen** | 拟人化角色扮演（Role-playing）多 Agent 协作 | 极其容易在 Agent 之间互相吹捧扯皮，Token 消耗失控 | 创意策划、头脑风暴、科研仿真 |
+
+---
+
+### 6.2 现代 Agent 的核心范式：基于状态机（StateGraph）编程
+
+生产级 Agent 不是一个自由放飞的 Prompt，而是一个**有限状态机（Finite State Machine, FSM）**。
+
+```mermaid
+stateDiagram-v2
+    [*] --> LLM_Node: 用户输入
+    LLM_Node --> Condition_Router: 模型产生输出
+    Condition_Router --> Action_Tool_Node: 存在 tool_calls (需要调工具)
+    Condition_Router --> Human_Review_Node: 遇到高危操作 (转账/删库)
+    Condition_Router --> [*]: 产生最终答案 (结束任务)
+    
+    Action_Tool_Node --> LLM_Node: 工具执行完毕，塞回结果重新思考
+    Human_Review_Node --> Action_Tool_Node: 人工在界面点击【批准】
+    Human_Review_Node --> [*]: 人工点击【驳回并终止】
+```
+
+---
+
+### 6.3 生产级代码实操：用 LangGraph 编写带状态机与人工审核的 Agent
+
+以下展示当今工业级 Agent 最标准的开发范式（Python + LangGraph）：
+
+```python
+import os
+from typing import TypedDict, Annotated, Sequence
+from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage
+from langchain_openai import ChatOpenAI
+from langchain_core.tools import tool
+from langgraph.graph import StateGraph, END
+from langgraph.graph.message import add_messages
+from langgraph.checkpoint.memory import MemorySaver
+
+# -------------------------------------------------------------
+# 1. 定义全局状态 (AgentState)
+# -------------------------------------------------------------
+class AgentState(TypedDict):
+    # add_messages 会在状态更新时执行追加 (Append-only)，保持历史连贯
+    messages: Annotated[Sequence[BaseMessage], add_messages]
+    require_human_approval: bool  # 是否触发人工审批标记
+
+# -------------------------------------------------------------
+# 2. 定义高精度工具 (使用 Pydantic 类型约束)
+# -------------------------------------------------------------
+@tool
+def query_flight_status(flight_no: str) -> str:
+    """根据航班号查询当前起降状态与延误时间"""
+    return f"航班 {flight_no} 当前延误 45 分钟，前序航班已起飞。"
+
+@tool
+def cancel_flight_ticket(ticket_id: str, refund_amount: float) -> str:
+    """【高危操作】取消机票并向用户退还指定金额款项"""
+    return f"退票成功！凭证号: REF_{ticket_id}，已原路退回 {refund_amount} 元。"
+
+tools = [query_flight_status, cancel_flight_ticket]
+model = ChatOpenAI(model="gpt-4o", temperature=0).bind_tools(tools)
+
+# -------------------------------------------------------------
+# 3. 编写图节点逻辑 (Nodes)
+# -------------------------------------------------------------
+def call_model_node(state: AgentState):
+    """思考节点: 调用大模型进行下一步规划"""
+    response = model.invoke(state["messages"])
+    
+    # 业务护栏拦截: 如果模型试图调用'退票退款'工具，强制打上人工审核标记
+    require_approval = False
+    if response.tool_calls:
+        for tc in response.tool_calls:
+            if tc["name"] == "cancel_flight_ticket":
+                require_approval = True
+                
+    return {
+        "messages": [response],
+        "require_human_approval": require_approval
+    }
+
+def tool_execution_node(state: AgentState):
+    """执行节点: 真正运行 Python 工具代码"""
+    last_msg = state["messages"][-1]
+    results = []
+    
+    for tool_call in last_msg.tool_calls:
+        # 工具分发执行 (Harness 动作)
+        if tool_call["name"] == "query_flight_status":
+            res = query_flight_status.invoke(tool_call["args"])
+        elif tool_call["name"] == "cancel_flight_ticket":
+            res = cancel_flight_ticket.invoke(tool_call["args"])
+        else:
+            res = "Error: 未知工具"
+            
+        results.append(ToolMessage(content=str(res), tool_call_id=tool_call["id"]))
+        
+    return {"messages": results, "require_human_approval": False}
+
+# -------------------------------------------------------------
+# 4. 编写条件路由边 (Conditional Edges)
+# -------------------------------------------------------------
+def route_next_step(state: AgentState):
+    """决定下一步走哪个分支"""
+    last_msg = state["messages"][-1]
+    
+    # 如果没有工具调用，说明给出了最终自然语言回复，流程结束
+    if not hasattr(last_msg, "tool_calls") or not last_msg.tool_calls:
+        return END
+        
+    # 如果触发了高危工具，路由到中断等待人工介入
+    if state.get("require_human_approval"):
+        return "human_approval_checkpoint"
+        
+    return "execute_tools"
+
+# -------------------------------------------------------------
+# 5. 编排图结构并注入检查点记忆
+# -------------------------------------------------------------
+workflow = StateGraph(AgentState)
+
+# 注册节点
+workflow.add_node("agent", call_model_node)
+workflow.add_node("execute_tools", tool_execution_node)
+
+# 设置入口与连线
+workflow.set_entry_point("agent")
+workflow.add_conditional_edges(
+    "agent",
+    route_next_step,
+    {
+        "execute_tools": "execute_tools",
+        "human_approval_checkpoint": END,  # 中断挂起，等待人工信号
+        END: END
+    }
+)
+workflow.add_edge("execute_tools", "agent")  # 工具执行完回传给模型继续思考
+
+# 关键：注入持久化检查点 (Checkpointer)
+# 允许系统将状态持久化到 SQLite/PostgreSQL，实现断点恢复与会话溯源
+checkpointer = MemorySaver()
+app = workflow.compile(checkpointer=checkpointer)
+```
+
+---
+
+### 6.4 调试与可观测性（Observability）：用 Langfuse 捕获全链路
+
+在本地开发 Agent 时，千万不要对着控制台 `print()` 盲调。你必须接入工业级可观测性平台（如 **Langfuse** 或 **Arize Phoenix**）。
+
+```
+                                  Langfuse 链路追踪控制台
+┌────────────────────────────────────────────────────────────────────────┐
+│ Trace: "用户办理 CA1501 航班退票" (耗时: 3.2s, 消耗: 2450 Tokens, 成本: $0.012) │
+│ ├── 1. Node: agent (LLM 调用 gpt-4o) ──────────── 850ms | 1200 Tokens  │
+│ │   └── Thought: 用户需要查询航班并退票，先调 query_flight_status        │
+│ ├── 2. Tool: query_flight_status(flight_no='CA1501') ── 120ms (命中缓存) │
+│ ├── 3. Node: agent (LLM 二次调用思考) ────────── 910ms | 1100 Tokens  │
+│ │   └── Thought: 确认延误符合退票标准，准备调用 cancel_flight_ticket    │
+│ └── 4. Guardrail: 触发高危拦截中断 ── 人工在后台点击【批准】              │
+└────────────────────────────────────────────────────────────────────────┘
+```
+- **核心开发价值**：
+  1. **捕获每一步的完整 Prompt 镜像**：看清楚到底是 System Prompt 没写好，还是工具入参抽错了；
+  2. **定位延迟瓶颈**：一秒看出是模型生成慢，还是外部查库慢；
+  3. **一键转入评测集（Dataset）**：发现线上 Badcase 时，一键将其标记并导出为自动化回归测试用例。
+
+---
+
+### 6.5 服务端高并发与流式响应（FastAPI + SSE + Redis）部署架构
+
+把 Agent 变成一个商业化可用的 SaaS 服务，后端架构通常包含以下四层：
+
+```
+                      ┌──────────────────────────┐
+                      │    前端 Web / App 客户端 │
+                      └─────────────┬────────────┘
+                                    │ HTTP POST 发起任务
+                                    │ SSE (Server-Sent Events) 双向流式打字机
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ FastAPI 网关接入层                                                     │
+│ - 鉴权与租户频控 (Rate Limiting)                                       │
+│ - 生成全局唯一 Session_ID 和 Thread_ID                                  │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ 异步任务入队
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ 分布式任务调度与状态层                                                 │
+│ ├─ Redis / Celery: 异步执行长程 Agent 任务，防止 HTTP 30 秒超时        │
+│ └─ PostgreSQL / SQLite: 记录 LangGraph State 检查点快照                │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ 调用大模型与工具
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│ 执行沙箱与外部生态                                                     │
+│ - vLLM / OpenAI API (大模型推理)                                       │
+│ - Docker / gVisor 沙箱 (执行代码与 Bash)                                │
+│ - 业务数据库 (只读从库)                                                 │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
