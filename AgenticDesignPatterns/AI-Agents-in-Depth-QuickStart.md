@@ -2,7 +2,10 @@
 
 > **本书作者**：李博杰（Pine AI 联合创始人兼首席架构师，前微软亚洲研究院研究员，中国科学技术大学博士）  
 > **核心定位**：专为**懂技术的 AI 产品经理（Technical PM）、系统架构师与技术负责人**编写。  
-> **组织架构**：分为两大独立篇章——**【第一篇·技术底层科普】** 拆解代码、协议、算法与系统实现；**【第二篇·产品架构与业务落地】** 拆解业务建模、交互体验、成本控制与评测飞轮。
+> **设计目标**：**不看原书也能建立从代码、协议、算法到业务架构、成本核算、评测指标的完整认知。**  
+> **篇章结构**：
+> - **【第一篇 · 技术底层科普】**：拆解大模型物理运行机制、KV Cache、Function Calling、MCP、RAG 向量算法、Coding Agent 与强化学习底层，用**生动比喻 + 系统时序图 + 真实代码**软化晦涩概念。
+> - **【第二篇 · 产品架构与业务落地】**：拆解业务决策树、Skills 渐进式披露、状态栏模式、记忆治理 PR 闭环、人在回路（HITL）、安全防御与 20 条 PRD 自查清单。
 
 ---
 
@@ -10,106 +13,92 @@
 
 ---
 
-## 模块一：大模型 API、KV Cache 与 Token 经济学底层
+## 模块一：大模型底层物理运行机制：无状态、分词与 KV Cache
 
-很多产品经理以为大模型交互像聊天软件（微信 WebSocket 长连接），实际上现代商业大模型（OpenAI, Anthropic, DeepSeek）提供的云端推理接口在网络传输层**全都是无状态的 HTTP REST API（或 SSE 流式响应）**。
+很多产品经理以为大模型像微信聊天一样是一个常驻的会话，或者像脑电波一样可以直接“记忆”。理解 Agent 的第一步，是**击碎对大模型的拟人化幻想，还原其作为物理计算系统的真实面目**。
 
-### 1.1 真实的 API 请求 Payload 结构
+### 1.1 一个直观的比喻：“失忆的天才外科医生”
 
-在底层，每一次与大模型交互，SDK 都要把整段历史完整打包成一个 JSON 发送出去：
+大模型在物理上是一个**绝对无状态的纯数学函数**：
 
-```json
-{
-  "model": "deepseek-chat",
-  "messages": [
-    {
-      "role": "system",
-      "content": "你是一个严谨的退票处理 Agent。遇到不确定的订单号必须使用 query_order 工具查询。"
-    },
-    {
-      "role": "user",
-      "content": "帮我查一下昨天订的上海到北京的高铁票，能退吗？"
-    },
-    {
-      "role": "assistant",
-      "content": null,
-      "tool_calls": [
-        {
-          "id": "call_123456",
-          "type": "function",
-          "function": {
-            "name": "query_order",
-            "arguments": "{\"date\":\"yesterday\",\"from\":\"上海\",\"to\":\"北京\"}"
-          }
-        }
-      ]
-    },
-    {
-      "role": "tool",
-      "tool_call_id": "call_123456",
-      "content": "{\"order_id\":\"G102_20261027\",\"status\":\"PAID\",\"refundable\":true,\"fee\":0.05}"
-    }
-  ],
-  "tools": [
-    {
-      "type": "function",
-      "function": {
-        "name": "query_order",
-        "description": "根据起止城市与日期查询用户车票订单",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "from": { "type": "string" },
-            "to": { "type": "string" },
-            "date": { "type": "string" }
-          },
-          "required": ["from", "to", "date"]
-        }
-      }
-    }
-  ],
-  "temperature": 0.1
-}
+$$\text{Next\_Token} = f(\text{Context})$$
+
+你可以把大模型想象成一位**医术极高、但只要眨一下眼睛就会彻底失忆的天才外科医生**：
+1. **第一轮交互**：你递给他病历本（`System` 提示词 + `User` 病情描述），他看了之后做出判断（`Assistant` 动作）：“准备 1 号手术刀”。
+2. **第二轮交互**：护士把 1 号手术刀递给他（`Tool` 执行结果）。此时医生**已经把刚才发生的事情忘得一干二净**！
+3. **唯一的解决办法**：护士必须把病历本、刚才医生说的话、护士递刀的动作记录**从头到尾一字不差地重新打印一份，塞回医生手里**。医生再次从第一个字读起，才能决定下一步是“切开皮肤”。
+
+**这就是 Agent 运行时的残酷真相**：每一次多步思考、每一次工具调用，系统都在背后把历史以来的全部消息**全量重拼、打包成巨大 JSON 再次网络请求大模型**。
+
+```
+第 1 轮请求: [System] + [User 问题] ───────────────────────────> 模型决定调工具 A
+第 2 轮请求: [System] + [User 问题] + [Assistant 调A] + [Tool A返回] ──> 模型决定调工具 B
+第 3 轮请求: [System] + [User] + [Assistant 调A] + [Tool A] + [Assistant 调B] + [Tool B] ──> 最终回答
 ```
 
-- **角色定义**：
-  - `system`：硬编码的规则、设定、输出约束。
-  - `user`：真实用户的提问输入。
-  - `assistant`：大模型的回复（如果触发工具，内容为 `tool_calls` 结构化对象，`content` 为空）。
-  - `tool`：外部工程环境（Harness）执行完真实工具代码后，将返回值作为该角色消息塞回历史。
+---
+
+### 1.2 从文字到显存：Token 分词与 Prefill / Decode 两阶段
+
+一个用户提问发送给大模型，GPU 芯片内部到底经历了什么？
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as 客户端 / Harness
+    participant Tokenizer as 分词器 (BPE)
+    participant Prefill as GPU Prefill 阶段 (首字计算)
+    participant Decode as GPU Decode 阶段 (逐字生成)
+    participant KVCache as 显存 KV Cache 池
+
+    Client->>Tokenizer: 发送原始文本字符串
+    Tokenizer->>Tokenizer: 拆分为 Token ID 序列 (数字数组)
+    Tokenizer->>Prefill: 送入显卡进行矩阵并行乘法
+    Prefill->>KVCache: 将历史 Token 计算出的 Key/Value 矩阵常驻显存
+    Prefill-->>Client: 输出第 1 个字符 (产生 TTFT 延迟)
+    loop 逐 Token 自回归循环
+        Decode->>KVCache: 读取历史上下文的注意力缓存
+        Decode->>Decode: 仅对当前最新 1 个 Token 计算 Attention
+        Decode->>KVCache: 追加写入新 Token 的 KV 缓存
+        Decode-->>Client: 流式吐出下一个字 (SSE 推送)
+    end
+```
+
+#### 为什么会有“首字延迟（TTFT）”和“生成流式速度”的区别？
+- **Prefill 阶段（计算输入）**：GPU 一口气把用户传来的 10,000 个 Token 全部并行算一遍。输入越长，这一步耗时越久。这就是为什么 Agent 跑了十几轮后，**你提问后往往要傻等 2~3 秒才出第一个字（Time to First Token，TTFT）**。
+- **Decode 阶段（自回归吐字）**：一旦首字出来了，后面每个字的生成是线性的，只需复用前面的计算结果，生成速度非常稳定（比如每秒 50~100 字）。
 
 ---
 
-### 1.2 KV Cache 与 Prompt Cache 底层原理与内存计算
+### 1.3 KV Cache 与 Prompt Cache：为什么多一个空格会烧掉公司几万块？
 
-为什么 Transformer 模型的输入越长推理越慢、成本越高？
+#### 什么是 KV Cache？
+在 Transformer 计算注意力时，每个词都需要与前面的所有词计算相关性。为了不重复计算，系统在 GPU 显存中开辟了一片内存，把历史词汇的 Key 向量和 Value 向量缓存起来，这就是 **KV Cache**。
+- **显存消耗公式**：
+  $$\text{KV Cache 显存} = 2 \times 2 \times n_{\text{layers}} \times n_{\text{heads}} \times d_{\text{head}} \times \text{序列长度} \times \text{并发数}$$
+  对于 70B 模型，上下文达到 32K 时，**单次请求仅缓存就需要占用 10GB 左右的显存**。
 
-#### 自注意力机制与 KV 缓存机制
-在自回归生成下一个 Token 时，模型需要计算当前 Token 与历史上所有 Token 之间的注意力（Attention）。为了避免每生成一个新词就把前面的词全算一遍，系统在显存中开辟了一片内存，把历史 Token 计算好的 Key 矩阵和 Value 矩阵缓存下来，称为 **KV Cache**。
+#### 什么是 Prompt Cache（前缀树缓存）？
+为了省钱，大模型厂商开发了 Prompt Cache：把常用的前缀（例如 System Prompt + 基础工具定义）常驻显存，后续请求只要前缀一致，直接复用！
+- **命中机制（Radix Tree 基数树匹配）**：
+  必须是**从第 1 个 Token 开始完全一模一样**。
 
-- **显存占用估算公式**：
-  $$\text{KV Cache 显存 (Bytes)} = 2 \times 2 \times n_{\text{layers}} \times n_{\text{heads}} \times d_{\text{head}} \times n_{\text{ctx}} \times \text{BatchSize}$$
-  *(其中第一个 2 代表 K 和 V 两个矩阵，第二个 2 代表 FP16 占 2 个字节)*。  
-  对于一个 70B 模型（80 层，上下文 32K），一个用户的单次交互仅 KV Cache 就要占用近 **10GB 显存**！
+```
+标准命中场景:
+[System Prompt 5000字] + [工具清单 3000字] + [用户提问 10字] ──> 8000字命中缓存！享受 1 折价格！
 
-#### Prompt Cache（前缀树缓存）机制
-为了降低成本，云厂商（Anthropic, OpenAI, DeepSeek）引入了 **Prompt Cache**：在服务器集群层使用 Radix Tree（基数树）跟踪公共前缀。
-- **匹配规则**：必须是**从第 1 个 Token 开始的严格连续前缀匹配**。只要前面有一个字符不一致，后续的所有缓存全部作废。
-- **经济效益对比**：
+翻车场景 (动态加时间戳):
+[当前时间: 15:30:02] + [System Prompt 5000字] + [工具清单] ──> 第 1 个词就变了！全部 8000 字缓存击穿！按原价扣费！
+```
 
-| 类型 | 计费价格（以常见模型为例） | 首字延迟（TTFT） | 命中条件 |
-|:---|:---|:---|:---|
-| **Cache Miss（冷启动）** | 100% 全额计费 | 800ms ~ 2500ms | 前缀发生任何改动 |
-| **Cache Hit（命中前缀）** | 仅收 10% ~ 25% 费用 | 100ms ~ 300ms | 前缀从第 1 字符起完全一致 |
-
-> 💥 **技术致命坑点**：
-> 如果工程师在 System Prompt 中加入动态变量（如：`当前系统时间是：2026-10-28 15:30:02`），或者在每次请求时打乱 `tools` 列表的顺序，**将导致缓存永远命中失败，云账单直接飙升 4 到 10 倍！**
+> 💡 **给 PM 的技术戒律**：
+> 系统提示词和工具定义必须像焊死在电路板上一样保持**字节级完全静止**。任何动态参数（时间、地理位置、用户账号），统统放到历史消息列表的最末尾传入！
 
 ---
 
-### 1.3 最小 Agent 运行时（The ReAct Loop）实现代码
+### 1.4 最小 Agent 运行时（The ReAct Loop）30 行代码骨架
 
-Agent 的核心不是什么复杂的神秘黑盒，最基础的原型用 30 行 Python 代码即可实现：
+抛开 LangChain、AutoGen 等复杂框架的花哨外衣，工业级 Agent 的核心循环本质上就是一个 `while` 循环：
 
 ```python
 import json
@@ -117,231 +106,265 @@ from openai import OpenAI
 
 client = OpenAI()
 
-def run_agent_loop(user_query: str, system_prompt: str, tools_schema: list, tool_map: dict):
-    # 1. 初始化上下文消息列表
+def run_react_agent(user_prompt: str, system_prompt: str, tools_schema: list, tool_map: dict):
+    # 1. 组装初始上下文
     messages = [
         {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_query}
+        {"role": "user", "content": user_prompt}
     ]
     
-    max_steps = 10  # 避免死循环熔断保护
-    for step in range(max_steps):
-        # 2. 带着全量上下文请求大模型
+    # 2. 启动 ReAct 闭环（防死循环上限 10 步）
+    for step in range(10):
+        # 2.1 呼叫大模型进行推理决策
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
             tools=tools_schema,
             temperature=0.0
         )
-        msg = response.choices[0].message
-        messages.append(msg) # 将模型的思考/动作记录写入历史
-        
-        # 3. 判断是否需要调用工具
-        if not msg.tool_calls:
-            # 没有工具调用，说明给出了最终答案，退出循环
-            return msg.content
-            
-        # 4. 执行工具调用（Harness 层动作）
-        for tool_call in msg.tool_calls:
+        assistant_msg = response.choices[0].message
+        messages.append(assistant_msg)  # 把模型的输出立刻追加进历史
+
+        # 2.2 判断是否达到终止状态（没有触发任何工具调用）
+        if not assistant_msg.tool_calls:
+            return assistant_msg.content  # 任务完成，返回最终自然语言结论
+
+        # 2.3 触发工具调用：Harness 层代表模型向物理世界出手
+        for tool_call in assistant_msg.tool_calls:
             func_name = tool_call.function.name
             args = json.loads(tool_call.function.arguments)
             
-            # 本地函数执行
-            tool_fn = tool_map.get(func_name)
-            tool_result = tool_fn(**args) if tool_fn else f"Error: Tool {func_name} not found"
+            # 执行底层 Python 函数（比如查库、请求外部 API）
+            executor = tool_map.get(func_name)
+            result = executor(**args) if executor else f"Error: 未找到工具 {func_name}"
             
-            # 5. 将观察结果（Observation）作为 'tool' 角色塞回上下文
+            # 2.4 把工具执行的观察结果（Observation）作为 'tool' 角色塞回上下文
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,
-                "content": json.dumps(tool_result, ensure_ascii=False)
+                "content": json.dumps(result, ensure_ascii=False)
             })
-            
-    return "Error: 达到最大步数限制仍未完成任务。"
+
+    return "Error: 超过步数熔断上限，可能陷入了死循环。"
 ```
 
 ---
 
-## 模块二：工具调用（Function Calling）与 MCP 协议机制
+## 模块二：工具调用（Function Calling）、MCP 与沙箱工程
 
-### 2.1 大模型是如何“知道”要调工具的？（Grammar 约束解码）
+### 2.1 大模型到底怎么学会调工具的？（Grammar 约束解码）
 
-大模型本质上只能做一件事：**根据前文预测下一个 Token 的概率分布**。那么它为什么能输出完美合法的 JSON 格式工具调用？
+很多产品经理以为大模型是“像写代码一样，在内存里直接调用了那个函数”。
+**完全不是！模型本质上只能吐字（生成文本）。**
 
-1. **特殊 Token 标记（Special Tokens）**：
-   在模型预训练和微调（SFT）阶段，厂商加入了类似 `<tool_call>` 和 `</tool_call>` 的特殊标记。当模型判定需要外部信息时，它会优先生成这些标记。
-2. **约束解码（Grammar-based Constrained Decoding）**：
-   在推理引擎（如 vLLM、llama.cpp 的 GBNF）底层，推理服务会读取传入的 JSON Schema。在采样每个 Token 时，系统动态构建语法状态机（BNF Grammar），**强行将所有不符合 JSON 语法的 Token 概率置为 0**（Mask 掉）。这样即便模型“想”生成乱码，输出也 100% 是一段合法 JSON。
-
----
-
-### 2.2 MCP（Model Context Protocol）协议规范
-
-传统做法是为每个 Agent 编写特定的 API 客户端代码。Anthropic 推出的 **MCP（模型上下文协议）** 正在成为工具生态的“USB 接口”。
-
-- **底层通信**：基于 **JSON-RPC 2.0** 规范，通过标准输入输出（Stdio）或 HTTP-SSE 通信。
-- **交互四步握手**：
-  1. `initialize`：客户端与工具服务端交换能力边界与协议版本。
-  2. `tools/list`：服务端向 Agent 声明可用工具列表及其输入参数 JSON Schema。
-  3. `tools/call`：Agent 向 MCP 服务端发送执行请求：
-     ```json
-     {
-       "jsonrpc": "2.0",
-       "method": "tools/call",
-       "params": {
-         "name": "fetch_weather",
-         "arguments": { "city": "Beijing" }
-       },
-       "id": 1
-     }
-     ```
-  4. 响应返回：服务端执行并返回文本、图片或结构化嵌入。
+#### 真实的技术全貌：
+1. **模型输出特殊标记**：模型在训练中学会了：当缺少信息时，不要直接说人话，而是输出一个符合约定的标记（如 `<tool_call>`）加上一段 JSON 字符串。
+2. **Grammar 约束解码（GBNF 状态机）**：
+   为什么模型输出的参数绝对不会少个括号或漏个逗号？
+   推理引擎（vLLM / llama.cpp）把你的 JSON Schema 编译成了一张**语法有限状态机（BNF Grammar）**。模型每生成一个字符，状态机就会**强行将所有不符合 JSON 语法的字符概率直接抹为 0**！模型哪怕想胡说八道，物理上也只能从合法的 JSON 字符中挑选下一个 Token。
+3. **框架拦截与执行**：推理框架在接收流式输出时，一旦检测到闭合的 JSON，立即暂停大模型生成，由外部工程代码（Python/Go）拿着参数去调用真实的后端服务，拿到结果后再塞回给大模型。
 
 ---
 
-### 2.3 工具执行沙箱（Sandbox）技术选型
+### 2.2 MCP（Model Context Protocol）协议：AI 时代的 USB 接口
 
-任何允许 Agent 生成并执行代码或 Shell 命令的产品，都面临严重的安全隐患（如提权、反弹 Shell、耗尽内存）：
+在过去，给每个 Agent 挂载工具都要写死一堆适配器代码。2024 年底 Anthropic 开源的 **MCP（模型上下文协议）** 正在统一整个行业。
+
+```mermaid
+flowchart LR
+    subgraph Host[Host: Agent 宿主环境 (Cursor/Claude Desktop/自建系统)]
+        Client[MCP Client]
+    end
+
+    subgraph Server1[MCP Server: 本地开发环境]
+        Tools1[Git 工具 / 本地文件读写 / 终端]
+    end
+
+    subgraph Server2[MCP Server: 企业数据中台]
+        Tools2[飞书多维表格 / Jira / PostgreSQL]
+    end
+
+    Client <==>|JSON-RPC 2.0 (Stdio 标准输入输出)| Server1
+    Client <==>|JSON-RPC 2.0 (HTTP + SSE)| Server2
+```
+
+- **三大核心能力**：
+  1. **Prompts（提示词模版）**：服务端预置的工作流或专家角色。
+  2. **Resources（只读资源）**：类似文件、数据库表，让模型读取背景。
+  3. **Tools（执行工具）**：可执行函数，模型可以传入参数调用。
+- **协议的革命性**：只要企业开发一套“企业 ERP 的 MCP Server”，不管你是用 Claude、Cursor、扣子还是自研 Agent，**一秒即插即用，不用改一行客户端胶水代码**。
+
+---
+
+### 2.3 工具执行沙箱：如何防止 Agent 把服务器删库？
+
+当 Agent 拥有执行 Shell 或 Python 代码的能力时，它就变成了一把双刃剑（比如执行了 `rm -rf /`，或者遭遇提示词注入被黑客操控向外发包）。
 
 ```
+Agent 发起代码执行请求: "python script.py"
+         │
+         ▼
 ┌────────────────────────────────────────────────────────┐
-│                   Agent Harness 进程                    │
-└──────────────────────────┬─────────────────────────────┘
-                           │ gRPC / UNIX Socket
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│ 沙箱容器隔离层                                          │
+│ 沙箱安全治理层                                          │
 │ ┌────────────────────────────────────────────────────┐ │
-│ │ gVisor / Firecracker (轻量级虚拟化内核隔离)           │ │
-│ │ ├─ Cgroups 限制: 内存 <= 512MB, CPU <= 1核         │ │
-│ │ ├─ iptables 防火墙: 默认 DROP，仅放行白名单域名 API   │ │
-│ │ └─ 存储隔离: 临时 tmpfs 挂载，执行完毕即销毁        │ │
+│ │ 1. 命名空间隔离 (PID / Mount / IPC Namespace)       │ │
+│ │    Agent 只能看见专属于它的虚拟文件目录            │ │
+│ ├────────────────────────────────────────────────────┤ │
+│ │ 2. Cgroups 资源硬限制                               │ │
+│ │    限制内存 <= 512MB, CPU <= 1核, 执行超时 <= 15s  │ │
+│ ├────────────────────────────────────────────────────┤ │
+│ │ 3. 网络出站白名单 (iptables / eBPF 过滤)           │ │
+│ │    默认禁止所有外网访问，仅放行指定业务域名         │ │
+│ ├────────────────────────────────────────────────────┤ │
+│ │ 4. 微虚拟机内核隔离 (gVisor / Firecracker)          │ │
+│ │    拦截所有系统调用，即便逃逸也无法触碰宿主机内核   │ │
 │ └────────────────────────────────────────────────────┘ │
 └────────────────────────────────────────────────────────┘
 ```
 
-| 方案 | 启动耗时 | 隔离安全性 | 资源开销 | 适用场景 |
-|:---|:---|:---|:---|:---|
-| **Docker 原生** | 500ms ~ 2s | 弱（共享宿主 Linux 内核，易被逃逸） | 中等 | 内部受信任运维 Agent |
-| **gVisor (runsc)** | 100ms ~ 300ms | 强（在用户态拦截并模拟全部系统调用） | 低 | 云端多租户代码解释器 |
-| **Firecracker (MicroVM)** | 5ms ~ 50ms | 极强（硬件级 KVM 轻量虚拟机） | 极低 | AWS Lambda / 生产级执行引擎 |
+---
+
+## 模块三：检索增强（RAG）与向量检索算法工程通俗解
+
+传统产品文档里常说“做个知识库就是把文档向量化存进向量数据库”。**在工业界，这种简陋的方案准确率通常只有 40%~60%，属于完全不能交付的半成品。**
+
+### 3.1 什么是 Embedding 向量？空间几何直观理解
+
+计算机看不懂“猫”和“狗”，但看得懂数字。
+**Embedding 模型的作用，就是把自然语言映射到几千维的高维数学空间里。**
+
+- **余弦相似度（Cosine Similarity）**：
+  两句话在空间里的向量夹角越小（夹角余弦越接近 1），说明它们**语义越接近**：
+
+$$\cos(\theta) = \frac{\vec{A} \cdot \vec{B}}{\|\vec{A}\| \|\vec{B}\|}$$
+
+- **致命弱点：Bi-Encoder（双编码器）的“相亲简历盲区”**
+  向量检索是分别把 Query 和文档转化成向量。这就像相亲时“只拿双方的个人简历打分”，看不到两个人坐在一起聊天时微妙的“化学反应”（无法理解精确条件、逻辑反转、零件型号）。
 
 ---
 
-## 模块三：检索增强（RAG）与向量检索算法工程
+### 3.2 工业级混合检索：BM25（老中医）+ 向量检索（新潮派）+ RRF
 
-单纯把数据做成向量切片塞给数据库，经常搜不出正确结果。这里给出底层的工程解法。
+为了解决上述问题，工业界必须采用**双路召回 + 重排流水线**：
 
-### 3.1 为什么单一向量检索会翻车？
-
-- **Bi-Encoder（双编码器）缺陷**：文档和 Query 分别独立编码成向量。向量适合泛化语义匹配（搜“小狗”能匹配到“柯基”），但在精确匹配（零件编号、型号如 `iPhone 15 Pro` 与 `iPhone 14 Pro`、布尔条件、代码变量名）上极其脆弱。
-- **BM25 稀疏检索**：基于词频（TF）和逆文档频率（IDF）的高级变体，能够精确匹配专有名词。
-
----
-
-### 3.2 工业级混合检索与 RRF 算法公式
-
-工业级系统的标准实现是：**BM25 + Dense Vector 并行检索，经由 RRF 融合，再交由 Cross-Encoder 精排**。
-
-#### RRF（倒数排名融合，Reciprocal Rank Fusion）公式
-$$RRF\_Score(d \in D) = \sum_{m \in M} \frac{1}{k + r_m(d)}$$
-- $M$：检索方法集合（向量检索、BM25 检索）；
-- $r_m(d)$：文档 $d$ 在该检索结果中的排名次序（从 1 开始）；
-- $k$：常数平滑项（通常取 60）。
-
-```python
-def reciprocal_rank_fusion(dense_ranks: list, sparse_ranks: list, k=60):
-    rrf_score = {}
-    for rank, doc_id in enumerate(dense_ranks, start=1):
-        rrf_score[doc_id] = rrf_score.get(doc_id, 0) + 1.0 / (k + rank)
-    for rank, doc_id in enumerate(sparse_ranks, start=1):
-        rrf_score[doc_id] = rrf_score.get(doc_id, 0) + 1.0 / (k + rank)
+```mermaid
+flowchart TD
+    UserQuery[用户输入: 查iPhone 15 Pro Max 屏幕维修报价] --> Fork{并行分发}
     
-    # 按照综合分倒序排列
-    return sorted(rrf_score.items(), key=lambda x: x[1], reverse=True)
+    Fork --> VectorEngine[向量检索 (Dense Retrieval)<br>捕捉'手机坏了换屏大概多少钱'泛化语义]
+    Fork --> BM25Engine[BM25 词频匹配 (Sparse Retrieval)<br>锁定'iPhone 15 Pro Max'精准型号]
+    
+    VectorEngine --> Top50A[召回候选 Top 50]
+    BM25Engine --> Top50B[召回候选 Top 50]
+    
+    Top50A --> RRF[RRF 算法: 倒数排名融合评分]
+    Top50B --> RRF
+    
+    RRF --> Top20[融合后初筛 Top 20]
+    Top20 --> CrossEncoder[Cross-Encoder 重排模型 (BGE-Reranker)<br>把 Query 和候选逐字拼合进行全注意力交叉比对]
+    CrossEncoder --> Top3[最终精准 Top 3 注入 Agent 上下文]
 ```
 
-#### Cross-Encoder（重排模型）
-把 `Query` 和初筛出来的 `Chunk` 拼接在一起成一句话送入模型进行全注意力计算（例如 BGE-Reranker）。准确率极高，但由于计算复杂度高，通常只对前 20~50 个候选分块重排，取 Top 3~5 传给 Agent 上下文。
+#### RRF（倒数排名融合）公式怎么理解？
+$$RRF\_Score(d) = \sum_{m \in \{\text{向量}, \text{BM25}\}} \frac{1}{60 + \text{在该路检索里的排名}}$$
+- **直观理解**：不管两路检索的分数机制有多大差异（向量分数是 0.85，BM25 分数是 14.2），RRF 只看**排名顺序**。如果一篇文档在两路检索里都排进了前 5，它的分数会成倍暴增，稳稳进入精排。
 
 ---
 
 ### 3.3 Contextual Chunking（上下文感知切分技术）
 
-传统切块直接按 500 字硬切，导致切出来的片段缺乏代词指向（如切块只写着“该公司的营收增长了 20%”，模型根本不知道是哪家公司）。
-- **工程解法**：在文档离线切分阶段，先调用小模型读取整篇文档，为**每一个 Chunk 的头部强制写入一段 50~100 字的上下文说明**：
-  ```markdown
-  [文档背景：本文来自苹果公司 2024 年 Q3 财报，本段讨论服务业务收入]
-  服务业务营收达到 242 亿美元，同比增长 12%...
-  ```
-- **收益**：该切块的 BM25 关键词和 Embedding 语义召回准确率提升 35% 以上。
+很多 RAG 系统搜不出结果，问题出在切块上。
+如果一本书被硬生生按 500 字切开，很多切片会变成这样：
+> *"第三季度，由于市场竞争加剧，该业务的毛利率同比下滑了 4.2%..."*
+
+**模型拿这段话去匹配时根本不知道“该业务”是哪个业务，搜出来也是废话。**
+
+- **工程解决方案**：在切块时，用轻量级小模型（如 Qwen-2.5-7B）通读全文，强制在每个切块的最前方嵌入 50 个字的背景说明：
+  > `[文档背景：本文档来自特斯拉 2024 年财报，本节讨论能源存储业务]`  
+  > *"第三季度，由于市场竞争加剧，该业务的毛利率同比下滑了 4.2%..."*
+- **效果**：检索召回率直接拉升 30% 以上，彻底根治代词指代丢失。
 
 ---
 
-## 模块四：Coding Agent 与 GUI/多模态交互底层工程
+## 模块四：Coding Agent 与 GUI 操作底层工程
 
-### 4.1 代码编辑工具底层实现：全量覆盖 vs Search-and-Replace
+为什么全球最强的通用 Agent（Manus、OpenClaw、Claude Code、Cursor）底层全都在**写代码、跑终端**？
 
-很多初级 Agent 编辑文件的方式是“重新输出整份文件代码”，这在 1000 行的代码库中会导致严重截断和高额 Token 消耗。
+### 4.1 代码编辑工具：为什么行号定位是灾难，必须用唯一子串匹配？
 
-工业级 Coding Agent（如 Claude Code、Aider、Cursor）采用**基于特征定位的精确替换**：
+初级工程师做代码 Agent，喜欢让大模型输出行号：`在第 45 行把变量 x 改为 y`。
+- **灾难原因**：模型在第 10 行加了一行代码，导致后续所有原定行号全部下移（行号漂移，Line Drift），接下来修改的代码全部错位。
+- **工业级解法：Search-and-Replace 块（块级原位替换）**：
 
-```
+```text
 <<<<<<< SEARCH
-def calculate_tax(amount):
-    return amount * 0.1
+def get_user_status(user_id):
+    return "active"
 =======
-def calculate_tax(amount, is_vip=False):
-    rate = 0.05 if is_vip else 0.1
-    return amount * rate
+def get_user_status(user_id):
+    user = db.find(user_id)
+    return user.status if user else "not_found"
 >>>>>>> REPLACE
 ```
-
-- **底层引擎执行逻辑**：
-  1. 读取目标文件；
-  2. 在文件全文中进行连续子字符串唯一性匹配（避免行号因增删变动导致漂移）；
-  3. 若匹配成功且唯一，执行原位替换；
-  4. 若匹配失败（例如空格或换行符不一致），采用模糊匹配（Levenshtein 距离）或借助 AST（抽象语法树）解析定位函数节点进行手术式替换。
+底层脚本通过在文件全文中搜索唯一匹配的代码块执行替换，就算文件增删了 1000 行，也能精准手术式定位。
 
 ---
 
-### 4.2 GUI 视觉定位（Grounding）机制
+### 4.2 GUI 视觉定位（Grounding）：大模型如何看懂屏幕？
 
-Agent 操作网页或手机屏幕时，大模型怎么知道应该点哪里？
+当 Agent 操作浏览器、电脑桌面或手机 App 时，底层有两种主流定位路径：
 
 ```
-原始屏幕截图 (1920x1080)
-      │
-      ├──> 路线 A: Set-of-Mark (SoM)
-      │    通过 OpenCV/YOLO 检测屏幕交互控件，打上带半透明颜色与数字编号标签
-      │    将“打好标签的图”送入多模态模型，模型输出：“点击标签 [12]”
-      │
-      └──> 路线 B: DOM / Accessibility Tree (无障碍树)
-           解析页面的 HTML DOM 或 Android UI Automator XML
-           保留可点击元素坐标与文本描述，转换为文本给模型，输出：“click(selector='#submit-btn')”
+方案 A: Set-of-Mark (SoM) 图像打标流
+[屏幕截屏] ──> [OpenCV / 控件识别模型] ──> 在按钮上画半透明红框并标号 [1] [2] [3]
+          ──> 送给视觉大模型 (VLM) ──> 模型输出: "点击数字 [2] 对应的搜索框"
+
+方案 B: Accessibility Tree (无障碍语义树) 纯文本流
+[网页或移动端系统] ──> 导出无障碍辅助树 (去掉所有无用样式，只保留核心结构)
+                   ──> 转换成极简文本:
+                       - <button id="login" coord="450,230">登录</button>
+                   ──> 送给大模型 ──> 模型输出: "click(450, 230)"
+```
+
+- **PM 选型指南**：网页端首选 **方案 B**（省 Token、速度快、精度 100%）；遇到 Canvas 画布、3D 游戏或无源码的旧软件，被迫降级采用 **方案 A**。
+
+---
+
+## 模块五：模型后训练（Post-Training）技术栈：SFT 与强化学习
+
+很多产品经理以为做模型就是“微调一下”。在工业界，后训练有一套极其严谨的科学分工。
+
+### 5.1 通俗拆解：预训练、SFT 与强化学习
+
+```
+1. 预训练 (Pre-training)
+   目标: 通读全人类几百 TB 的互联网文本，学会语言规律与世界通识。
+   形象比喻: 饱读诗书，但不懂规矩，你问他一句他只知道顺着文字往下胡乱接龙的书呆子。
+
+2. 监督微调 (SFT, Supervised Fine-Tuning)
+   目标: 给它 1 万条高质量标准问答/工具调用模板，学习对话礼仪与输出格式。
+   形象比喻: 上岗培训，发了一本《客服标准化话术手册》，教他什么情况下输出什么格式。
+   技术细节: 训练时采用 Loss Masking（只给答案打分，不给题目打分）。
+
+3. 强化学习 (RL, Reinforcement Learning)
+   目标: 不给标准答案，只给胜负规则（考官与沙箱），让它自己做成千上万次探索。
+   形象比喻: 驾校练车，教练坐在副驾不说话，开进坑里扣分，顺畅停入车库给糖吃。
 ```
 
 ---
 
-## 模块五：后训练（Post-Training）技术栈：SFT、RLVR 与 GRPO
+### 5.2 RLVR 与 DeepSeek-R1 的核心秘密：GRPO 算法
 
-### 5.1 SFT 训练的底层本质（Loss Masking）
+为什么过去的强化学习很慢很难训，而 2025 年以 DeepSeek-R1 为代表的推理模型突然爆发？
 
-很多产品以为微调就是喂“一问一答”。在底层工程中，训练 Agent 的 SFT 数据由多轮消息组成。
-- **技术要点：Loss Masking（损失掩码）**：
-  计算梯度时，系统**只会计算模型输出部分（Assistant 的 Thought 和 Tool Call 参数）的 Cross-Entropy Loss**。用户的输入（User Prompt）和工具执行结果（Tool Result）在计算损失时权重被置为 0。模型仅学会“在给定观察下如何决策”，而不是死记硬背外部输出。
+#### 核心秘密 1：可验证奖励（RLVR，Reinforcement Learning with Verified Rewards）
+- **传统写散文/写诗**：好不好看必须靠人类专家主观打分，容易产生偏见和讨好评委（Reward Hacking）。
+- **数学与代码 Agent**：好不好有**冷酷无情的编译器当裁判**！代码跑通了测试用例，奖励就是 +1；报错崩溃，奖励就是 -1。大模型通过上百万次疯狂试错，自主学会了长链条规划与自我纠错（`<think>` 机制的本质）。
 
----
-
-### 5.2 RLVR 与 GRPO 原理
-
-在 Agent 研发中，**RLVR（基于可验证奖励的强化学习）** 和 **GRPO（群组相对策略优化）** 彻底改变了模型自主推理的边界（如 DeepSeek-R1、OpenAI o1/o3）：
-
-- **RLVR 的条件**：必须存在一个**非 LLM 的外部确定性评判器（Deterministic Verifier）**。
-  - 例如：代码是否跑通了单元测试？SQL 查出的数字是否与数据库真值相等？数学证明最终答案是否等于 42？
-- **GRPO 相比传统 PPO 的工程优势**：
-  - 传统 PPO 需要一个庞大的“价值模型（Critic Model）”占用大量显存；
-  - **GRPO 彻底丢弃了 Critic 模型**：让当前策略针对同一个输入采样 $G$ 个不同的动作轨迹（比如生成 8 种不同的工具调用链），计算这组采样的平均得分与标准差，直接计算相对优势（Advantage），训练吞吐量提升 2~3 倍。
+#### 核心秘密 2：GRPO 彻底丢弃了“打分员模型（Critic）”
+传统强化学习算法（PPO）需要两个巨大的模型常驻显存：一个负责做题（Actor），一个负责打分估计（Critic），显存开销极大。  
+**GRPO（群组相对策略优化）的优雅解法**：  
+根本不需要打分模型！针对一道题，让当前模型一口气生成 8 条不同的解答路径。计算这 8 条路径的平均得分，哪一条比平均水平好就奖励，比平均水平差就惩罚。**训练显存直接砍掉一半，训练吞吐提升 3 倍！**
 
 ---
 
@@ -351,7 +374,7 @@ Agent 操作网页或手机屏幕时，大模型怎么知道应该点哪里？
 
 ## 模块一：业务建模与心智模型
 
-### 1.1 业务场景选型：什么时候做工作流，什么时候做自主 Agent？
+### 1.1 业务场景选型：什么时候做工作流？什么时候做自主 Agent？
 
 作为技术 PM，拿到业务需求后的第一件事不是画多 Agent 架构图，而是通过决策树判断技术复杂度：
 
