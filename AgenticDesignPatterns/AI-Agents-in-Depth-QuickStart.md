@@ -151,8 +151,19 @@
    - 代码是人类最精确的形式化工具：算账用 Python 算（准确率 100%）、调接口写脚本（替代几十轮自然语言交互）。
    - 软件工程几十年现成的基建（Linter、编译器报错、单元测试、Git 回滚）提供了世界上最完美的 Harness。
 2. **Search-and-Replace 唯一子串原位替换**
-   - 坚决杜绝依赖“行号”进行编辑（行号漂移灾难）；通过搜索唯一的旧代码块特征进行文本手术式替换。
-
+   - **行号漂移灾难**：让模型输出“在第 45 行修改”不可靠，前面的任何编辑都会导致后续行号错位；全量重写大文件又极耗 Token 且易截断。
+   - **工业级标准（Aider / Claude Code 范式）**：让模型仅输出具备唯一性的局部修改块：
+     ```text
+     <<<<<<< SEARCH
+     def calculate_tax(amount):
+         return amount * 0.1
+     =======
+     def calculate_tax(amount, is_vip=False):
+         rate = 0.05 if is_vip else 0.1
+         return amount * rate
+     >>>>>>> REPLACE
+     ```
+   - 底层 Harness 在目标文件中全文搜索 `SEARCH` 块，命中且唯一则原位替换为 `REPLACE` 块；若未命中则降级为 Levenshtein 模糊匹配或 AST（抽象语法树）节点定位。
 ### 【产品架构与落地】
 1. **代码生成 vs 生成模型边界**：
    - 工业零件、带精细排版的 PPT、报表图表走代码生成（精准、可调试）；
