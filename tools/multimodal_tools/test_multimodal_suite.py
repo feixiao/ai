@@ -441,6 +441,19 @@ class TestSampleDataFixtures(unittest.TestCase):
         self.assertEqual(manifest_data["model_id"], "Qwen2.5-VL-3B-Instruct")
         self.assertTrue(manifest_data["memory_profile_gb"]["safe_to_deploy"])
 
+    def test_sample_valid_dataset_and_metadata(self):
+        import json
+        sample_valid = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "valid.jsonl"
+        self.assertTrue(sample_valid.exists())
+        stats = validate_multimodal_dataset(str(sample_valid))
+        self.assertEqual(stats["health_score"], 100.0)
+
+        meta_path = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "video_inspection_metadata.json"
+        self.assertTrue(meta_path.exists())
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        self.assertEqual(meta["camera_id"], "CAM_WORKSHOP_NORTH_01")
+        self.assertEqual(len(meta["frames"]), 4)
+
 class TestLocalMultimodalServer(unittest.TestCase):
     def test_server_demo_self_test(self):
         import importlib.util
