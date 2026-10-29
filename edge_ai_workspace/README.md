@@ -22,6 +22,9 @@
 ---
 
 ## 二、文档导航
+### [音视频多模态大模型实战手册：调用、微调决策与端侧部署指南](../docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md)
+针对 **Mac Studio（主设备，高吞吐推理与 LoRA 微调）** 与 **Pixel 10（移动端，LiteRT/MediaPipe 实时推理）** 的音视频多模态（VLM + Whisper/TTS）实战全景手册，附带四套零门槛开箱即用的 hands-on 实操练习。
+
 
 ### [Mac Studio](MAC_STUDIO.md)
 Mac Studio 作为独立边缘计算节点：音视频硬解、Core ML/Metal、MLX、多模态模型和可验证 Demo。
