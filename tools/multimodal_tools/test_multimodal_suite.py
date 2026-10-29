@@ -268,6 +268,14 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("极速启动", p.stdout)
 
+    def test_multimodal_ci_workflow_exists(self):
+        wf = ROOT_DIR / ".github" / "workflows" / "multimodal_ci.yml"
+        self.assertTrue(wf.exists())
+        content = wf.read_text(encoding="utf-8")
+        self.assertIn("autoresearch.sh", content)
+        self.assertIn("test_multimodal_suite.py", content)
+        self.assertIn("quickstart.sh", content)
+
 class TestSampleDataFixtures(unittest.TestCase):
     def test_sample_dataset_validation(self):
         sample_train = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "train.jsonl"
