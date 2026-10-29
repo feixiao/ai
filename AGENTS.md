@@ -26,6 +26,7 @@ This repository is a hands-on AI engineering knowledge base and practice playgro
 - `PiAgent/`: Configuration patterns, deployment scripts (`install.sh`), Google Gemini Pro integration, and reverse proxy/gateway setups for Pi Agent (`pi` / `pi-coding-agent`).
 - `omp/`: Configuration patterns, deployment scripts (`install.sh`), multi-model roles, and local gateway integration for omp (oh-my-pi) Coding Agent CLI.
 - `TensorFlowLite/`, `PyTorch/`, `spleeter/`: Deep learning experiments and audio source separation scripts.
+- `docs/` & `examples/multimodal_practice/`: 2026 音视频多模态大模型实战手册、LoRA 结构化微调、Mac Studio (MLX/UMA) 与 Pixel 10 (Tensor G5 / LiteRT) 移动端部署套件及开箱即用练习代码。
 
 ## Environment & Common Commands
 

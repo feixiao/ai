@@ -2,6 +2,7 @@
 
 > **核心硬件**：Google Pixel 10（具体 SoC、加速器名称、驱动能力以设备实际规格和运行时枚举为准；本文不假定未公开的内部微架构）。  
 > **核心系统能力**：Android CameraX/NDK 音视频管线，以及 LiteRT、厂商 GPU/NPU 后端或其他端侧运行时；系统级生成式 AI 能力是否可用取决于 Android 版本、地区、设备配置与 API。
+> 💡 **进阶全景与实操**：关于 Pixel 10 部署 W4A16 量化多模态大模型（Qwen2.5-VL/LiteRT/CameraX 零拷贝）、三大端侧移动运行时对比及动手练习，请参阅专篇 [音视频多模态大模型实战手册](../docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md) 与 [实操练习 4](../examples/multimodal_practice/04_export_to_pixel10.py)。
 
 ---
 ## 一、 从传统音视频到端侧 AI：到底提升了什么
