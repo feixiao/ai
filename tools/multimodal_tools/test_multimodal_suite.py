@@ -146,6 +146,28 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertIn("EdgeVisionAnalyzer", snippet)
         self.assertIn("CameraX", snippet)
 
+
+    def test_lab04_cli_export_and_saving(self):
+        import subprocess, tempfile
+        lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as f_man:
+            tmp_man = f_man.name
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".kt") as f_kt:
+            tmp_kt = f_kt.name
+        try:
+            p = subprocess.run(
+                [sys.executable, str(lab04_path), "--save-manifest", tmp_man, "--save-android-code", tmp_kt],
+                capture_output=True, text=True
+            )
+            self.assertEqual(p.returncode, 0)
+            self.assertIn("部署清单已成功保存", p.stdout)
+            self.assertIn("Android 源码已成功保存", p.stdout)
+            self.assertTrue(Path(tmp_man).stat().st_size > 0)
+            self.assertTrue(Path(tmp_kt).stat().st_size > 0)
+        finally:
+            for f in (tmp_man, tmp_kt):
+                if os.path.exists(f):
+                    os.remove(f)
     def test_multimodal_pipeline_cli_flags(self):
         import subprocess
         script = TOOLS_DIR / "multimodal_pipeline.py"
@@ -414,6 +436,14 @@ class TestLocalMultimodalServer(unittest.TestCase):
         lab05 = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(lab05)
         self.assertTrue(lab05.run_demo_self_test())
+
+    def test_lab05_cli_help(self):
+        import subprocess
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        p = subprocess.run([sys.executable, str(lab05_path), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("--port", p.stdout)
+        self.assertIn("--host", p.stdout)
 
 class TestClientServerIntegration(unittest.TestCase):
     def test_live_clients_talking_to_server(self):
