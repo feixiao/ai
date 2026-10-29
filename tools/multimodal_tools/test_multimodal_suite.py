@@ -791,6 +791,40 @@ class TestNumericalLoRAOptimization(unittest.TestCase):
             self.assertIn("mlx_vlm.lora", sim_res["command"])
             self.assertEqual(sim_res["peak_vram_gb"], 5.1)
 
+
+    def test_lab03_schema_validation_failure_modes(self):
+        import importlib.util, tempfile, json
+        lab03_path = ROOT_DIR / "examples" / "multimodal_practice" / "03_vlm_lora_dataset_and_train.py"
+        spec = importlib.util.spec_from_file_location("lab03", str(lab03_path))
+        lab03 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab03)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bad_json = Path(tmpdir) / "bad_json.jsonl"
+            bad_json.write_text(
+                json.dumps({
+                    "messages": [
+                        {"role": "user", "content": "<image>\n请分析监控"},
+                        {"role": "assistant", "content": "普通文本非JSON"}
+                    ]
+                }) + "\n",
+                encoding="utf-8"
+            )
+            with self.assertRaises(json.JSONDecodeError):
+                lab03.validate_dataset_schema(bad_json)
+
+            missing_img = Path(tmpdir) / "missing_img.jsonl"
+            missing_img.write_text(
+                json.dumps({
+                    "messages": [
+                        {"role": "user", "content": "请分析监控帧"},
+                        {"role": "assistant", "content": '{"ok": true}'}
+                    ]
+                }) + "\n",
+                encoding="utf-8"
+            )
+            with self.assertRaises(AssertionError):
+                lab03.validate_dataset_schema(missing_img)
     def test_qwen_72b_feasibility(self):
         # 72B on Mac Studio 192G should be feasible
         res_mac_192 = check_hardware_feasibility("qwen2.5-vl-72b", "mac_studio_m4_ultra_192g", "inference")
@@ -1584,7 +1618,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 102)
+        self.assertEqual(data["total_unit_tests"], 103)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1599,7 +1633,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 102)
+        self.assertEqual(data["total_unit_tests"], 103)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
