@@ -479,6 +479,38 @@ class TestLocalMultimodalServer(unittest.TestCase):
         self.assertIn("--port", p.stdout)
         self.assertIn("--host", p.stdout)
 
+    def test_server_cors_and_error_handling(self):
+        import importlib.util
+        import urllib.request
+        import urllib.error
+        import threading
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+
+        server = HTTPServer(("127.0.0.1", 0), lab05.MultimodalAPIHandler)
+        port = server.server_port
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+
+        try:
+            req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/chat/completions", method="OPTIONS")
+            with urllib.request.urlopen(req) as resp:
+                self.assertEqual(resp.status, 204)
+                self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+
+            req_404 = urllib.request.Request(f"http://127.0.0.1:{port}/invalid/route")
+            try:
+                urllib.request.urlopen(req_404)
+            except urllib.error.HTTPError as e:
+                self.assertEqual(e.code, 404)
+        finally:
+            server.shutdown()
+            server.server_close()
+
 class TestClientServerIntegration(unittest.TestCase):
     def test_live_clients_talking_to_server(self):
         import subprocess, socket, threading, time
@@ -581,7 +613,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 53)
+        self.assertEqual(data["total_unit_tests"], 54)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
