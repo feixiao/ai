@@ -972,6 +972,46 @@ class TestLocalMultimodalServer(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_server_string_image_tag_and_usage_tokens(self):
+        import importlib.util, urllib.request, json, threading
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+
+        server = HTTPServer(("127.0.0.1", 0), lab05.MultimodalAPIHandler)
+        port = server.server_port
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+
+        try:
+            payload = {
+                "model": "qwen2.5-vl-3b-int4",
+                "messages": [
+                    {"role": "user", "content": "请分析监控帧 <image> 中的安全帽佩戴规范"}
+                ]
+            }
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{port}/chat/completions",
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req) as resp:
+                self.assertEqual(resp.status, 200)
+                data = json.loads(resp.read().decode("utf-8"))
+                self.assertEqual(data["model"], "qwen2.5-vl-3b-int4")
+                content = data["choices"][0]["message"]["content"]
+                self.assertIn("接收时序抽帧: 1 张", content)
+                self.assertIn("安全帽佩戴规范", content)
+                usage = data["usage"]
+                self.assertGreaterEqual(usage["prompt_tokens"], 256)
+                self.assertGreater(usage["completion_tokens"], 0)
+                self.assertEqual(usage["total_tokens"], usage["prompt_tokens"] + usage["completion_tokens"])
+        finally:
+            server.shutdown()
+            server.server_close()
+
 class TestClientServerIntegration(unittest.TestCase):
     def test_live_clients_talking_to_server(self):
         import subprocess, socket, threading, time
@@ -1221,7 +1261,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 88)
+        self.assertEqual(data["total_unit_tests"], 89)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1236,7 +1276,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 88)
+        self.assertEqual(data["total_unit_tests"], 89)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
