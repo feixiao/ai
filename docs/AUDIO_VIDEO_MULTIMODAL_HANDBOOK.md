@@ -317,11 +317,48 @@ class PixelMultimodalInference(private val context: Context) {
 
 ---
 
-## 六、 端到端工程验证与配套工具
+## 六、 避坑指南与高频故障排查 (Troubleshooting & Production Pitfalls)
+
+### 6.1 Mac Studio 实战避坑排错
+1. **Metal 显存单进程默认分配上限 (75% Limit)**：
+   * **现象**：在 64GB 的 Mac Studio 上加载 32B 大模型或并发处理多路长视频抽帧时，显存仅用到约 48GB 便突发 Metal 内存分配失败（OOM）。
+   * **原因**：macOS 为保护系统 UI 渲染流畅度，默认将单个用户态进程的 GPU 最大显存限制为整机物理内存的约 75%。
+   * **对策**：如果确需分配更大显存用于极限微调或批处理，可通过终端查看并按需配置内核参数：
+     ```bash
+     # 查看当前有线内存分配上限
+     sysctl iogpu.wired_mem_limit
+     # 临时调高上限（如设为 56GB）
+     sudo sysctl iogpu.wired_mem_limit=60129542144
+     ```
+2. **VideoToolbox 硬解多路流 CVPixelBuffer 环形队列阻塞**：
+   * **现象**：OpenCV 连续拉取 4K RTSP 流或切片长视频时，内存缓慢泄漏直至程序崩溃。
+   * **原因**：视频帧在解码后写入硬件显存共享池，若后续 VLM 推理过慢且未及时释放旧帧，会导致缓冲区溢出。
+   * **对策**：必须在抽帧队列中加入丢帧策略，仅保留最新关键帧并显示调用释放引用。
+
+### 6.2 Pixel 10 移动端避坑排错
+1. **LiteRT 算子不支持导致的性能悬崖 (TPU $\to$ CPU Fallback)**：
+   * **现象**：在 Pixel 10 上运行微调后导出的模型时，单帧推理从预期的 80ms 激增至 2500ms，手机发热严重。
+   * **原因**：模型微调或转换时引入了 Edge TPU 硬件不支持的动态 Shape 或复杂激活函数，LiteRT 自动回退至 CPU 软解。
+   * **对策**：在导出 `.task` 或 `.tflite` 前，务必固化模型输入的固定维度（如视觉输入锁定为 `1x3x384x384`），使用官方推荐的标准算子子集。
+2. **CameraX YUV_420_888 步长填充导致图像花屏/发绿**：
+   * **现象**：将摄像头采集的 `ImageProxy` 直接拷贝送入模型，识别结果混乱或画面出现倾斜条纹。
+   * **原因**：移动端传感器为了对齐硬件行宽，`plane[0].rowStride` 通常大于 `width`（存在 Padding 填充字节）。
+   * **对策**：优先利用 `Surface` / `AHardwareBuffer` 直通零拷贝；若在 CPU 内存中转换，必须逐行按 `pixelStride` 抽取有效像素。
+3. **电池与温度自适应防降频**：
+   * 严禁无节制全速持续循环推理，必须监听 Android `PowerManager.OnThermalStatusChangedListener`，在设备处于 `MODERATE` 发热时自动将抽帧频率减半，进入 `SEVERE` 时休眠 5 秒，平衡功耗与续航。
+
+---
+
+## 七、 端到端工程验证与配套工具
 
 本手册配备了完整的数学计算与验证套件（位于项目 `tools/multimodal_tools/`）：
 * `vram_and_budget.py`：计算各类多模态模型在 Mac Studio（UMA）与 Pixel 10 上的显存常驻与 LoRA 微调开销；
 * `multimodal_pipeline.py`：模拟音视频帧下采样、VLM 消息构造与导出规范校验；
 * `eval_handbook.py`：全自动执行语法分析、深度校验、实操练习完整性与平台篇幅平衡检查。
+
+可以通过一键运行脚本体验全部 4 套练习：
+```bash
+bash examples/multimodal_practice/run_all_labs.sh
+```
 
 通过这套体系，你可以清晰地在 Mac Studio 上完成多模态大模型的直接调用与微调，并将轻量化结果无缝迁移部署到 Pixel 10 现场端侧设备上。

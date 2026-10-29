@@ -137,6 +137,74 @@ def simulate_mlx_lora_training(dataset_dir: str) -> dict:
         "peak_vram_gb": 5.1
     }
 
+def run_numerical_lora_optimization(d: int = 16, r: int = 4, alpha: int = 8, steps: int = 20) -> dict:
+    """
+    执行一次严密的纯 Python 原生数学梯度下降更新：
+    模型公式：y = W x + (alpha / r) * B (A x)
+    其中 W (d x d) 为完全冻结的基座权重，A (r x d) 与 B (d x r) 为可训练低秩适配器。
+    演示在不改变原始 W 的前提下，仅更新 2*r*d 个参数让输出收敛拟合目标。
+    """
+    import random
+    random.seed(42)
+    scale = alpha / r
+
+    # 输入特征 x 与目标适配特征 y_target
+    x = [random.gauss(0, 1.0) for _ in range(d)]
+    y_target = [random.gauss(0, 1.0) for _ in range(d)]
+
+    # 冻结的基座权重 W
+    W = [[random.gauss(0, 0.1) for _ in range(d)] for _ in range(d)]
+
+    # 初始化低秩矩阵：A 高斯分布，B 全零初始化 (确保初始状态下 LoRA 不影响基座)
+    A = [[random.gauss(0, 0.05) for _ in range(d)] for _ in range(r)]
+    B = [[0.0 for _ in range(r)] for _ in range(d)]
+
+    def forward(cur_x, cur_W, cur_A, cur_B):
+        Ax = [sum(cur_A[i][j] * cur_x[j] for j in range(d)) for i in range(r)]
+        BAx = [sum(cur_B[i][j] * Ax[j] for j in range(r)) for i in range(d)]
+        Wx = [sum(cur_W[i][j] * cur_x[j] for j in range(d)) for i in range(d)]
+        y = [Wx[i] + scale * BAx[i] for i in range(d)]
+        return y, Ax
+
+    # 初始损失
+    y_init, _ = forward(x, W, A, B)
+    init_loss = sum((y_init[i] - y_target[i]) ** 2 for i in range(d)) / d
+
+    # 执行梯度下降
+    lr = 0.08
+    history = []
+    for step in range(steps):
+        y_pred, Ax = forward(x, W, A, B)
+        loss = sum((y_pred[i] - y_target[i]) ** 2 for i in range(d)) / d
+        if step % 5 == 0 or step == steps - 1:
+            history.append({"step": step, "loss": round(loss, 4)})
+
+        # dLoss / dy = 2 * (y_pred - y_target) / d
+        grad_y = [2.0 * (y_pred[i] - y_target[i]) / d for i in range(d)]
+
+        # 累积更新 B 与 A
+        for i in range(d):
+            for j in range(r):
+                B[i][j] -= lr * grad_y[i] * scale * Ax[j]
+
+        for j in range(r):
+            grad_Ax_j = sum(grad_y[i] * scale * B[i][j] for i in range(d))
+            for k in range(d):
+                A[j][k] -= lr * grad_Ax_j * x[k]
+
+    y_final, _ = forward(x, W, A, B)
+    final_loss = sum((y_final[i] - y_target[i]) ** 2 for i in range(d)) / d
+
+    return {
+        "dimension_d": d,
+        "lora_rank_r": r,
+        "lora_alpha": alpha,
+        "init_loss": round(init_loss, 4),
+        "final_loss": round(final_loss, 4),
+        "loss_reduction_pct": round((1.0 - final_loss / init_loss) * 100, 2),
+        "history": history
+    }
+
 def main():
     parser = argparse.ArgumentParser(description="实操 3：Mac Studio 多模态大模型 LoRA 微调练习")
     parser.add_argument("--demo", action="store_true", help="执行完整实操演示")
@@ -166,6 +234,12 @@ def main():
         bar = "█" * int((3.0 - step["loss"]) * 10)
         print(f"    Iter {step['iter']:3d} | Loss: {step['loss']:.2f} | 显存: {step['vram_used_gb']}G | {bar}")
 
+    print("\n[数学原理实操] 运行纯 Python 原生低秩矩阵 (W + scale * B·A) 梯度下降仿真...")
+    num_res = run_numerical_lora_optimization()
+    print(f"  - 特征维度 d={num_res['dimension_d']}, LoRA 秩 r={num_res['lora_rank_r']}, 缩放因子 alpha={num_res['lora_alpha']}")
+    print(f"  - 初始损失 Loss: {num_res['init_loss']} -> 20 步更新后损失: {num_res['final_loss']} (降低 {num_res['loss_reduction_pct']}%)")
+    for h in num_res["history"]:
+        print(f"    Step {h['step']:2d}: Loss = {h['loss']:.4f}")
     print("\n[步骤 4] 验证微调后 Adapter 输出契约遵从性：")
     sample_output = {
         "compliant": False,
