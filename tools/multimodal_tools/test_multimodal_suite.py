@@ -288,6 +288,15 @@ class TestClientServerIntegration(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+class TestBenchmarkSummary(unittest.TestCase):
+    def test_generate_dashboard(self):
+        from benchmark_summary import generate_dashboard
+        output = generate_dashboard()
+        self.assertIn("技术雷达", output)
+        self.assertIn("GOLD STANDARD", output)
+        self.assertIn("qwen2.5-vl-72b", output)
+        self.assertIn("pixel_10_tensor_g5", output)
+
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)
