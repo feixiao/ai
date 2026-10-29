@@ -293,6 +293,31 @@ class TestNumericalLoRAOptimization(unittest.TestCase):
         self.assertLess(res["final_loss"], res["init_loss"])
         self.assertGreater(res["loss_reduction_pct"], 70.0)
 
+    def test_lab03_dataset_generation_and_schema_validation(self):
+        import importlib.util
+        import tempfile
+        lab03_path = ROOT_DIR / "examples" / "multimodal_practice" / "03_vlm_lora_dataset_and_train.py"
+        spec = importlib.util.spec_from_file_location("lab03", str(lab03_path))
+        lab03 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab03)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            train_f, valid_f = lab03.generate_multimodal_dataset(tmpdir)
+            self.assertTrue(train_f.exists())
+            self.assertTrue(valid_f.exists())
+
+            train_schema = lab03.validate_dataset_schema(train_f)
+            self.assertEqual(train_schema["status"], "ALL_SCHEMA_PASS")
+            self.assertEqual(train_schema["total_lines"], 3)
+
+            valid_schema = lab03.validate_dataset_schema(valid_f)
+            self.assertEqual(valid_schema["status"], "ALL_SCHEMA_PASS")
+            self.assertEqual(valid_schema["total_lines"], 1)
+
+            sim_res = lab03.simulate_mlx_lora_training(tmpdir)
+            self.assertIn("mlx_vlm.lora", sim_res["command"])
+            self.assertEqual(sim_res["peak_vram_gb"], 5.1)
+
     def test_qwen_72b_feasibility(self):
         # 72B on Mac Studio 192G should be feasible
         res_mac_192 = check_hardware_feasibility("qwen2.5-vl-72b", "mac_studio_m4_ultra_192g", "inference")
@@ -654,7 +679,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 56)
+        self.assertEqual(data["total_unit_tests"], 57)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
