@@ -1012,6 +1012,48 @@ class TestLocalMultimodalServer(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_server_post_route_aliases_and_not_found(self):
+        import importlib.util, urllib.request, urllib.error, json, threading
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+
+        server = HTTPServer(("127.0.0.1", 0), lab05.MultimodalAPIHandler)
+        port = server.server_port
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+
+        try:
+            req_audio = urllib.request.Request(
+                f"http://127.0.0.1:{port}/audio/transcriptions",
+                data=b"test_audio_bytes",
+                headers={"Content-Type": "application/octet-stream"}
+            )
+            with urllib.request.urlopen(req_audio) as resp:
+                self.assertEqual(resp.status, 200)
+                data = json.loads(resp.read().decode("utf-8"))
+                self.assertIn("巡检打卡", data.get("text", ""))
+                self.assertEqual(data.get("language"), "zh")
+
+            req_404 = urllib.request.Request(
+                f"http://127.0.0.1:{port}/v1/unknown_action",
+                data=b"{}",
+                headers={"Content-Type": "application/json"}
+            )
+            try:
+                urllib.request.urlopen(req_404)
+                self.fail("Expected HTTPError 404")
+            except urllib.error.HTTPError as e:
+                self.assertEqual(e.code, 404)
+                err_data = json.loads(e.read().decode("utf-8"))
+                self.assertEqual(err_data.get("error"), "Not Found")
+                self.assertIn("/v1/unknown_action", err_data.get("message", ""))
+        finally:
+            server.shutdown()
+            server.server_close()
+
 class TestClientServerIntegration(unittest.TestCase):
     def test_live_clients_talking_to_server(self):
         import subprocess, socket, threading, time
@@ -1261,7 +1303,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 89)
+        self.assertEqual(data["total_unit_tests"], 90)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1276,7 +1318,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 89)
+        self.assertEqual(data["total_unit_tests"], 90)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
