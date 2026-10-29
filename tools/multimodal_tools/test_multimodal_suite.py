@@ -241,6 +241,24 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertIn("base64_data", frames[0])
         self.assertIn("预置样本目录", desc)
 
+    def test_load_or_simulate_video_frames_fallback_on_missing_dir(self):
+        import importlib.util, tempfile
+        lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+        spec = importlib.util.spec_from_file_location("lab01", str(lab01_path))
+        lab01 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab01)
+
+        frames_missing, desc_missing = lab01.load_or_simulate_video_frames(sample_dir="/non/existent/dir/123", num_frames=3)
+        self.assertEqual(len(frames_missing), 3)
+        self.assertEqual(desc_missing, "纯 Python 动态生成测试帧")
+        self.assertEqual(frames_missing[0]["timestamp_sec"], 0.0)
+        self.assertEqual(frames_missing[2]["timestamp_sec"], 4.0)
+
+        with tempfile.TemporaryDirectory() as empty_dir:
+            frames_empty, desc_empty = lab01.load_or_simulate_video_frames(sample_dir=empty_dir, num_frames=2)
+            self.assertEqual(len(frames_empty), 2)
+            self.assertEqual(desc_empty, "纯 Python 动态生成测试帧")
+
 
     def test_synthetic_bmp_and_simulate_frames(self):
         import importlib.util
@@ -1552,7 +1570,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 100)
+        self.assertEqual(data["total_unit_tests"], 101)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1567,7 +1585,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 100)
+        self.assertEqual(data["total_unit_tests"], 101)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):

@@ -18,7 +18,7 @@ show_help() {
 选项:
   --demo       (默认) 运行全量 6 阶段音视频多模态实操练习流水线
   --menu       打开交互式终端控制台菜单 (TUI 选项 0~10)
-  --test       运行全量 100 项标准单元测试套件 (unittest)
+  --test       运行全量 101 项标准单元测试套件 (unittest)
   --check      探测宿主机 Apple Silicon 芯片、UMA 内存及 Pixel 10 ADB 状态
   --report     打印多模态技术雷达与基准全景看板
   --server     在前台启动本地 OpenAI 兼容 HTTP 网关服务 (端口 8000)
