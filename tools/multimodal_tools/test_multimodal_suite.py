@@ -105,6 +105,13 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertEqual(len(content), 4)  # 3 frames + 1 text
         self.assertEqual(content[-1]["text"], "巡检分析")
 
+    def test_build_vlm_payload_zero_frames(self):
+        # Empty frames fallback to text-only prompt
+        p_zero = build_multimodal_vlm_payload("纯文本查询", [], fps=30.0)
+        self.assertEqual(len(p_zero["messages"][0]["content"]), 1)
+        self.assertEqual(p_zero["messages"][0]["content"][0]["type"], "text")
+        self.assertEqual(p_zero["messages"][0]["content"][0]["text"], "纯文本查询")
+
     def test_chunk_audio_stream_bounds(self):
         # 1 second audio at 16kHz
         chunks_1s = chunk_audio_stream(16000, 16000, chunk_duration_sec=3.0)
@@ -876,7 +883,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 70)
+        self.assertEqual(data["total_unit_tests"], 71)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
