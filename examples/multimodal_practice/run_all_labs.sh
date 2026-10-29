@@ -51,8 +51,7 @@ echo -e "\n▶️ [2/6] 运行实操 2：音频大模型 (Whisper ASR + TTS) 双
 "$PYTHON_BIN" "${SCRIPT_DIR}/02_audio_whisper_tts.py" --demo
 
 echo -e "\n▶️ [3/6] 运行实操 3：Mac Studio 多模态大模型 LoRA 微调与数学梯度下降..."
-"$PYTHON_BIN" "${SCRIPT_DIR}/03_vlm_lora_dataset_and_train.py" --demo
-
+"$PYTHON_BIN" "${SCRIPT_DIR}/03_vlm_lora_dataset_and_train.py" --demo --use-sample-data
 echo -e "\n▶️ [4/6] 运行实操 4：W4A16 4-bit 量化导出与 Pixel 10 内存防爆校验..."
 "$PYTHON_BIN" "${SCRIPT_DIR}/04_export_to_pixel10.py" --demo
 

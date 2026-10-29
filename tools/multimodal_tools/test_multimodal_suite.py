@@ -287,6 +287,14 @@ class TestEnvironmentScript(unittest.TestCase):
         p_rep = subprocess.run(["bash", str(qs_script), "--report"], capture_output=True, text=True)
         self.assertEqual(p_rep.returncode, 0)
         self.assertIn("技术雷达", p_rep.stdout)
+
+    def test_run_all_labs_script(self):
+        import subprocess
+        runner = ROOT_DIR / "examples" / "multimodal_practice" / "run_all_labs.sh"
+        self.assertTrue(runner.exists())
+        p = subprocess.run(["bash", str(runner)], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("全部 6 套", p.stdout)
     def test_multimodal_ci_workflow_exists(self):
         wf = ROOT_DIR / ".github" / "workflows" / "multimodal_ci.yml"
         self.assertTrue(wf.exists())
