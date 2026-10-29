@@ -87,7 +87,7 @@ def evaluate_code_validity(code_blocks: list) -> float:
 
     syntax_ratio = valid_py / len(py_blocks) if py_blocks else 1.0
 
-    # Also run the companion benchmark tools
+    # Also run the companion benchmark tools and unittest suite
     sys.path.insert(0, str(ROOT_DIR / "tools" / "multimodal_tools"))
     try:
         from vram_and_budget import run_budget_benchmark
@@ -110,7 +110,13 @@ def evaluate_code_validity(code_blocks: list) -> float:
     except Exception:
         formatter_ok = False
 
-    tools_ratio = (float(budget_ok) + float(pipeline_ok) + float(formatter_ok)) / 3.0
+    try:
+        from test_multimodal_suite import run_suite
+        suite_ok = run_suite()
+    except Exception:
+        suite_ok = False
+
+    tools_ratio = (float(budget_ok) + float(pipeline_ok) + float(formatter_ok) + float(suite_ok)) / 4.0
     score = syntax_ratio * 50.0 + tools_ratio * 50.0
     return round(score, 2)
 
