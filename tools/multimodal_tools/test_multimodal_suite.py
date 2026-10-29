@@ -178,6 +178,20 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertEqual(sim_frames[0]["timestamp_sec"], 0.0)
         self.assertEqual(sim_frames[2]["timestamp_sec"], 4.0)
 
+    def test_lab01_save_frames_and_cli_dump(self):
+        import importlib.util, tempfile
+        lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+        spec = importlib.util.spec_from_file_location("lab01", str(lab01_path))
+        lab01 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab01)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            frames, _ = lab01.load_or_simulate_video_frames(num_frames=2)
+            lab01.save_frames_to_disk(frames, tmpdir)
+            saved_bmps = list(Path(tmpdir).glob("*.bmp"))
+            self.assertEqual(len(saved_bmps), 2)
+            self.assertTrue(saved_bmps[0].stat().st_size > 0)
+
     def test_synthetic_wav_and_vad_chunking(self):
         import importlib.util
         import tempfile
@@ -804,7 +818,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 65)
+        self.assertEqual(data["total_unit_tests"], 66)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
