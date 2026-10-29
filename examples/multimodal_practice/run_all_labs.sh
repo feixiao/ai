@@ -12,7 +12,35 @@ echo "=================================================================="
 echo "🚀 启动 2026 音视频多模态大模型 4 套端到端实操练习流水线"
 echo "=================================================================="
 
-echo -e "\n▶️ [1/4] 运行实操 1：视频抽帧与视觉语言模型 (VLM) 批处理..."
+# 1. 硬件环境与就绪探测
+OS_NAME="$(uname -s)"
+ARCH_NAME="$(uname -m)"
+echo -e "\n🔍 [环境探测]"
+echo "  - 操作系统: ${OS_NAME} (${ARCH_NAME})"
+
+if [[ "${OS_NAME}" == "Darwin" ]]; then
+    CPU_BRAND="$(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo "Apple Silicon")"
+    TOTAL_MEM_BYTES="$(sysctl -n hw.memsize 2>/dev/null || echo "0")"
+    TOTAL_MEM_GB=$(( TOTAL_MEM_BYTES / 1024 / 1024 / 1024 ))
+    echo "  - 芯片型号: ${CPU_BRAND}"
+    echo "  - 统一内存 (UMA): ${TOTAL_MEM_GB} GB"
+    if [[ "${ARCH_NAME}" == "arm64" ]]; then
+        echo "  - 加速硬件: Metal GPU + Apple Neural Engine (ANE) 就绪"
+    fi
+fi
+
+# 检查可选辅助工具
+for tool in ffmpeg ollama; do
+    if command -v "${tool}" >/dev/null 2>&1; then
+        echo "  - 可选工具 [${tool}]: 已安装 ($(command -v "${tool}"))"
+    else
+        echo "  - 可选工具 [${tool}]: 未检测到 (使用内置纯 Python 仿真引擎，无影响)"
+    fi
+done
+
+# 2. 依次执行 4 套实操练习
+echo -e "\n=================================================================="
+echo "▶️ [1/4] 运行实操 1：视频抽帧与视觉语言模型 (VLM) 批处理..."
 "$PYTHON_BIN" "${SCRIPT_DIR}/01_video_vlm_inference.py" --demo
 
 echo -e "\n▶️ [2/4] 运行实操 2：音频大模型 (Whisper ASR + TTS) 双向交互闭环..."
