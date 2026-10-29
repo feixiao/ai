@@ -304,6 +304,14 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("抽取关键帧索引", p.stdout)
 
+    def test_multimodal_pipeline_cli_chunk_audio(self):
+        import subprocess
+        script = TOOLS_DIR / "multimodal_pipeline.py"
+        p = subprocess.run([sys.executable, str(script), "--chunk-audio", "--audio-duration-sec", "6.0"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("音频时长 6.0s 切片完成", p.stdout)
+        self.assertIn("Window 00", p.stdout)
+
 class TestDatasetFormatter(unittest.TestCase):
     def test_estimate_tokens(self):
         self.assertEqual(estimate_tokens("", num_images=0), 0)
@@ -888,7 +896,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 73)
+        self.assertEqual(data["total_unit_tests"], 74)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -903,7 +911,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 73)
+        self.assertEqual(data["total_unit_tests"], 74)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
