@@ -208,6 +208,27 @@ flowchart LR
     LiteRT --> Pixel["Pixel 10 现场执行<br/>(内存占用 < 3.5GB, 零拷贝)"]
     GGUF --> Pixel
 ```
+#### 三大端侧移动运行时对比矩阵 (Google Pixel 10)
+
+| 移动运行时 | 推荐加速后端 | 典型优势 | 内存开销 | 适用场景 |
+| :--- | :--- | :--- | :--- | :--- |
+| **Google LiteRT (原 TFLite)** | **Tensor G5 Edge TPU (NPU)** | Google 官方生态深度亲和、极低待机功耗 (<2W)、NDK/Java 绑定完备 | 最优 (~1.8GB) | 持续后台视觉巡检、传感器事件驱动常驻 |
+| **llama.cpp (GGUF)** | **Vulkan / OpenCL 移动 GPU** | 社区更新快、算子覆盖全、支持 Termux / C++ 原生极速测试 | 中等 (~2.2GB) | 快速原型验证、黑客松离线交互、非受限 C++ 宿主 |
+| **PyTorch ExecuTorch** | **Vulkan / XNNPACK** | 与 PyTorch 生态无缝打通、支持复杂自定义 C++ 算子导出 | 中等 (~2.4GB) | 已有深度 PyTorch 资产迁移、需要复用 Python 逻辑 |
+
+#### 生产级格式转换命令：
+```bash
+# 1. 导出为 Google LiteRT (锁定固定静态输入维度以避免 TPU 回退)
+python3 -m ai_edge_torch.convert \
+  --model-path ./fused_model \
+  --quantization int4_weight_only \
+  --output-path ./qwen2.5_vl_3b_w4a16.tflite
+
+# 2. 导出为 GGUF 格式 (供 llama.cpp 移动端 Vulkan 运行)
+python3 llama.cpp/convert_hf_to_gguf.py ./fused_model --outtype f16 --outfile model-f16.gguf
+./llama.cpp/build/bin/llama-quantize model-f16.gguf model-q4_k_m.gguf Q4_K_M
+```
+
 
 ### 3.3 Pixel 10 移动端音视频调用代码架构 (Kotlin / Native 范式)
 

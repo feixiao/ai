@@ -56,6 +56,27 @@ def run_quantization_and_export(
     }
     return export_manifest
 
+def get_export_cli_commands(model_name: str) -> dict:
+    """生成针对不同端侧运行时的标准转换命令矩阵"""
+    return {
+        "LiteRT_Edge_TPU": (
+            f"python3 -m ai_edge_torch.convert \\\n"
+            f"  --model-path ./fused_model \\\n"
+            f"  --quantization int4_weight_only \\\n"
+            f"  --output-path ./qwen2.5_vl_3b_w4a16.tflite"
+        ),
+        "GGUF_llama_cpp": (
+            f"python3 llama.cpp/convert_hf_to_gguf.py ./fused_model --outtype f16 --outfile model-f16.gguf\n"
+            f"./llama.cpp/build/bin/llama-quantize model-f16.gguf model-q4_k_m.gguf Q4_K_M"
+        ),
+        "ExecuTorch_Vulkan": (
+            f"python3 -m executorch.examples.models.qwen2_vl.export \\\n"
+            f"  --checkpoint ./fused_model \\\n"
+            f"  --backend vulkan \\\n"
+            f"  --output qwen2.5_vl_3b.pte"
+        )
+    }
+
 def generate_android_snippet() -> str:
     """生成 Android 端直接引用的 CameraX 与 LiteRT 推理代码示例"""
     return """
@@ -111,6 +132,10 @@ def main():
 
     print("\n[步骤 4] 生成 Android 端的原生 CameraX + Edge TPU 零拷贝调用模版：")
     print(generate_android_snippet())
+    print("\n[步骤 5] 生成针对三类端侧运行时的标准转换命令矩阵：")
+    cmds = get_export_cli_commands(args.model)
+    for runtime, cmd in cmds.items():
+        print(f"  ▶️ [{runtime}]:\n{cmd}\n")
 
     print("\n✅ 实操 4 验证成功：端侧量化导出与 Pixel 10 部署闭环跑通！\n")
 

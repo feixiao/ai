@@ -96,7 +96,17 @@ def call_local_vlm_mock_or_live(payload: dict, endpoint_url: str = None) -> dict
                 headers={"Content-Type": "application/json"}
             )
             with urllib.request.urlopen(req, timeout=5) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+                raw = json.loads(resp.read().decode("utf-8"))
+                # 适配 OpenAI 兼容格式或 Ollama 格式
+                content = raw.get("message", {}).get("content") or \
+                          (raw.get("choices", [{}])[0].get("message", {}).get("content")) or str(raw)
+                return {
+                    "status": "success",
+                    "inference_engine": "Live HTTP Endpoint",
+                    "model": payload["model"],
+                    "analysis_report": {"summary": content},
+                    "raw_response": raw
+                }
         except Exception as e:
             print(f"[提示] 连接本地端点 {endpoint_url} 失败 ({e})，自动回退到内置确定性推理引擎。")
 
@@ -121,10 +131,22 @@ def call_local_vlm_mock_or_live(payload: dict, endpoint_url: str = None) -> dict
         }
     }
 
+def save_frames_to_disk(frames: list, output_dir: str):
+    """将提取的关键帧保存到本地目录供开发者核对"""
+    p = Path(output_dir)
+    p.mkdir(parents=True, exist_ok=True)
+    for f in frames:
+        file_path = p / f"frame_{f['frame_id']:02d}_{f['timestamp_sec']}s.bmp"
+        data = base64.b64decode(f["base64_data"])
+        file_path.write_bytes(data)
+    print(f"  - 抽帧图像已保存至本地: {p.resolve()} (共 {len(frames)} 帧)")
+
 def main():
     parser = argparse.ArgumentParser(description="实操 1：Mac Studio 视频帧抽取与视觉多模态大模型调用")
     parser.add_argument("--demo", action="store_true", help="一键执行完整实操演示")
-    parser.add_argument("--endpoint", type=str, default=None, help="本地 Ollama / LM Studio HTTP 接口 (如 http://localhost:11434/api/chat)")
+    parser.add_argument("--endpoint", type=str, default=None, help="本地 Ollama / LM Studio HTTP 接口 (如 http://localhost:11434/v1/chat/completions)")
+    parser.add_argument("--model", type=str, default="qwen2.5-vl:7b", help="模型名称标识")
+    parser.add_argument("--dump-frames", type=str, default=None, help="将抽取的关键帧图像保存到指定目录")
     parser.add_argument("--prompt", type=str, default="分析画面中工人的作业安全合规性与设备状态变化", help="提问提示词")
     args = parser.parse_args()
 
@@ -137,8 +159,11 @@ def main():
     for f in frames:
         print(f"  - 提取帧 #{f['frame_id']} | 时间戳: {f['timestamp_sec']}s | 编码大小: {len(f['base64_data'])} 字符")
 
+    if args.dump_frames:
+        save_frames_to_disk(frames, args.dump_frames)
+
     print("\n[步骤 2] 正在构建符合 Qwen2.5-VL / MLX 标准的 Prompt Payload...")
-    payload = build_vlm_request(frames, args.prompt)
+    payload = build_vlm_request(frames, args.prompt, model=args.model)
     print(f"  - 模型目标: {payload['model']}")
     print(f"  - 图像 Token 挂载数: {len(frames)} 帧")
     print(f"  - 用户提问: {args.prompt}")

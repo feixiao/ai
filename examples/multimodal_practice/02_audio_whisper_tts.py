@@ -87,21 +87,28 @@ def synthesize_speech_response(text: str, play_audio: bool = False) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="实操 2：Mac Studio 音频大模型 (Whisper + TTS) 语音交互练习")
     parser.add_argument("--demo", action="store_true", help="执行完整实操演示")
+    parser.add_argument("--audio", type=str, default=None, help="指定本地待识别的 WAV 格式真实音频路径")
     parser.add_argument("--play", action="store_true", help="是否在 Mac 上实际播放生成的 TTS 语音")
     args = parser.parse_args()
 
-    tmp_wav = "/tmp/test_multimodal_audio.wav"
+    is_custom_audio = args.audio is not None and os.path.exists(args.audio)
+    target_wav = args.audio if is_custom_audio else "/tmp/test_multimodal_audio.wav"
+
     print("===============================================================")
     print(" 🎙️ 实操 2：Mac Studio 音频大模型 (Whisper + TTS) 交互闭环练习")
     print("===============================================================")
 
-    print(f"\n[步骤 1] 正在生成标准 16kHz PCM 单声道测试音频: {tmp_wav}")
-    generate_synthetic_wav(tmp_wav, duration_sec=2.0)
-    file_size = os.path.getsize(tmp_wav)
-    print(f"  - 音频时长: 2.0 秒 | 采样率: 16000 Hz | 文件大小: {file_size} 字节")
+    if not is_custom_audio:
+        print(f"\n[步骤 1] 正在生成标准 16kHz PCM 单声道测试音频: {target_wav}")
+        generate_synthetic_wav(target_wav, duration_sec=2.0)
+    else:
+        print(f"\n[步骤 1] 正在读取用户指定音频文件: {target_wav}")
+
+    file_size = os.path.getsize(target_wav)
+    print(f"  - 音频文件就绪 | 大小: {file_size} 字节")
 
     print("\n[步骤 2] 执行本地低延迟 VAD (语音活动检测) 与切片分块...")
-    chunks = simulate_vad_and_chunk(tmp_wav)
+    chunks = simulate_vad_and_chunk(target_wav)
     for c in chunks:
         status_icon = "🟢 语音" if c["vad_label"] == "VOICE_ACTIVE" else "⚪ 静音丢弃"
         print(f"  - 分片 #{c['chunk_id']} [{c['start_time']} -> {c['end_time']}] {status_icon} (能量: {c['energy_db']} dB)")
@@ -119,9 +126,9 @@ def main():
     print(f"  - 播报语音文本: \"{tts_res['response_text']}\"")
     print(f"  - 音频合成耗时: {tts_res['latency_ms']} ms")
 
-    # 清理临时文件
-    if os.path.exists(tmp_wav):
-        os.remove(tmp_wav)
+    # 清理合成临时文件
+    if not is_custom_audio and os.path.exists(target_wav):
+        os.remove(target_wav)
 
     print("\n✅ 实操 2 验证成功：音频转写与语音合成双向闭环完成！\n")
 
