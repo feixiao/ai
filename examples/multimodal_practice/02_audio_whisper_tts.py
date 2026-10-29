@@ -91,8 +91,19 @@ def main():
     parser.add_argument("--play", action="store_true", help="是否在 Mac 上实际播放生成的 TTS 语音")
     args = parser.parse_args()
 
-    is_custom_audio = args.audio is not None and os.path.exists(args.audio)
-    target_wav = args.audio if is_custom_audio else "/tmp/test_multimodal_audio.wav"
+    sample_wav_fixture = Path(__file__).resolve().parent / "sample_data" / "audio" / "sample_inspection_16k.wav"
+    if args.audio is not None and os.path.exists(args.audio):
+        target_wav = args.audio
+        is_custom_audio = True
+        audio_source_desc = f"用户指定音频: {target_wav}"
+    elif sample_wav_fixture.exists():
+        target_wav = str(sample_wav_fixture)
+        is_custom_audio = True
+        audio_source_desc = f"预置样本音频: {target_wav}"
+    else:
+        target_wav = "/tmp/test_multimodal_audio.wav"
+        is_custom_audio = False
+        audio_source_desc = f"临时生成测试音频: {target_wav}"
 
     print("===============================================================")
     print(" 🎙️ 实操 2：Mac Studio 音频大模型 (Whisper + TTS) 交互闭环练习")
@@ -102,7 +113,7 @@ def main():
         print(f"\n[步骤 1] 正在生成标准 16kHz PCM 单声道测试音频: {target_wav}")
         generate_synthetic_wav(target_wav, duration_sec=2.0)
     else:
-        print(f"\n[步骤 1] 正在读取用户指定音频文件: {target_wav}")
+        print(f"\n[步骤 1] 正在读取音频数据 ({audio_source_desc})")
 
     file_size = os.path.getsize(target_wav)
     print(f"  - 音频文件就绪 | 大小: {file_size} 字节")

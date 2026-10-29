@@ -215,6 +215,16 @@ class TestSampleDataFixtures(unittest.TestCase):
         bmps = list(frames_dir.glob("*.bmp"))
         self.assertEqual(len(bmps), 4)
 
+    def test_sample_audio_properties(self):
+        import wave
+        audio_path = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "audio" / "sample_inspection_16k.wav"
+        self.assertTrue(audio_path.exists())
+        with wave.open(str(audio_path), "rb") as wf:
+            self.assertEqual(wf.getframerate(), 16000)
+            self.assertEqual(wf.getnchannels(), 1)
+            self.assertEqual(wf.getsampwidth(), 2)
+            self.assertGreater(wf.getnframes(), 16000)
+
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

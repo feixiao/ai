@@ -115,3 +115,4 @@ bash setup_environment.sh --push-pixel10 /path/to/qwen2.5_vl_3b_w4a16.task
 * `sample_data/valid.jsonl`：验证集样例；
 * `sample_data/video_inspection_metadata.json`：工业监控切片元数据定义（包含摄像头编号、分辨率、采样步长与目标 ROI 坐标）；
 * `sample_data/frames/`：预先生成的 4 张 BMP 关键帧图片（可直接在 Finder / 系统看图器中查看）。
+* `sample_data/audio/sample_inspection_16k.wav`：标准 16kHz PCM 单声道测试音频（包含多频段语音特征与静音段，供 Whisper 与 VAD 练习无缝读取）。
