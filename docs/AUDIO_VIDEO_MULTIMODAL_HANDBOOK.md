@@ -491,7 +491,7 @@ bash examples/multimodal_practice/run_all_labs.sh --menu
 | :--- | :--- | :--- | :--- |
 | **一键流水线** | 根目录快捷调度 | `make demo` | 串行执行抽帧、语音、LoRA数学、INT4导出、网关、客户端6阶段 |
 | **交互式控制台**| 终端 TUI 菜单 | `make menu` | 打开数字菜单自由单选执行各实操练习或硬件探测 |
-| **单元测试套件**| 原生 unittest | `make test` | 快速执行 27 项边界与数学公式全量单元测试 |
+| **单元测试套件**| 原生 unittest | `make test` | 快速执行 30 项边界与数学公式全量单元测试 |
 | **自动化基准** | Autoresearch | `make benchmark` | 评估手册结构、代码语法、执行力与篇幅平衡指标 (100分) |
 | **硬件环境探针**| 工具链检测 | `make check` | 探测 Mac Studio 芯片、UMA 内存、FFmpeg 及 Pixel 10 ADB |
 | **技术雷达看板**| 全景评估看板 | `make report` | 打印 6 项基准得分、13 款模型与 6 档硬件画像规格表 |
@@ -502,3 +502,27 @@ bash examples/multimodal_practice/run_all_labs.sh --menu
 | **客户端直连** | 原生客户端调用 | `python3 examples/multimodal_practice/client_example.py --server http://127.0.0.1:8000` | 零依赖直接请求 Mac Studio 网关完成视觉问答与语音转写 |
 
 全套体系通过 `bash autoresearch.sh` 实行持续基准验证，确保所有公式、语法、命令在 Mac Studio 及通用开发环境下均严格自洽闭环。
+
+---
+
+## 附录：四大典型多模态落地配方清单 (Production Recipes Checklist)
+
+### 配方 1：智能安防与违章作业实时稽核 (Smart Safety Audit)
+* **核心设备**：Mac Studio (M2/M4 Max/Ultra)
+* **技术链路**：RTSP 4K 监控流 ➔ VideoToolbox 硬件解码 ➔ 均匀抽帧 (1fps) ➔ Qwen2.5-VL-7B (MLX INT4) ➔ 判定工人穿戴合规性 ➔ 命中告警发送 MQTT / Webhook。
+* **微调策略**：初期直接 Prompting 调用；若出现输出格式漂移或漏判专有工服，使用 500 条样本做 LoRA 契约微调。
+
+### 配方 2：移动手持巡检仪现场交互 (Handheld Inspection Patrol)
+* **核心设备**：Google Pixel 10
+* **技术链路**：手机后置摄像头 (CameraX) + 麦克风 (AAudio) ➔ 本地 LiteRT INT4 运行 Qwen2.5-VL-3B + Whisper-Tiny (离线运行，功耗 < 2W) ➔ 现场声光报警；疑难帧上报 Mac Studio。
+* **微调策略**：在 Mac Studio 上完成 LoRA 微调并融合导出为 `.task` / `.tflite`，通过 ADB 推入 Pixel 10 离线常驻。
+
+### 配方 3：会议实时转写与智能纪要语音助手 (Meeting ASR & Live Assistant)
+* **核心设备**：Mac Studio (作为中心中枢) + 任意局域网终端
+* **技术链路**：麦克风音频流 ➔ Whisper-large-v3-turbo (ANE 神经引擎硬解，32ms 转写) ➔ Qwen2.5-7B 提取纪要要点 ➔ Kokoro/ChatTTS 拟人语音播报。
+* **微调策略**：绝不微调 Whisper（通用泛化极强）；仅在需要特定发音人音色克隆时微调 TTS Voice Adapter。
+
+### 配方 4：短视频镜头质检与自动化打标 (Short Video QA & Tagging)
+* **核心设备**：Mac Studio (128GB/192GB UMA)
+* **技术链路**：视频文件切片 ➔ uniform_sampling 提取多模态关键帧 ➔ Qwen2.5-VL-72B 旗舰模型深度理解 ➔ 产出时间戳、场景描述、高光评分与标签 ➔ 写入底库。
+* **微调策略**：完全无需微调，直接调用 72B 旗舰模型，发挥其世界级通用视频理解能力。
