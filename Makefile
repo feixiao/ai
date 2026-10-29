@@ -4,7 +4,7 @@
 
 PYTHON ?= python3
 
-.PHONY: all help demo menu test benchmark check report server
+.PHONY: all help demo menu test benchmark check report server clean
 
 all: demo
 
@@ -19,6 +19,7 @@ help:
 	@echo "  make check       - 探测 Mac Studio 统一内存与 Pixel 10 ADB 环境"
 	@echo "  make report      - 打印多模态技术雷达与基准全景看板"
 	@echo "  make server      - 启动本地 OpenAI 兼容多模态微服务网关 (8000端口)"
+	@echo "  make clean       - 清理临时音频与数据测试缓存"
 	@echo "=================================================================="
 
 demo:
@@ -41,3 +42,7 @@ report:
 
 server:
 	$(PYTHON) examples/multimodal_practice/05_local_multimodal_server.py --port 8000 --host 0.0.0.0
+
+clean:
+	rm -rf /tmp/test_multimodal_audio.wav /tmp/multimodal_lora_data
+	@echo "🧹 临时缓存已清理完毕。"

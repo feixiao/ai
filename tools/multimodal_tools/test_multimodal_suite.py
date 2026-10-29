@@ -231,6 +231,12 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("工作台", p.stdout)
 
+    def test_root_makefile_clean_target(self):
+        import subprocess
+        p = subprocess.run(["make", "-C", str(ROOT_DIR), "clean"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("已清理", p.stdout)
+
 class TestSampleDataFixtures(unittest.TestCase):
     def test_sample_dataset_validation(self):
         sample_train = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "train.jsonl"
