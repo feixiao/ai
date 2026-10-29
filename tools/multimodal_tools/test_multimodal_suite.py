@@ -122,6 +122,11 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertGreaterEqual(len(chunks_7s), 3)
         self.assertEqual(chunks_7s[0], (0, 48000))
 
+    def test_chunk_audio_stream_zero_overlap(self):
+        # 6 seconds audio at 16kHz (96,000 samples) with 3.0s chunks and 0.0s overlap
+        chunks = chunk_audio_stream(96000, 16000, chunk_duration_sec=3.0, overlap_sec=0.0)
+        self.assertEqual(chunks, [(0, 48000), (48000, 96000)])
+
     def test_validate_edge_export_spec(self):
         valid_spec = {
             "model_name": "qwen2.5-vl-3b-int4",
@@ -883,7 +888,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 71)
+        self.assertEqual(data["total_unit_tests"], 72)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
