@@ -20,10 +20,11 @@ MENU_ITEMS = [
     ("3", "实操 3：Mac Studio 多模态 LoRA 结构化微调与数学梯度下降仿真", ["03_vlm_lora_dataset_and_train.py", "--demo"]),
     ("4", "实操 4：Pixel 10 4-bit 量化导出与端侧 LiteRT/GGUF 内存防爆校验", ["04_export_to_pixel10.py", "--demo"]),
     ("5", "实操 5：Mac Studio 本地 OpenAI 兼容多模态 HTTP API 网关自测", ["05_local_multimodal_server.py", "--demo"]),
-    ("6", "🚀 一键串行运行全部 5 套实操练习流水线", ["run_all_labs.sh"]),
+    ("6", "🚀 一键串行运行全部 6 套实操练习流水线", ["run_all_labs.sh"]),
     ("7", "🔍 执行宿主机环境与 UMA 统一内存硬件探测", ["probe_env"]),
     ("8", "📊 打开多模态模型显存与算力预算估算器 (vram_and_budget)", ["vram_budget"]),
     ("9", "📈 查看音视频多模态技术雷达与基准全景看板 (benchmark_summary)", ["benchmark_summary"]),
+    ("10", "📡 运行原生轻量客户端调用参考实现 (client_example)", ["client_example.py", "--demo"]),
 ]
 
 def probe_hardware_environment():
@@ -81,7 +82,7 @@ def run_choice(choice: str):
                 subprocess.run(full_cmd)
             return True
 
-    print(f"⚠️ 无效选项: {choice}，请输入 0~9 之间的数字。")
+    print(f"⚠️ 无效选项: {choice}，请输入 0~10 之间的数字。")
     return True
 
 def print_menu():
@@ -89,13 +90,13 @@ def print_menu():
     print(" 🎬 2026 音视频多模态大模型实操练习控制台 (Mac Studio & Pixel 10)")
     print("==================================================================")
     for key, title, _ in MENU_ITEMS:
-        print(f" [{key}] {title}")
-    print(" [0] 退出")
+        print(f" [{key:>2}] {title}")
+    print(" [ 0] 退出")
     print("------------------------------------------------------------------")
 
 def main():
     parser = argparse.ArgumentParser(description="音视频多模态实操练习交互式控制台")
-    parser.add_argument("--choice", type=str, default=None, choices=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], help="直接执行指定编号任务")
+    parser.add_argument("--choice", type=str, default=None, choices=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"], help="直接执行指定编号任务")
     parser.add_argument("--demo", action="store_true", help="演示模式：直接运行一键流水线 (选项 6)")
     args = parser.parse_args()
 
@@ -116,7 +117,7 @@ def main():
     while True:
         print_menu()
         try:
-            user_input = input("请输入选项编号 [0-9]: ").strip()
+            user_input = input("请输入选项编号 [0-10]: ").strip()
             cont = run_choice(user_input)
             if not cont:
                 break

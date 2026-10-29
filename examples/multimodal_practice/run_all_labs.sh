@@ -42,23 +42,26 @@ for tool in ffmpeg ollama; do
     fi
 done
 
-# 2. 依次执行 5 套实操练习
+# 2. 依次执行 6 套实操练习与客户端流水线
 echo -e "\n=================================================================="
-echo "▶️ [1/5] 运行实操 1：视频抽帧与视觉语言模型 (VLM) 批处理..."
+echo "▶️ [1/6] 运行实操 1：视频抽帧与视觉语言模型 (VLM) 批处理..."
 "$PYTHON_BIN" "${SCRIPT_DIR}/01_video_vlm_inference.py" --demo
 
-echo -e "\n▶️ [2/5] 运行实操 2：音频大模型 (Whisper ASR + TTS) 双向交互闭环..."
+echo -e "\n▶️ [2/6] 运行实操 2：音频大模型 (Whisper ASR + TTS) 双向交互闭环..."
 "$PYTHON_BIN" "${SCRIPT_DIR}/02_audio_whisper_tts.py" --demo
 
-echo -e "\n▶️ [3/5] 运行实操 3：Mac Studio 多模态大模型 LoRA 微调与数学梯度下降..."
+echo -e "\n▶️ [3/6] 运行实操 3：Mac Studio 多模态大模型 LoRA 微调与数学梯度下降..."
 "$PYTHON_BIN" "${SCRIPT_DIR}/03_vlm_lora_dataset_and_train.py" --demo
 
-echo -e "\n▶️ [4/5] 运行实操 4：W4A16 4-bit 量化导出与 Pixel 10 内存防爆校验..."
+echo -e "\n▶️ [4/6] 运行实操 4：W4A16 4-bit 量化导出与 Pixel 10 内存防爆校验..."
 "$PYTHON_BIN" "${SCRIPT_DIR}/04_export_to_pixel10.py" --demo
 
-echo -e "\n▶️ [5/5] 运行实操 5：Mac Studio 本地 OpenAI 兼容多模态 API 网关自测..."
+echo -e "\n▶️ [5/6] 运行实操 5：Mac Studio 本地 OpenAI 兼容多模态 API 网关自测..."
 "$PYTHON_BIN" "${SCRIPT_DIR}/05_local_multimodal_server.py" --demo
 
+echo -e "\n▶️ [6/6] 运行轻量客户端 (client_example) 原生多模态请求自测..."
+"$PYTHON_BIN" "${SCRIPT_DIR}/client_example.py" --demo
+
 echo -e "\n=================================================================="
-echo "🎉 全部 5 套音视频实操练习执行完毕，所有验证与契约均通过！"
+echo "🎉 全部 6 套音视频实操练习与客户端流水线执行完毕，全部验证通过！"
 echo "=================================================================="
