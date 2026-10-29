@@ -246,6 +246,48 @@ class TestLocalMultimodalServer(unittest.TestCase):
         spec.loader.exec_module(lab05)
         self.assertTrue(lab05.run_demo_self_test())
 
+class TestClientServerIntegration(unittest.TestCase):
+    def test_live_clients_talking_to_server(self):
+        import subprocess, socket, threading, time
+        from http.server import HTTPServer
+        import importlib.util
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        server = HTTPServer(("127.0.0.1", port), lab05.MultimodalAPIHandler)
+        server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+        server_thread.start()
+        time.sleep(0.05)
+
+        try:
+            # 1. Test Lab 01 calling Lab 05 chat completions endpoint
+            lab01_script = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+            p1 = subprocess.run(
+                [sys.executable, str(lab01_script), "--endpoint", f"http://127.0.0.1:{port}/v1/chat/completions"],
+                capture_output=True, text=True
+            )
+            self.assertEqual(p1.returncode, 0)
+            self.assertIn("Live HTTP Endpoint", p1.stdout)
+
+            # 2. Test Lab 02 calling Lab 05 audio transcriptions endpoint
+            lab02_script = ROOT_DIR / "examples" / "multimodal_practice" / "02_audio_whisper_tts.py"
+            p2 = subprocess.run(
+                [sys.executable, str(lab02_script), "--endpoint", f"http://127.0.0.1:{port}/v1/audio/transcriptions"],
+                capture_output=True, text=True
+            )
+            self.assertEqual(p2.returncode, 0)
+            self.assertIn("Live Whisper Endpoint", p2.stdout)
+        finally:
+            server.shutdown()
+            server.server_close()
+
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

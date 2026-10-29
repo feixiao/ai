@@ -360,6 +360,12 @@ class PixelMultimodalInference(private val context: Context) {
   ```bash
   python3 examples/multimodal_practice/05_local_multimodal_server.py --demo
   ```
+  ```bash
+  # 启动本地服务并在另一终端使用练习 1/2 直连自测
+  python3 examples/multimodal_practice/05_local_multimodal_server.py --port 8000
+  python3 examples/multimodal_practice/01_video_vlm_inference.py --endpoint http://localhost:8000/v1/chat/completions
+  python3 examples/multimodal_practice/02_audio_whisper_tts.py --endpoint http://localhost:8000/v1/audio/transcriptions
+  ```
 
 ---
 

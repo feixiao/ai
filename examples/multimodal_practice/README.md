@@ -35,7 +35,7 @@ bash setup_environment.sh --push-pixel10 /path/to/qwen2.5_vl_3b_w4a16.task
 
 ---
 
-## 4 套实操练习详解
+## 5 套实操练习详解
 
 ### 练习 1：Mac Studio 视频抽帧与视觉语言模型 (VLM) 批处理
 * **脚本文件**：`01_video_vlm_inference.py`
@@ -123,6 +123,18 @@ bash setup_environment.sh --push-pixel10 /path/to/qwen2.5_vl_3b_w4a16.task
   # 在前台启动服务供局域网 / 手机调用 (端口 8000)
   python3 05_local_multimodal_server.py --port 8000 --host 0.0.0.0
   ```
+
+#### 客户端与网关服务联动联调命令：
+```bash
+# 终端 A：在 Mac Studio 上启动本地多模态网关服务
+python3 05_local_multimodal_server.py --port 8000
+
+# 终端 B：实操 1 客户端直连网关发送视频抽帧
+python3 01_video_vlm_inference.py --endpoint http://localhost:8000/v1/chat/completions
+
+# 终端 B：实操 2 客户端直连网关发送音频执行 Whisper 转写
+python3 02_audio_whisper_tts.py --endpoint http://localhost:8000/v1/audio/transcriptions
+```
 
 ---
 
