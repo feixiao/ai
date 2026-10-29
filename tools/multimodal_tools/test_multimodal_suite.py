@@ -402,6 +402,24 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertIn("MiniCPM-V-2.6", p.stdout)
         self.assertIn("W4A16 量化转换测算", p.stdout)
         self.assertIn("部署闭环跑通", p.stdout)
+
+    def test_lab04_custom_quantization_and_export_device(self):
+        import importlib.util
+        lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
+        spec = importlib.util.spec_from_file_location("lab04", str(lab04_path))
+        lab04 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab04)
+
+        manifest = lab04.run_quantization_and_export(
+            model_name="SmolVLM-2B-Instruct",
+            quant_method="W4A16",
+            target_device="Pixel 10 Pro (Tensor G5)"
+        )
+        self.assertEqual(manifest["model_id"], "SmolVLM-2B-Instruct")
+        self.assertEqual(manifest["target_platform"], "Pixel 10 Pro (Tensor G5)")
+        self.assertEqual(manifest["quantization"]["format"], "W4A16")
+        self.assertTrue(manifest["memory_profile_gb"]["safe_to_deploy"])
+        self.assertIn("Edge TPU", manifest["target_runtime"])
     def test_multimodal_pipeline_cli_flags(self):
         import subprocess
         script = TOOLS_DIR / "multimodal_pipeline.py"
@@ -1323,7 +1341,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 91)
+        self.assertEqual(data["total_unit_tests"], 92)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1338,7 +1356,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 91)
+        self.assertEqual(data["total_unit_tests"], 92)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
