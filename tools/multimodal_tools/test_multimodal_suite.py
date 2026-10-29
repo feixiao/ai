@@ -308,6 +308,30 @@ class TestMultimodalPipeline(unittest.TestCase):
             self.assertIn("Whisper", trans["engine"])
             self.assertIn("巡检打卡", trans["transcribed_text"])
 
+    def test_synthetic_wav_sample_rates_and_durations(self):
+        import importlib.util, wave, tempfile
+        lab02_path = ROOT_DIR / "examples" / "multimodal_practice" / "02_audio_whisper_tts.py"
+        spec = importlib.util.spec_from_file_location("lab02", str(lab02_path))
+        lab02 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab02)
+
+        test_cases = [
+            (0.5, 8000),
+            (1.0, 16000),
+            (2.5, 24000)
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            for dur, sr in test_cases:
+                out_path = Path(tmpdir) / f"test_{int(dur*10)}_{sr}.wav"
+                lab02.generate_synthetic_wav(str(out_path), duration_sec=dur, sample_rate=sr)
+                self.assertTrue(out_path.exists())
+
+                with wave.open(str(out_path), "rb") as wf:
+                    self.assertEqual(wf.getnchannels(), 1)
+                    self.assertEqual(wf.getsampwidth(), 2)
+                    self.assertEqual(wf.getframerate(), sr)
+                    self.assertEqual(wf.getnframes(), int(dur * sr))
+
     def test_lab02_cli_custom_audio_and_tts_synthesis(self):
         import importlib.util, subprocess
         lab02_path = ROOT_DIR / "examples" / "multimodal_practice" / "02_audio_whisper_tts.py"
@@ -1363,7 +1387,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 93)
+        self.assertEqual(data["total_unit_tests"], 94)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1378,7 +1402,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 93)
+        self.assertEqual(data["total_unit_tests"], 94)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
