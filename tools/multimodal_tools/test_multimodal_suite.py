@@ -229,6 +229,41 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertIn("核查设备温度与指示灯状态", p.stdout)
         self.assertIn("闭环跑通", p.stdout)
 
+    def test_lab01_cli_live_endpoint_and_fallback(self):
+        import importlib.util, socket, threading, subprocess, time
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+
+        spec_srv = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec_srv)
+        spec_srv.loader.exec_module(lab05)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        server = HTTPServer(("127.0.0.1", port), lab05.MultimodalAPIHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        time.sleep(0.05)
+
+        try:
+            endpoint_url = f"http://127.0.0.1:{port}/v1/chat/completions"
+            p_live = subprocess.run([sys.executable, str(lab01_path), "--endpoint", endpoint_url, "--demo"], capture_output=True, text=True)
+            self.assertEqual(p_live.returncode, 0)
+            self.assertIn("Live HTTP Endpoint", p_live.stdout)
+            self.assertIn("边缘网关分析报告", p_live.stdout)
+            self.assertIn("闭环跑通", p_live.stdout)
+
+            p_fallback = subprocess.run([sys.executable, str(lab01_path), "--endpoint", "http://127.0.0.1:59995/v1/chat/completions", "--demo"], capture_output=True, text=True)
+            self.assertEqual(p_fallback.returncode, 0)
+            self.assertIn("自动回退到内置确定性推理引擎", p_fallback.stdout)
+            self.assertIn("闭环跑通", p_fallback.stdout)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_synthetic_wav_and_vad_chunking(self):
         import importlib.util
         import tempfile
@@ -1186,7 +1221,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 87)
+        self.assertEqual(data["total_unit_tests"], 88)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1201,7 +1236,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 87)
+        self.assertEqual(data["total_unit_tests"], 88)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
