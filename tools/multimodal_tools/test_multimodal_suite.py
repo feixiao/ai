@@ -215,6 +215,14 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(res.returncode, 0)
         self.assertIn("环境探测", res.stdout)
 
+    def test_makefile_exists_and_runs_help(self):
+        import subprocess
+        makefile = ROOT_DIR / "examples" / "multimodal_practice" / "Makefile"
+        self.assertTrue(makefile.exists())
+        p = subprocess.run(["make", "-C", str(makefile.parent), "help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("快捷指令", p.stdout)
+
 class TestSampleDataFixtures(unittest.TestCase):
     def test_sample_dataset_validation(self):
         sample_train = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "train.jsonl"

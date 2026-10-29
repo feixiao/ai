@@ -1,17 +1,17 @@
 # 2026 音视频多模态大模型实操练习套件 (Hands-on Practice Labs)
 
-> 针对 **Mac Studio（桌面边缘中心）** 与 **Google Pixel 10（移动端边缘节点）** 打造的 4 套端到端、零门槛、零外部三方依赖的音视频大模型实战练习。  
+> 针对 **Mac Studio（桌面边缘中心）** 与 **Google Pixel 10（移动端边缘节点）** 打造的 5 套端到端、零门槛、零外部三方依赖的音视频大模型实操练习与客户端套件。  
 > 理论与完整指南请参阅：[`docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md`](../../docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md)。
 
 ---
 
 ## 快速开始
 
-### 方式一：一键运行全部 4 套练习
+### 方式一：一键运行全部 6 阶段端到端流水线
 ```bash
 bash run_all_labs.sh
 ```
-*自动完成环境探测（Apple Silicon 芯片检测、统一内存 UMA 探测、可选工具检查），并依次执行 4 套实操练习流水线。*
+*自动完成环境探测（Apple Silicon 芯片检测、统一内存 UMA 探测、可选工具检查），并依次执行 6 阶段实操练习与客户端联调流水线。*
 
 ### 方式二：交互式终端控制台菜单
 ```bash
@@ -31,6 +31,16 @@ bash setup_environment.sh --install-mac-mlx
 
 # 将量化导出的模型通过 ADB 推送至在线的 Pixel 10 手机端
 bash setup_environment.sh --push-pixel10 /path/to/qwen2.5_vl_3b_w4a16.task
+```
+
+### 方式四：Developer Makefile 快捷指令
+```bash
+make demo    # 运行全量 6 阶段流水线
+make menu    # 打开交互式终端控制台
+make test    # 运行 26 项单元测试
+make check   # 探测硬件与 ADB 设备
+make report  # 查看技术雷达与基准看板
+make server  # 启动本地多模态网关服务 (8000端口)
 ```
 
 ---
