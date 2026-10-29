@@ -273,6 +273,29 @@ class TestMultimodalPipeline(unittest.TestCase):
             self.assertEqual(len(frames_empty), 2)
             self.assertEqual(desc_empty, "纯 Python 动态生成测试帧")
 
+    def test_build_vlm_request_structure_and_base64_urls(self):
+        import importlib.util
+        lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+        spec = importlib.util.spec_from_file_location("lab01", str(lab01_path))
+        lab01 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab01)
+
+        sim_frames = lab01.simulate_video_frames(num_frames=2)
+        req = lab01.build_vlm_request(sim_frames, "排查工位隐患", model="qwen2.5-vl-3b")
+        self.assertEqual(req["model"], "qwen2.5-vl-3b")
+        self.assertEqual(req["temperature"], 0.1)
+        self.assertEqual(req["max_tokens"], 512)
+        content = req["messages"][0]["content"]
+        self.assertEqual(len(content), 3)
+        self.assertTrue(content[0]["image_url"]["url"].startswith("data:image/bmp;base64,"))
+        self.assertTrue(content[1]["image_url"]["url"].startswith("data:image/bmp;base64,"))
+        self.assertIn("请根据这 2 张连续视频抽帧分析：排查工位隐患", content[2]["text"])
+
+        req_zero = lab01.build_vlm_request([], "纯文本指令")
+        self.assertEqual(len(req_zero["messages"][0]["content"]), 1)
+        self.assertEqual(req_zero["messages"][0]["content"][0]["type"], "text")
+        self.assertIn("请根据这 0 张连续视频抽帧分析：纯文本指令", req_zero["messages"][0]["content"][0]["text"])
+
 
     def test_synthetic_bmp_and_simulate_frames(self):
         import importlib.util
@@ -1774,7 +1797,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 108)
+        self.assertEqual(data["total_unit_tests"], 109)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1789,7 +1812,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 108)
+        self.assertEqual(data["total_unit_tests"], 109)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
