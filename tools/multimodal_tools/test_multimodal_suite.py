@@ -559,6 +559,28 @@ class TestDatasetFormatter(unittest.TestCase):
         self.assertIn("<image>", sg["messages"][0]["content"])
         self.assertIn("检测作业规范", sg["messages"][0]["content"])
 
+    def test_alpaca_to_sharegpt_pure_text_and_custom_tag(self):
+        alpaca_text = {
+            "instruction": "解释统一内存架构 UMA 的优势",
+            "input": "针对 Apple Silicon 与移动 SoC",
+            "output": "CPU、GPU 与 NPU 共享超高带宽物理内存池，避免张量在主机和设备内存间拷贝。"
+        }
+        res_text = alpaca_to_sharegpt(alpaca_text)
+        self.assertNotIn("image", res_text)
+        self.assertNotIn("<image>", res_text["messages"][0]["content"])
+        self.assertIn("解释统一内存架构", res_text["messages"][0]["content"])
+        self.assertEqual(len(res_text["messages"]), 2)
+
+        alpaca_img = {
+            "instruction": "检查设备指示灯",
+            "output": '{"lamp": "red"}',
+            "image": "lamp.jpg"
+        }
+        res_custom = alpaca_to_sharegpt(alpaca_img, image_tag="[IMG]")
+        self.assertIn("[IMG]", res_custom["messages"][0]["content"])
+        self.assertNotIn("<image>", res_custom["messages"][0]["content"])
+        self.assertEqual(res_custom["image"], "lamp.jpg")
+
     def test_split_reproducibility(self):
         import tempfile
         with tempfile.NamedTemporaryFile("w+", delete=False) as f_in:
@@ -1530,7 +1552,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 99)
+        self.assertEqual(data["total_unit_tests"], 100)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1545,7 +1567,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 99)
+        self.assertEqual(data["total_unit_tests"], 100)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
