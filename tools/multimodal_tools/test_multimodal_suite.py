@@ -213,6 +213,25 @@ class TestMultimodalPipeline(unittest.TestCase):
             trans = lab02.transcribe_audio_whisper_simulation(chunks)
             self.assertIn("Whisper", trans["engine"])
             self.assertIn("巡检打卡", trans["transcribed_text"])
+
+    def test_lab02_cli_custom_audio_and_tts_synthesis(self):
+        import importlib.util, subprocess
+        lab02_path = ROOT_DIR / "examples" / "multimodal_practice" / "02_audio_whisper_tts.py"
+        spec = importlib.util.spec_from_file_location("lab02", str(lab02_path))
+        lab02 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab02)
+
+        # Test synthesize_speech_response
+        tts_res = lab02.synthesize_speech_response("系统状态正常，已打卡完成。")
+        self.assertIn("Kokoro", tts_res["tts_engine"])
+        self.assertEqual(tts_res["sample_rate_hz"], 24000)
+
+        # Test CLI invocation with --audio
+        sample_audio = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "audio" / "sample_inspection_16k.wav"
+        p = subprocess.run([sys.executable, str(lab02_path), "--audio", str(sample_audio)], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("用户指定音频", p.stdout)
+        self.assertIn("双向闭环完成", p.stdout)
     def test_export_commands_and_android_snippet(self):
         import importlib.util
         lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
@@ -818,7 +837,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 66)
+        self.assertEqual(data["total_unit_tests"], 67)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
