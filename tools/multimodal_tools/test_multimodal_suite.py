@@ -268,6 +268,17 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("极速启动", p.stdout)
 
+
+    def test_quickstart_script_check_and_report(self):
+        import subprocess
+        qs_script = ROOT_DIR / "quickstart.sh"
+        p_check = subprocess.run(["bash", str(qs_script), "--check"], capture_output=True, text=True)
+        self.assertEqual(p_check.returncode, 0)
+        self.assertIn("环境探测", p_check.stdout)
+
+        p_rep = subprocess.run(["bash", str(qs_script), "--report"], capture_output=True, text=True)
+        self.assertEqual(p_rep.returncode, 0)
+        self.assertIn("技术雷达", p_rep.stdout)
     def test_multimodal_ci_workflow_exists(self):
         wf = ROOT_DIR / ".github" / "workflows" / "multimodal_ci.yml"
         self.assertTrue(wf.exists())
