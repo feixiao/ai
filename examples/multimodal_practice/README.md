@@ -108,6 +108,24 @@ bash setup_environment.sh --push-pixel10 /path/to/qwen2.5_vl_3b_w4a16.task
 
 ---
 
+### 练习 5：Mac Studio 本地 OpenAI 兼容多模态 HTTP API 网关服务
+* **脚本文件**：`05_local_multimodal_server.py`
+* **功能**：
+  1. 纯 Python 标准库构建零依赖 OpenAI 兼容 HTTP 网关；
+  2. 提供 `GET /health`（硬件/加速器状态）、`GET /v1/models`（模型枚举）；
+  3. 提供 `POST /v1/chat/completions`（多模态视觉问答）、`POST /v1/audio/transcriptions`（语音转写）；
+  4. 允许局域网内的 Pixel 10、Web 客户端或 Agent 框架跨端调用。
+* **命令示例**：
+  ```bash
+  # 自动化全路由联调自测
+  python3 05_local_multimodal_server.py --demo
+
+  # 在前台启动服务供局域网 / 手机调用 (端口 8000)
+  python3 05_local_multimodal_server.py --port 8000 --host 0.0.0.0
+  ```
+
+---
+
 ## 样例数据与真机测试资源 (`sample_data/`)
 
 套件内置了可直接查看与训练验证的静态真实样例资源：

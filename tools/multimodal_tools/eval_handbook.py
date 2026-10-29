@@ -133,6 +133,7 @@ def evaluate_hands_on_practice(content: str) -> float:
         "02_audio_whisper_tts.py",
         "03_vlm_lora_dataset_and_train.py",
         "04_export_to_pixel10.py",
+        "05_local_multimodal_server.py",
     ]
 
     passed = 0

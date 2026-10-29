@@ -199,8 +199,8 @@ class TestInteractiveMenu(unittest.TestCase):
         spec.loader.exec_module(menu)
         # Choice 0 exits
         self.assertFalse(menu.run_choice("0"))
-        # Choice 6 (probe) runs successfully
-        self.assertTrue(menu.run_choice("6"))
+        # Choice 7 (probe) runs successfully
+        self.assertTrue(menu.run_choice("7"))
 
 class TestEnvironmentScript(unittest.TestCase):
     def test_setup_environment_check(self):
@@ -235,6 +235,16 @@ class TestSampleDataFixtures(unittest.TestCase):
             self.assertEqual(wf.getnchannels(), 1)
             self.assertEqual(wf.getsampwidth(), 2)
             self.assertGreater(wf.getnframes(), 16000)
+
+class TestLocalMultimodalServer(unittest.TestCase):
+    def test_server_demo_self_test(self):
+        import importlib.util
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        self.assertTrue(lab05_path.exists())
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+        self.assertTrue(lab05.run_demo_self_test())
 
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])

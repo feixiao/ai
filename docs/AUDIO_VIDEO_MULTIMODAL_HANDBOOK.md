@@ -299,7 +299,7 @@ class PixelMultimodalInference(private val context: Context) {
 
 ---
 
-## 五、 四套开箱即用、可直接动手实操练习的工程范例 (Hands-on Practice Labs)
+## 五、 五套开箱即用、可直接动手实操练习的工程范例 (Hands-on Practice Labs)
 
 为了让手册不仅停留在理论与配置，仓库内提供了四套**零门槛、无第三方复杂依赖、在任何 Mac / PC 上可直接单键执行**的完整实操练习代码（位于 `examples/multimodal_practice/`）：
 
@@ -347,6 +347,18 @@ class PixelMultimodalInference(private val context: Context) {
 * **执行练习命令**：
   ```bash
   python3 examples/multimodal_practice/04_export_to_pixel10.py --demo
+  ```
+
+### 5.5 实操练习 5：Mac Studio 本地 OpenAI 兼容多模态 HTTP API 网关服务
+* **对应脚本**：`examples/multimodal_practice/05_local_multimodal_server.py`
+* **练习内容**：
+  1. 纯 Python 标准库构建零依赖 OpenAI 兼容 HTTP 网关服务；
+  2. 暴露 `GET /health`（硬件/加速器状态）、`GET /v1/models`（模型清单）；
+  3. 暴露 `POST /v1/chat/completions`（多模态视觉问答）、`POST /v1/audio/transcriptions`（语音转写）；
+  4. 支持 Pixel 10 移动端、Web 前端或 Agent 框架跨局域网高速调用。
+* **执行练习命令**：
+  ```bash
+  python3 examples/multimodal_practice/05_local_multimodal_server.py --demo
   ```
 
 ---
