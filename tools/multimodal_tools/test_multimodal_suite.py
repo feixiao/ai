@@ -165,6 +165,32 @@ class TestNumericalLoRAOptimization(unittest.TestCase):
         self.assertLess(res["final_loss"], res["init_loss"])
         self.assertGreater(res["loss_reduction_pct"], 70.0)
 
+    def test_qwen_72b_feasibility(self):
+        # 72B on Mac Studio 192G should be feasible
+        res_mac_192 = check_hardware_feasibility("qwen2.5-vl-72b", "mac_studio_m4_ultra_192g", "inference")
+        self.assertTrue(res_mac_192["feasible"])
+
+        # 72B on Pixel 10 must fail
+        res_pixel = check_hardware_feasibility("qwen2.5-vl-72b", "pixel_10_tensor_g5", "inference")
+        self.assertFalse(res_pixel["feasible"])
+
+    def test_gemma_3n_mobile_edge(self):
+        res = check_hardware_feasibility("gemma-3n-2b", "pixel_10_pro_tensor_g5", "inference")
+        self.assertTrue(res["feasible"])
+        self.assertLess(res["required_gb"], 3.0)
+
+class TestInteractiveMenu(unittest.TestCase):
+    def test_menu_quit_and_probe(self):
+        import importlib.util
+        menu_path = ROOT_DIR / "examples" / "multimodal_practice" / "interactive_menu.py"
+        spec = importlib.util.spec_from_file_location("interactive_menu", str(menu_path))
+        menu = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(menu)
+        # Choice 0 exits
+        self.assertFalse(menu.run_choice("0"))
+        # Choice 6 (probe) runs successfully
+        self.assertTrue(menu.run_choice("6"))
+
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

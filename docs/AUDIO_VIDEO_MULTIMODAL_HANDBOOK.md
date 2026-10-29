@@ -66,9 +66,13 @@ Mac Studio 作为边缘工作站与本地中心节点，拥有 **Apple Silicon �
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **视觉语言大模型 (VLM)** | Qwen2.5-VL-3B | INT4 (MLX) | ~2.5 GB | M2/M3/M4 Max (32G+) | 边缘低延迟视频实时分析 (15+ FPS) |
 | **视觉语言大模型 (VLM)** | Qwen2.5-VL-7B | INT4 (MLX) | ~5.2 GB | M2/M3/M4 Max (32G+) | 高精度视频语义理解、复杂工业场景 |
+| **旗舰多模态中枢 (VLM)** | Qwen2.5-VL-72B | INT4 (MLX) | ~38.0 GB | M4 Ultra (128G/192G) | 企业多路超高清并发分析旗舰中枢 |
 | **端侧轻量 VLM** | MiniCPM-V-2.6 | INT4 | ~2.1 GB | M2/M3/M4 Max (32G+) | 兼顾 Mac 验证与 Pixel 10 移植 |
+| **移动端原生 VLM** | Gemma-3n-2B | INT4 (LiteRT) | ~1.8 GB | M2/M3 Max / Pixel 10 | 现场便携低功耗巡检与语音视线交互 |
 | **语音识别 (ASR)** | Whisper-large-v3-turbo | FP16 (CoreML/ANE)| ~1.8 GB | 任意 Apple Silicon | 超高精度近实时音频转写（几乎无延迟） |
+| **端侧轻量 ASR** | Whisper-tiny / Base | FP16/INT8 | ~0.08 GB ~ 0.15 GB | 任意 Apple Silicon / Pixel 10 | 移动端 7x24 小时低功耗常驻监听 |
 | **语音合成 (TTS)** | Kokoro-82M / ChatTTS | FP16 (Metal) | ~0.5 GB ~ 1.5 GB | 任意 Apple Silicon | 本地实时拟人语音反馈与对话生成 |
+| **声音克隆 (Voice Clone)** | CosyVoice-300M | FP16 (Metal) | ~1.2 GB | M2/M3/M4 Max (32G+) | 3秒极速声音复刻与个性化播报 |
 
 ### 2.2 视觉大模型 (VLM) 本地调用实战 (Qwen2.5-VL + MLX)
 

@@ -19,12 +19,17 @@ class MultimodalModelSpec:
 MODEL_REGISTRY: Dict[str, MultimodalModelSpec] = {
     "qwen2.5-vl-3b": MultimodalModelSpec("qwen2.5-vl-3b", "vision-language", 3.0, 8192, "int4"),
     "qwen2.5-vl-7b": MultimodalModelSpec("qwen2.5-vl-7b", "vision-language", 7.0, 8192, "int4"),
+    "qwen2.5-vl-72b": MultimodalModelSpec("qwen2.5-vl-72b", "vision-language", 72.0, 8192, "int4"),
     "minicpm-v-2.6": MultimodalModelSpec("minicpm-v-2.6", "vision-language", 2.4, 4096, "int4"),
     "smolvlm-2b": MultimodalModelSpec("smolvlm-2b", "vision-language", 2.2, 4096, "int4"),
+    "gemma-3n-2b": MultimodalModelSpec("gemma-3n-2b", "vision-language", 2.0, 4096, "int4"),
+    "internvl2.5-2b": MultimodalModelSpec("internvl2.5-2b", "vision-language", 2.2, 4096, "int4"),
     "whisper-large-v3-turbo": MultimodalModelSpec("whisper-large-v3-turbo", "audio-asr", 0.8, 448, "fp16"),
     "whisper-base": MultimodalModelSpec("whisper-base", "audio-asr", 0.074, 448, "fp16"),
+    "whisper-tiny": MultimodalModelSpec("whisper-tiny", "audio-asr", 0.039, 448, "fp16"),
     "kokoro-tts": MultimodalModelSpec("kokoro-tts", "audio-tts", 0.082, 512, "fp16"),
     "chattts": MultimodalModelSpec("chattts", "audio-tts", 0.2, 1024, "fp16"),
+    "cosyvoice-300m": MultimodalModelSpec("cosyvoice-300m", "audio-tts", 0.3, 1024, "fp16"),
 }
 
 # Target hardware specifications
@@ -36,11 +41,25 @@ HARDWARE_PROFILES = {
         "max_recommended_vram_gb": 48.0,  # OS & app reserved 16GB
         "accelerators": ["Metal GPU", "Apple Neural Engine (ANE)", "VideoToolbox 4K/8K Decoders"],
     },
+    "mac_studio_m4_max_64g": {
+        "device_type": "desktop_edge_hub",
+        "total_ram_gb": 64.0,
+        "uma_bandwidth_gbs": 410.0,
+        "max_recommended_vram_gb": 48.0,
+        "accelerators": ["Metal GPU", "ANE", "VideoToolbox"],
+    },
     "mac_studio_m4_ultra_128g": {
         "device_type": "desktop_edge_hub",
         "total_ram_gb": 128.0,
         "uma_bandwidth_gbs": 800.0,
         "max_recommended_vram_gb": 104.0,
+        "accelerators": ["Metal GPU", "ANE", "VideoToolbox"],
+    },
+    "mac_studio_m4_ultra_192g": {
+        "device_type": "desktop_edge_hub",
+        "total_ram_gb": 192.0,
+        "uma_bandwidth_gbs": 820.0,
+        "max_recommended_vram_gb": 160.0,
         "accelerators": ["Metal GPU", "ANE", "VideoToolbox"],
     },
     "pixel_10_tensor_g5": {
@@ -50,7 +69,15 @@ HARDWARE_PROFILES = {
         "max_recommended_vram_gb": 4.5,  # Strict mobile OS headroom
         "accelerators": ["Edge TPU (NPU)", "Mali/Custom GPU", "LiteRT / MediaPipe"],
     },
+    "pixel_10_pro_tensor_g5": {
+        "device_type": "mobile_edge_node",
+        "total_ram_gb": 16.0,
+        "uma_bandwidth_gbs": 64.0,
+        "max_recommended_vram_gb": 4.8,
+        "accelerators": ["Edge TPU (NPU)", "Mali/Custom GPU", "LiteRT / MediaPipe"],
+    },
 }
+
 
 def estimate_inference_memory_gb(params_b: float, precision: str, video_frames: int = 16) -> Dict[str, float]:
     """
