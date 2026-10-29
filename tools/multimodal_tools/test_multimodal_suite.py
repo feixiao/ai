@@ -316,6 +316,13 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertIn("用法:", p.stdout)
         self.assertIn("install-mac-mlx", p.stdout)
 
+    def test_setup_environment_push_missing_file(self):
+        import subprocess
+        script = ROOT_DIR / "examples" / "multimodal_practice" / "setup_environment.sh"
+        p = subprocess.run(["bash", str(script), "--push-pixel10", "non_existent_model.task"], capture_output=True, text=True)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertIn("指定的模型文件不存在", p.stdout)
+
     def test_makefile_exists_and_runs_help(self):
         import subprocess
         makefile = ROOT_DIR / "examples" / "multimodal_practice" / "Makefile"
@@ -574,7 +581,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 52)
+        self.assertEqual(data["total_unit_tests"], 53)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
