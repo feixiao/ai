@@ -42,6 +42,20 @@ class TestVramAndBudget(unittest.TestCase):
         self.assertAlmostEqual(m_int4["weight_gb"], 1.5, places=2)
         self.assertAlmostEqual(m_fp16["weight_gb"], 6.0, places=2)
 
+    def test_inference_memory_video_frames_and_bf16_int8_precision(self):
+        m_0frames = estimate_inference_memory_gb(params_b=3.0, precision="int4", video_frames=0)
+        m_64frames = estimate_inference_memory_gb(params_b=3.0, precision="int4", video_frames=64)
+        self.assertLess(m_0frames["activation_and_kv_gb"], m_64frames["activation_and_kv_gb"])
+        self.assertEqual(m_0frames["activation_and_kv_gb"], 0.5)
+
+        m_bf16 = estimate_inference_memory_gb(params_b=7.0, precision="bf16")
+        m_fp16 = estimate_inference_memory_gb(params_b=7.0, precision="fp16")
+        self.assertEqual(m_bf16["weight_gb"], m_fp16["weight_gb"])
+        self.assertEqual(m_bf16["weight_gb"], 14.0)
+
+        m_int8 = estimate_inference_memory_gb(params_b=7.0, precision="int8")
+        self.assertEqual(m_int8["weight_gb"], 7.0)
+
     def test_lora_finetune_memory(self):
         lora_mem = estimate_lora_finetune_memory_gb(params_b=7.0, rank=16)
         self.assertGreater(lora_mem["total_training_gb"], 5.0)
@@ -1570,7 +1584,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 101)
+        self.assertEqual(data["total_unit_tests"], 102)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1585,7 +1599,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 101)
+        self.assertEqual(data["total_unit_tests"], 102)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
