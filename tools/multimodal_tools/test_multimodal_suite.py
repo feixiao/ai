@@ -125,6 +125,27 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertEqual(p_zero["messages"][0]["content"][0]["type"], "text")
         self.assertEqual(p_zero["messages"][0]["content"][0]["text"], "纯文本查询")
 
+    def test_build_vlm_payload_custom_model_and_fps(self):
+        frames = [0, 25, 50, 125]
+        payload = build_multimodal_vlm_payload(
+            prompt="CCTV 违规行为核查",
+            sampled_frame_indices=frames,
+            fps=25.0,
+            model_name="openbmb/MiniCPM-V-2_6"
+        )
+        self.assertEqual(payload["model"], "openbmb/MiniCPM-V-2_6")
+        self.assertEqual(payload["temperature"], 0.2)
+        self.assertEqual(payload["max_tokens"], 512)
+        content = payload["messages"][0]["content"]
+        self.assertEqual(len(content), 5)
+        self.assertEqual(content[0]["timestamp_sec"], 0.0)
+        self.assertEqual(content[1]["timestamp_sec"], 1.0)
+        self.assertEqual(content[2]["timestamp_sec"], 2.0)
+        self.assertEqual(content[3]["timestamp_sec"], 5.0)
+        self.assertEqual(content[3]["encoding"], "jpeg_base64_or_surface")
+        self.assertEqual(content[-1]["type"], "text")
+        self.assertEqual(content[-1]["text"], "CCTV 违规行为核查")
+
     def test_chunk_audio_stream_bounds(self):
         # 1 second audio at 16kHz
         chunks_1s = chunk_audio_stream(16000, 16000, chunk_duration_sec=3.0)
@@ -1387,7 +1408,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 94)
+        self.assertEqual(data["total_unit_tests"], 95)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1402,7 +1423,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 94)
+        self.assertEqual(data["total_unit_tests"], 95)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
