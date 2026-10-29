@@ -1786,6 +1786,42 @@ class TestClientServerIntegration(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_client_trailing_slash_normalization(self):
+        import importlib.util, socket, threading, time
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        client_path = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+
+        spec_srv = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec_srv)
+        spec_srv.loader.exec_module(lab05)
+
+        spec_cli = importlib.util.spec_from_file_location("client_mod", str(client_path))
+        client_mod = importlib.util.module_from_spec(spec_cli)
+        spec_cli.loader.exec_module(client_mod)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        server = HTTPServer(("127.0.0.1", port), lab05.MultimodalAPIHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        time.sleep(0.05)
+
+        try:
+            slash_url = f"http://127.0.0.1:{port}///"
+            self.assertTrue(client_mod.check_server_reachable(slash_url))
+            health = client_mod.get_server_health(slash_url)
+            self.assertEqual(health["status"], "healthy")
+            models = client_mod.list_gateway_models(slash_url)
+            self.assertIn("qwen2.5-vl-7b", models)
+            trans = client_mod.transcribe_audio_file(slash_url)
+            self.assertIn("巡检打卡", trans)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_lab01_cli_help(self):
         import subprocess
         s = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
@@ -1831,7 +1867,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 110)
+        self.assertEqual(data["total_unit_tests"], 111)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1846,7 +1882,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 110)
+        self.assertEqual(data["total_unit_tests"], 111)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
