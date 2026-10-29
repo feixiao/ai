@@ -28,7 +28,7 @@
 ### 1. 多模态生成与音视频落地 (Mac Studio 128G 实战)
 
 依托 128GB 统一内存的大容量与高带宽特性，沉淀端到端生图、生视频与数字人流水线：
-- **[2026 音视频多模态大模型实战手册：调用、微调决策与端侧部署指南](./docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md)**：聚焦 Mac Studio（主设备，高通量 VLM 推理与 LoRA 结构化微调）与 Google Pixel 10（移动端，LiteRT 实时感知）的工程全景手册，配套 4 套开箱即用练习代码（详见 [实操套件](./examples/multimodal_practice/README.md)）。
+- **[2026 音视频多模态大模型实战手册：调用、微调决策与端侧部署指南](./docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md)**：聚焦 Mac Studio（主设备，高通量 VLM 推理与 LoRA 结构化微调）与 Google Pixel 10（移动端，LiteRT 实时感知）的工程全景手册，配套 5 套开箱即用练习代码与原生客户端（详见 [实操套件](./examples/multimodal_practice/README.md)），支持 `./quickstart.sh` 或 `make demo` 一键极速起步。
 
 - **[短剧/短视频 Mac Studio 落地方案](./ComfyUI/短剧短视频_MacStudio_落地方案.md)**：利用 Wan 2.2 I2V + T2V 分镜式镜头生成，结合 Lightning LoRA 与 Tiled VAE 解码，构建 15~30s 商业短剧全流程。
 - **[HunyuanVideo 1.5 腾讯混元视频生成](./ComfyUI/hunyuan_video_1.5/README.md)**：针对 M4 Max 128GB 调优的原生 ComfyUI 节点链与 API 自动化调用测试。

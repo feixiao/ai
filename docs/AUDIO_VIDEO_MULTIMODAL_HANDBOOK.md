@@ -340,7 +340,7 @@ sequenceDiagram
 
 ## 五、 五套开箱即用、可直接动手实操练习的工程范例 (Hands-on Practice Labs)
 
-为了让手册不仅停留在理论与配置，仓库内提供了四套**零门槛、无第三方复杂依赖、在任何 Mac / PC 上可直接单键执行**的完整实操练习代码（位于 `examples/multimodal_practice/`）：
+为了让手册不仅停留在理论与配置，仓库内提供了五套**零门槛、无第三方复杂依赖、在任何 Mac / PC 上可直接单键执行**的完整实操练习代码与原生客户端（位于 `examples/multimodal_practice/`）：
 
 ### 5.1 实操练习 1：Mac Studio 视频帧抽取与视觉多模态大模型 (VLM) 调用
 * **对应脚本**：`examples/multimodal_practice/01_video_vlm_inference.py`
