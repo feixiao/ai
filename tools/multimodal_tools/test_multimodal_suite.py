@@ -217,6 +217,18 @@ class TestMultimodalPipeline(unittest.TestCase):
             self.assertEqual(len(saved_bmps), 2)
             self.assertTrue(saved_bmps[0].stat().st_size > 0)
 
+    def test_lab01_cli_custom_prompt_and_model(self):
+        import subprocess
+        lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+        p = subprocess.run(
+            [sys.executable, str(lab01_path), "--model", "qwen2.5-vl-3b", "--prompt", "核查设备温度与指示灯状态", "--demo"],
+            capture_output=True, text=True
+        )
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("模型目标: qwen2.5-vl-3b", p.stdout)
+        self.assertIn("核查设备温度与指示灯状态", p.stdout)
+        self.assertIn("闭环跑通", p.stdout)
+
     def test_synthetic_wav_and_vad_chunking(self):
         import importlib.util
         import tempfile
@@ -1011,7 +1023,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 80)
+        self.assertEqual(data["total_unit_tests"], 81)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1026,7 +1038,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 80)
+        self.assertEqual(data["total_unit_tests"], 81)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
