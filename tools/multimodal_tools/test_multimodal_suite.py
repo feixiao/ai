@@ -590,6 +590,36 @@ class TestDatasetFormatter(unittest.TestCase):
             if os.path.exists(tmp_out):
                 os.remove(tmp_out)
 
+    def test_build_multimodal_dataset_from_folder_edge_cases(self):
+        import tempfile, json
+        from dataset_formatter import build_multimodal_dataset_from_folder
+
+        with self.assertRaises(FileNotFoundError):
+            build_multimodal_dataset_from_folder("/non/existent/image/folder/12345")
+
+        with tempfile.TemporaryDirectory() as empty_dir:
+            res = build_multimodal_dataset_from_folder(empty_dir)
+            self.assertEqual(res, 0)
+
+        frames_dir = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "frames"
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".jsonl") as f_out:
+            tmp_out = f_out.name
+        try:
+            count = build_multimodal_dataset_from_folder(
+                str(frames_dir),
+                prompt="识别设备红绿指示灯",
+                default_response='{"indicator": "green", "status": "safe"}',
+                output_file=tmp_out
+            )
+            self.assertEqual(count, 4)
+            with open(tmp_out, "r", encoding="utf-8") as f:
+                row = json.loads(f.readline().strip())
+                self.assertIn("识别设备红绿指示灯", row["messages"][0]["content"])
+                self.assertEqual(row["messages"][1]["content"], '{"indicator": "green", "status": "safe"}')
+        finally:
+            if os.path.exists(tmp_out):
+                os.remove(tmp_out)
+
     def test_validate_multimodal_dataset_anomalies_and_truncation(self):
         import tempfile, json
         from dataset_formatter import validate_multimodal_dataset
@@ -1408,7 +1438,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 95)
+        self.assertEqual(data["total_unit_tests"], 96)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1423,7 +1453,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 95)
+        self.assertEqual(data["total_unit_tests"], 96)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
