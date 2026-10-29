@@ -574,6 +574,9 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
+        self.assertEqual(data["total_unit_tests"], 52)
+        self.assertEqual(data["practice_labs_count"], 5)
+        self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
         self.assertEqual(data["hardware_profiles_count"], 6)
         self.assertIn("qwen2.5-vl-72b", data["models"])
