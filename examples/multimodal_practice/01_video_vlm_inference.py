@@ -65,6 +65,35 @@ def simulate_video_frames(num_frames: int = 4) -> list:
         })
     return frames
 
+def load_or_simulate_video_frames(sample_dir: str = None, num_frames: int = 4) -> tuple:
+    """
+    优先从 sample_data/frames/ 加载真实预置的 BMP 关键帧图片；
+    若目录不存在或为空，则无缝回退到纯 Python 动态生成测试帧。
+    返回: (frames, source_description)
+    """
+    if sample_dir is None:
+        default_dir = Path(__file__).resolve().parent / "sample_data" / "frames"
+        if default_dir.exists():
+            sample_dir = str(default_dir)
+
+    if sample_dir and os.path.isdir(sample_dir):
+        bmp_files = sorted(Path(sample_dir).glob("*.bmp"))
+        if bmp_files:
+            frames = []
+            for i, p in enumerate(bmp_files[:num_frames]):
+                b64_str = base64.b64encode(p.read_bytes()).decode("utf-8")
+                frames.append({
+                    "frame_id": i,
+                    "timestamp_sec": i * 2.0,
+                    "base64_data": b64_str,
+                    "file_path": str(p),
+                    "simulated_scene": f"从预置样例加载: {p.name}"
+                })
+            return frames, f"预置样本目录 ({sample_dir})"
+
+    frames = simulate_video_frames(num_frames)
+    return frames, "纯 Python 动态生成测试帧"
+
 def build_vlm_request(frames: list, user_prompt: str, model: str = "qwen2.5-vl:7b") -> dict:
     """构建标准多模态交互消息格式"""
     content = []
@@ -154,11 +183,10 @@ def main():
     print(" 🎬 实操 1：Mac Studio 视频多模态大模型 (VLM) 实时调用练习")
     print("===============================================================")
     
-    print("\n[步骤 1] 正在模拟视频时间轴高通量均匀抽帧...")
-    frames = simulate_video_frames(num_frames=4)
+    frames, source_desc = load_or_simulate_video_frames(num_frames=4)
+    print(f"\n[步骤 1] 正在加载视频时序关键帧 (数据源: {source_desc})...")
     for f in frames:
         print(f"  - 提取帧 #{f['frame_id']} | 时间戳: {f['timestamp_sec']}s | 编码大小: {len(f['base64_data'])} 字符")
-
     if args.dump_frames:
         save_frames_to_disk(frames, args.dump_frames)
 

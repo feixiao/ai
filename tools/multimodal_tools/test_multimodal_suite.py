@@ -113,6 +113,17 @@ class TestMultimodalPipeline(unittest.TestCase):
         invalid_spec["context_memory_budget_mb"] = 5500
         self.assertFalse(validate_edge_export_spec(invalid_spec)["valid"])
 
+    def test_load_or_simulate_video_frames(self):
+        import importlib.util
+        lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+        spec = importlib.util.spec_from_file_location("lab01", str(lab01_path))
+        lab01 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab01)
+        frames, desc = lab01.load_or_simulate_video_frames(num_frames=4)
+        self.assertEqual(len(frames), 4)
+        self.assertIn("base64_data", frames[0])
+        self.assertIn("预置样本目录", desc)
+
 class TestDatasetFormatter(unittest.TestCase):
     def test_estimate_tokens(self):
         self.assertEqual(estimate_tokens("", num_images=0), 0)
