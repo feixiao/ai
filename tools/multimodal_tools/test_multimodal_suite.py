@@ -260,6 +260,14 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertIn("client_example", content)
         self.assertIn("setup_environment.sh", content)
 
+    def test_quickstart_script_help(self):
+        import subprocess
+        qs_script = ROOT_DIR / "quickstart.sh"
+        self.assertTrue(qs_script.exists())
+        p = subprocess.run(["bash", str(qs_script), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("极速启动", p.stdout)
+
 class TestSampleDataFixtures(unittest.TestCase):
     def test_sample_dataset_validation(self):
         sample_train = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "train.jsonl"
