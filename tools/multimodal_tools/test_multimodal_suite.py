@@ -124,6 +124,20 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertIn("base64_data", frames[0])
         self.assertIn("预置样本目录", desc)
 
+    def test_export_commands_and_android_snippet(self):
+        import importlib.util
+        lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
+        spec = importlib.util.spec_from_file_location("lab04", str(lab04_path))
+        lab04 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab04)
+        cmds = lab04.get_export_cli_commands("qwen2.5-vl-3b")
+        self.assertIn("LiteRT_Edge_TPU", cmds)
+        self.assertIn("GGUF_llama_cpp", cmds)
+        self.assertIn("ExecuTorch_Vulkan", cmds)
+        snippet = lab04.generate_android_snippet()
+        self.assertIn("EdgeVisionAnalyzer", snippet)
+        self.assertIn("CameraX", snippet)
+
 class TestDatasetFormatter(unittest.TestCase):
     def test_estimate_tokens(self):
         self.assertEqual(estimate_tokens("", num_images=0), 0)
