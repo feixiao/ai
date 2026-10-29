@@ -66,6 +66,15 @@ class TestVramAndBudget(unittest.TestCase):
         with self.assertRaises(ValueError):
             check_hardware_feasibility("qwen2.5-vl-3b", "non_existent_device")
 
+    def test_unsupported_task_and_lora_rank_scaling(self):
+        with self.assertRaises(ValueError):
+            check_hardware_feasibility("qwen2.5-vl-3b", "mac_studio_m2_max_64g", task="pretrain_from_scratch")
+
+        r16 = estimate_lora_finetune_memory_gb(params_b=7.0, rank=16)
+        r32 = estimate_lora_finetune_memory_gb(params_b=7.0, rank=32)
+        self.assertGreater(r32["lora_trainable_gb"], r16["lora_trainable_gb"])
+        self.assertGreater(r32["total_training_gb"], r16["total_training_gb"])
+
     def test_vram_and_budget_cli_model_and_device(self):
         import subprocess
         script = TOOLS_DIR / "vram_and_budget.py"
@@ -795,7 +804,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 64)
+        self.assertEqual(data["total_unit_tests"], 65)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
