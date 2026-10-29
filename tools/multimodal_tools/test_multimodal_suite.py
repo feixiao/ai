@@ -574,6 +574,28 @@ class TestInteractiveMenu(unittest.TestCase):
         self.assertEqual(p_choice.returncode, 0)
         self.assertIn("宿主机硬件环境与多模态加速能力探测", p_choice.stdout)
 
+    def test_menu_print_menu_and_invalid_choice(self):
+        import importlib.util, io
+        from contextlib import redirect_stdout
+        menu_path = ROOT_DIR / "examples" / "multimodal_practice" / "interactive_menu.py"
+        spec = importlib.util.spec_from_file_location("interactive_menu", str(menu_path))
+        menu = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(menu)
+
+        f = io.StringIO()
+        with redirect_stdout(f):
+            menu.print_menu()
+        out = f.getvalue()
+        self.assertIn("音视频多模态大模型实操练习控制台", out)
+        self.assertIn("实操 1", out)
+        self.assertIn("退出", out)
+
+        f_invalid = io.StringIO()
+        with redirect_stdout(f_invalid):
+            res = menu.run_choice("999")
+        self.assertTrue(res)
+        self.assertIn("无效选项: 999", f_invalid.getvalue())
+
 class TestEnvironmentScript(unittest.TestCase):
     def test_setup_environment_check(self):
         import subprocess
@@ -1128,7 +1150,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 85)
+        self.assertEqual(data["total_unit_tests"], 86)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1143,7 +1165,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 85)
+        self.assertEqual(data["total_unit_tests"], 86)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
