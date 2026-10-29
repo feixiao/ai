@@ -200,6 +200,21 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(res.returncode, 0)
         self.assertIn("环境探测", res.stdout)
 
+class TestSampleDataFixtures(unittest.TestCase):
+    def test_sample_dataset_validation(self):
+        sample_train = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "train.jsonl"
+        self.assertTrue(sample_train.exists())
+        stats = validate_multimodal_dataset(str(sample_train))
+        self.assertEqual(stats["health_score"], 100.0)
+        self.assertEqual(stats["invalid_records"], 0)
+        self.assertEqual(stats["truncation_risk_count"], 0)
+
+    def test_sample_frames_exist(self):
+        frames_dir = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "frames"
+        self.assertTrue(frames_dir.exists())
+        bmps = list(frames_dir.glob("*.bmp"))
+        self.assertEqual(len(bmps), 4)
+
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

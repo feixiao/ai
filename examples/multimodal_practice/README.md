@@ -105,3 +105,13 @@ bash setup_environment.sh --push-pixel10 /path/to/qwen2.5_vl_3b_w4a16.task
   ```bash
   python3 04_export_to_pixel10.py --demo
   ```
+
+---
+
+## 样例数据与真机测试资源 (`sample_data/`)
+
+套件内置了可直接查看与训练验证的静态真实样例资源：
+* `sample_data/train.jsonl`：包含 4 条真实多模态标注的 ShareGPT 格式训练数据（含 `<image>` 占位与结构化 JSON 输出契约）；
+* `sample_data/valid.jsonl`：验证集样例；
+* `sample_data/video_inspection_metadata.json`：工业监控切片元数据定义（包含摄像头编号、分辨率、采样步长与目标 ROI 坐标）；
+* `sample_data/frames/`：预先生成的 4 张 BMP 关键帧图片（可直接在 Finder / 系统看图器中查看）。
