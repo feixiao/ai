@@ -661,6 +661,32 @@ class TestDatasetFormatter(unittest.TestCase):
                 if os.path.exists(p):
                     os.remove(p)
 
+    def test_split_dataset_boundary_ratios_and_blank_lines(self):
+        import tempfile
+        from dataset_formatter import split_multimodal_dataset
+
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".jsonl") as f_in:
+            f_in.write('{"line": 1}\n\n   \n{"line": 2}\n{"line": 3}\n')
+            temp_path = f_in.name
+
+        t1, v1 = tempfile.NamedTemporaryFile(delete=False).name, tempfile.NamedTemporaryFile(delete=False).name
+        t2, v2 = tempfile.NamedTemporaryFile(delete=False).name, tempfile.NamedTemporaryFile(delete=False).name
+
+        try:
+            n_tr, n_val = split_multimodal_dataset(temp_path, t1, v1, train_ratio=1.0)
+            self.assertEqual(n_tr, 3)
+            self.assertEqual(n_val, 0)
+            with open(v1) as f:
+                self.assertEqual(f.read(), "")
+
+            n_tr0, n_val0 = split_multimodal_dataset(temp_path, t2, v2, train_ratio=0.0)
+            self.assertEqual(n_tr0, 0)
+            self.assertEqual(n_val0, 3)
+        finally:
+            for p in [temp_path, t1, v1, t2, v2]:
+                if os.path.exists(p):
+                    os.remove(p)
+
     def test_dataset_formatter_cli_validate(self):
         import subprocess
         script = TOOLS_DIR / "dataset_formatter.py"
@@ -1686,7 +1712,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 105)
+        self.assertEqual(data["total_unit_tests"], 106)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1701,7 +1727,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 105)
+        self.assertEqual(data["total_unit_tests"], 106)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
