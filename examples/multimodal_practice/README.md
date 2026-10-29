@@ -3,6 +3,45 @@
 > 针对 **Mac Studio（桌面边缘中心）** 与 **Google Pixel 10（移动端边缘节点）** 打造的 5 套端到端、零门槛、零外部三方依赖的音视频大模型实操练习与客户端套件。  
 > 理论与完整指南请参阅：[`docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md`](../../docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md)。
 
+
+---
+
+## 系统架构拓扑全景 (Architecture Topology)
+
+```
+                            ┌──────────────────────────────────────────────────────────┐
+                            │     Mac Studio (Apple Silicon UMA 400~800GB/s MEC)       │
+                            │                                                          │
+                            │  ┌────────────────────────────────────────────────────┐  │
+                            │  │ 05_local_multimodal_server.py (HTTP API Gateway)   │  │
+                            │  │  - GET  /health        (Metal/ANE Accelerator Info)│  │
+                            │  │  - GET  /v1/models     (Loaded Models Registry)    │  │
+                            │  │  - POST /v1/chat/completions  (Multimodal VLM)     │  │
+                            │  │  - POST /v1/audio/transcriptions (Whisper ASR)     │  │
+                            │  └────────▲───────────────────────────────▲───────────┘  │
+                            │           │                               │              │
+     本地调用与客户端演练   │           │                               │              │
+┌───────────────────────────┤           │                               │              │
+│ 01_video_vlm_inference.py ┼───────────┘                               │              │
+│ 02_audio_whisper_tts.py   ┼───────────────────────────────────────────┘              │
+│ 03_vlm_lora_train.py      │ (LoRA W + (alpha/r)*BA 原生数学梯度下降仿真)              │
+│ client_example.py         │ (零依赖原生 Python SDK 参考实现)                         │
+└───────────────────────────┴───────────────────────────┬──────────────────────────────┘
+                                                        │
+                                                        │ 量化导出 (04_export_to_pixel10.py)
+                                                        │ W4A16 INT4 权重 (1.8GB) + ADB Push
+                                                        │
+                                                        ▼
+                            ┌──────────────────────────────────────────────────────────┐
+                            │     Google Pixel 10 (Tensor G5 Edge Sensor Node)         │
+                            │                                                          │
+                            │  - 硬件边界: 可用物理内存 <= 4.5GB, 被动散热功耗 < 2W     │
+                            │  - 移动运行时: Google LiteRT / MediaPipe GenAI Task      │
+                            │  - 零拷贝管线: CameraX HardwareBuffer 直通 Edge TPU      │
+                            │  - 本地常驻: Qwen2.5-VL-3B-INT4 + Whisper-Tiny (离线感知) │
+                            │  - 协同上报: 遇复杂疑难切片 ➔ 局域网请求 Mac Studio 网关  │
+                            └──────────────────────────────────────────────────────────┘
+```
 ---
 
 ## 快速开始

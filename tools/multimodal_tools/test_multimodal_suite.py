@@ -251,6 +251,15 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("已清理", p.stdout)
 
+    def test_practice_readme_structure(self):
+        readme = ROOT_DIR / "examples" / "multimodal_practice" / "README.md"
+        self.assertTrue(readme.exists())
+        content = readme.read_text(encoding="utf-8")
+        self.assertIn("系统架构拓扑全景", content)
+        self.assertIn("05_local_multimodal_server", content)
+        self.assertIn("client_example", content)
+        self.assertIn("setup_environment.sh", content)
+
 class TestSampleDataFixtures(unittest.TestCase):
     def test_sample_dataset_validation(self):
         sample_train = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "train.jsonl"
