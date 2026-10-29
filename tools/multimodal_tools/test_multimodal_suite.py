@@ -515,6 +515,17 @@ class TestNumericalLoRAOptimization(unittest.TestCase):
         self.assertIn("预置实体标注数据集", p.stdout)
         self.assertIn("10 步梯度下降", p.stdout)
 
+    def test_lab03_cli_outdir(self):
+        import subprocess, tempfile
+        lab03_path = ROOT_DIR / "examples" / "multimodal_practice" / "03_vlm_lora_dataset_and_train.py"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            p = subprocess.run([sys.executable, str(lab03_path), "--outdir", tmpdir, "--steps", "5"], capture_output=True, text=True)
+            self.assertEqual(p.returncode, 0)
+            self.assertIn("自动生成结构化 ShareGPT 多模态微调数据集", p.stdout)
+            self.assertIn("训练集就绪", p.stdout)
+            self.assertIn("验证集就绪", p.stdout)
+            self.assertIn("契约收敛验证跑通", p.stdout)
+
 class TestInteractiveMenu(unittest.TestCase):
     def test_menu_quit_and_probe(self):
         import importlib.util
@@ -931,7 +942,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 76)
+        self.assertEqual(data["total_unit_tests"], 77)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -946,7 +957,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 76)
+        self.assertEqual(data["total_unit_tests"], 77)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
