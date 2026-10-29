@@ -33,6 +33,14 @@ def get_server_health(server_url: str) -> dict:
     with urllib.request.urlopen(req, timeout=5) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
+def list_gateway_models(server_url: str) -> list:
+    """查询远程 Mac Studio 网关已加载的模型列表"""
+    url = f"{server_url.rstrip('/')}/v1/models"
+    req = urllib.request.Request(url, headers={"Connection": "close"})
+    with urllib.request.urlopen(req, timeout=5) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+        return [m.get("id") for m in data.get("data", [])]
+
 def chat_multimodal_vision(server_url: str, prompt: str, image_paths: list = None) -> str:
     """向 Mac Studio 网关发送时序视觉图像帧并获取结构化分析"""
     url = f"{server_url.rstrip('/')}/v1/chat/completions"
@@ -116,6 +124,8 @@ def main():
         print("  - 服务状态:", health.get("status"))
         print("  - 硬件画像:", health.get("hardware_profile"))
         print("  - 加速硬件:", health.get("accelerators"))
+        models = list_gateway_models(server_url)
+        print("  - 在线模型列表:", ", ".join(models))
 
         # 2. 视觉抽帧问答
         sample_frames = list(Path(__file__).resolve().parent.glob("sample_data/frames/*.bmp"))[:2]
