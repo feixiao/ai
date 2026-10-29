@@ -16,6 +16,7 @@ show_help() {
   --check                 (默认) 探测 Mac Studio 与 Pixel 10 本地部署工具链完整性
   --install-mac-mlx       安装针对 Apple Silicon 优化的 MLX 生产级多模态库 (mlx-vlm, mlx-whisper)
   --push-pixel10 <文件>    通过 ADB 将量化后的端侧模型 (.task/.tflite) 推送到 Pixel 10
+  --download-models       显示 Mac Studio 与 Pixel 10 推荐模型权重极速下载指令
   --help                  显示本帮助文档
 EOF
 }
@@ -106,6 +107,33 @@ push_to_pixel10() {
     echo "✅ 模型推送成功！Pixel 10 端侧路径: ${target_dir}/$(basename "${model_path}")"
 }
 
+download_models_guide() {
+    cat <<EOF
+==================================================================
+📥 2026 推荐音视频多模态模型权重极速拉取指令 (Mac & Pixel 10)
+==================================================================
+
+1. Mac Studio 视觉语言大模型 (首选 Qwen2.5-VL-7B 4-bit):
+   - Ollama 方式:
+     ollama pull qwen2.5-vl:7b
+   - Apple MLX 方式 (Hugging Face / ModelScope):
+     huggingface-cli download mlx-community/Qwen2.5-VL-7B-Instruct-4bit --local-dir ./models/qwen2.5-vl-7b
+
+2. Mac Studio 语音大模型 (首选 Whisper-large-v3-turbo):
+   - MLX-Whisper 方式:
+     huggingface-cli download mlx-community/whisper-large-v3-turbo --local-dir ./models/whisper-large-v3-turbo
+   - 极轻量 Kokoro-TTS:
+     huggingface-cli download hexgrad/Kokoro-82M --local-dir ./models/kokoro-82m
+
+3. Pixel 10 移动端轻量模型 (首选 Qwen2.5-VL-3B-INT4 / Gemma-3n-2B):
+   - LiteRT / MediaPipe Task 格式:
+     huggingface-cli download google/gemma-3n-2b-it-litert --local-dir ./models/pixel10/gemma-3n-2b
+   - GGUF 格式 (llama.cpp 移动端 Vulkan):
+     huggingface-cli download Qwen/Qwen2.5-VL-3B-Instruct-GGUF --include "*q4_k_m.gguf" --local-dir ./models/pixel10/
+==================================================================
+EOF
+}
+
 case "${1:-}" in
     --check|"")
         check_environment
@@ -115,6 +143,9 @@ case "${1:-}" in
         ;;
     --push-pixel10)
         push_to_pixel10 "${2:-}"
+        ;;
+    --download-models)
+        download_models_guide
         ;;
     --help|-h)
         show_help

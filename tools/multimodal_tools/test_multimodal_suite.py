@@ -261,6 +261,15 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(res.returncode, 0)
         self.assertIn("环境探测", res.stdout)
 
+    def test_setup_environment_download_models(self):
+        import subprocess
+        script = ROOT_DIR / "examples" / "multimodal_practice" / "setup_environment.sh"
+        p = subprocess.run(["bash", str(script), "--download-models"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("qwen2.5-vl", p.stdout)
+        self.assertIn("Whisper", p.stdout)
+        self.assertIn("Pixel 10", p.stdout)
+
     def test_makefile_exists_and_runs_help(self):
         import subprocess
         makefile = ROOT_DIR / "examples" / "multimodal_practice" / "Makefile"
