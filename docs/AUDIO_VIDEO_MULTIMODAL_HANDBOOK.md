@@ -150,6 +150,12 @@ def transcribe_audio_whisper(audio_path: str) -> str:
 {"messages": [{"role": "user", "content": "<image>检测画面中作业人员是否穿戴绝缘手套与反光背心？"}, {"role": "assistant", "content": "{\"ppe_compliant\": false, \"violations\": [\"missing_insulated_gloves\"], \"confidence\": 0.96}"}]}
 ```
 
+可以使用配套工具对数据集进行全自动语法、Token 截断与 Schema 校验：
+```bash
+# 检查数据格式与上下文长度超标风险
+python3 tools/multimodal_tools/dataset_formatter.py --validate data/train.jsonl
+```
+
 #### 2. 启动 MLX LoRA 微调命令
 ```bash
 python -m mlx_vlm.lora \
@@ -396,7 +402,16 @@ python3 tools/multimodal_tools/multimodal_pipeline.py --sample-video --total-fra
 python3 tools/multimodal_tools/multimodal_pipeline.py --chunk-audio --audio-duration-sec 10
 ```
 
-### 7.3 实操练习一键运行与基准评估
+### 7.3 多模态数据集格式化与切分工具 (`dataset_formatter.py`)
+```bash
+# 校验 JSONL 多模态数据语法与 Token 截断风险
+python3 tools/multimodal_tools/dataset_formatter.py --validate data/train.jsonl
+
+# 将全量数据集按 85:15 比例确定性切分为训练集与验证集
+python3 tools/multimodal_tools/dataset_formatter.py --split data/all.jsonl --train-out data/train.jsonl --valid-out data/valid.jsonl --ratio 0.85
+```
+
+### 7.4 实操练习一键运行与基准评估
 可以通过一键运行脚本体验全部 4 套练习：
 ```bash
 bash examples/multimodal_practice/run_all_labs.sh

@@ -92,9 +92,9 @@ def evaluate_code_validity(code_blocks: list) -> float:
     try:
         from vram_and_budget import run_budget_benchmark
         run_budget_benchmark()
-        tools_ok = True
+        budget_ok = True
     except Exception:
-        tools_ok = False
+        budget_ok = False
 
     try:
         from multimodal_pipeline import run_pipeline_benchmark
@@ -103,7 +103,15 @@ def evaluate_code_validity(code_blocks: list) -> float:
     except Exception:
         pipeline_ok = False
 
-    score = syntax_ratio * 50.0 + (25.0 if tools_ok else 0.0) + (25.0 if pipeline_ok else 0.0)
+    try:
+        from dataset_formatter import run_dataset_formatter_benchmark
+        run_dataset_formatter_benchmark()
+        formatter_ok = True
+    except Exception:
+        formatter_ok = False
+
+    tools_ratio = (float(budget_ok) + float(pipeline_ok) + float(formatter_ok)) / 3.0
+    score = syntax_ratio * 50.0 + tools_ratio * 50.0
     return round(score, 2)
 
 def evaluate_hands_on_practice(content: str) -> float:
