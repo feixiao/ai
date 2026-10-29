@@ -22,6 +22,7 @@ show_help() {
   --check      探测宿主机 Apple Silicon 芯片、UMA 内存及 Pixel 10 ADB 状态
   --report     打印多模态技术雷达与基准全景看板
   --server     在前台启动本地 OpenAI 兼容 HTTP 网关服务 (端口 8000)
+  --clean      清理临时音频与数据测试缓存
   --help       显示本帮助文档
 ==================================================================
 EOF
@@ -42,6 +43,10 @@ case "${1:-}" in
         ;;
     --server|-s)
         exec "$PYTHON_BIN" "${SCRIPT_DIR}/examples/multimodal_practice/05_local_multimodal_server.py" --port 8000 --host 0.0.0.0
+        ;;
+    --clean)
+        rm -rf /tmp/test_multimodal_audio.wav /tmp/multimodal_lora_data
+        echo "🧹 临时缓存已清理完毕。"
         ;;
     --help|-h)
         show_help

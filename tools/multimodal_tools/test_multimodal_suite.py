@@ -312,6 +312,10 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(p_rep.returncode, 0)
         self.assertIn("技术雷达", p_rep.stdout)
 
+        p_clean = subprocess.run(["bash", str(qs_script), "--clean"], capture_output=True, text=True)
+        self.assertEqual(p_clean.returncode, 0)
+        self.assertIn("已清理", p_clean.stdout)
+
     def test_run_all_labs_script(self):
         import subprocess
         runner = ROOT_DIR / "examples" / "multimodal_practice" / "run_all_labs.sh"
