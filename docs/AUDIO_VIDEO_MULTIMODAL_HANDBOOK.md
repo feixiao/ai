@@ -476,13 +476,29 @@ python3 tools/multimodal_tools/dataset_formatter.py --split data/all.jsonl --tra
 ```
 
 ### 7.4 实操练习一键运行与基准评估
-可以通过一键运行脚本体验全部 4 套练习：
+可以通过一键运行脚本体验全部 6 阶段流水线：
 ```bash
-# 一键执行全量流水线
+# 一键执行全量 6 阶段流水线
 bash examples/multimodal_practice/run_all_labs.sh
 
-# 或进入交互式终端控制台菜单自由单选练习
+# 或进入交互式终端控制台菜单自由单选练习 (选项 0~10)
 bash examples/multimodal_practice/run_all_labs.sh --menu
 ```
+
+### 7.5 全景命令行速查矩阵 (Master CLI Command Reference Table)
+
+| 场景分类 | 目标工具 / 脚本 | 推荐命令 | 作用与输出说明 |
+| :--- | :--- | :--- | :--- |
+| **一键流水线** | 根目录快捷调度 | `make demo` | 串行执行抽帧、语音、LoRA数学、INT4导出、网关、客户端6阶段 |
+| **交互式控制台**| 终端 TUI 菜单 | `make menu` | 打开数字菜单自由单选执行各实操练习或硬件探测 |
+| **单元测试套件**| 原生 unittest | `make test` | 快速执行 27 项边界与数学公式全量单元测试 |
+| **自动化基准** | Autoresearch | `make benchmark` | 评估手册结构、代码语法、执行力与篇幅平衡指标 (100分) |
+| **硬件环境探针**| 工具链检测 | `make check` | 探测 Mac Studio 芯片、UMA 内存、FFmpeg 及 Pixel 10 ADB |
+| **技术雷达看板**| 全景评估看板 | `make report` | 打印 6 项基准得分、13 款模型与 6 档硬件画像规格表 |
+| **微服务网关** | OpenAI 兼容服务 | `make server` | 在前台启动多模态 HTTP API 网关服务 (监听 8000 端口) |
+| **显存预算核算**| 预算估算器 | `python3 tools/multimodal_tools/vram_and_budget.py --list-models` | 列出已注册模型与默认精度，支持 `--model` 与 `--device` 测算 |
+| **数据格式工程**| 数据集工具 | `python3 tools/multimodal_tools/dataset_formatter.py --validate data.jsonl` | 扫描多模态数据语法、Token 截断风险并支持确定性切分 |
+| **抽帧采样调试**| 视频流仿真 | `python3 tools/multimodal_tools/multimodal_pipeline.py --sample-video` | 验证多模态 Token 构建与滑动窗口 VAD 切片逻辑 |
+| **客户端直连** | 原生客户端调用 | `python3 examples/multimodal_practice/client_example.py --server http://127.0.0.1:8000` | 零依赖直接请求 Mac Studio 网关完成视觉问答与语音转写 |
 
 全套体系通过 `bash autoresearch.sh` 实行持续基准验证，确保所有公式、语法、命令在 Mac Studio 及通用开发环境下均严格自洽闭环。
