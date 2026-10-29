@@ -16,6 +16,16 @@ import sys
 import urllib.request
 from pathlib import Path
 
+def check_server_reachable(server_url: str, timeout: float = 2.0) -> bool:
+    """快速探测远程 Mac Studio 多模态网关端口是否连通"""
+    try:
+        url = f"{server_url.rstrip('/')}/health"
+        req = urllib.request.Request(url, headers={"Connection": "close"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
 def get_server_health(server_url: str) -> dict:
     """探测 Mac Studio 边缘算力服务运行状态与统一内存"""
     url = f"{server_url.rstrip('/')}/health"

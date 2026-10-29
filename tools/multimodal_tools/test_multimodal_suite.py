@@ -655,6 +655,16 @@ class TestClientServerIntegration(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("客户端端到端调用", p.stdout)
 
+    def test_client_server_reachability_probe(self):
+        import importlib.util
+        client_path = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+        spec = importlib.util.spec_from_file_location("client_mod", str(client_path))
+        client_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(client_mod)
+
+        # Unused port must return False
+        self.assertFalse(client_mod.check_server_reachable("http://127.0.0.1:59998", timeout=0.5))
+
     def test_client_example_cli_help(self):
         import subprocess
         client_script = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
@@ -707,7 +717,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 59)
+        self.assertEqual(data["total_unit_tests"], 60)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
