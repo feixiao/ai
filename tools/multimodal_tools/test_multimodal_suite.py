@@ -209,6 +209,23 @@ class TestMultimodalPipeline(unittest.TestCase):
             for f in (tmp_man, tmp_kt):
                 if os.path.exists(f):
                     os.remove(f)
+
+    def test_lab04_quantization_calculation(self):
+        import importlib.util
+        lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
+        spec = importlib.util.spec_from_file_location("lab04", str(lab04_path))
+        lab04 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab04)
+
+        manifest = lab04.run_quantization_and_export("Qwen2.5-VL-3B-Instruct")
+        self.assertEqual(manifest["quantization"]["format"], "W4A16")
+        self.assertEqual(manifest["quantization"]["weight_bits"], 4)
+        mem = manifest["memory_profile_gb"]
+        self.assertEqual(mem["fp16_original_size"], 6.0)
+        self.assertEqual(mem["quantized_weights_size"], 1.8)
+        self.assertEqual(mem["total_peak_ram"], 3.0)
+        self.assertTrue(mem["safe_to_deploy"])
+        self.assertEqual(mem["device_safe_ceiling"], 4.5)
     def test_multimodal_pipeline_cli_flags(self):
         import subprocess
         script = TOOLS_DIR / "multimodal_pipeline.py"
@@ -679,7 +696,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 57)
+        self.assertEqual(data["total_unit_tests"], 58)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
