@@ -28,6 +28,7 @@
 ### 1. 多模态生成与音视频落地 (Mac Studio 128G 实战)
 
 依托 128GB 统一内存的大容量与高带宽特性，沉淀端到端生图、生视频与数字人流水线：
+- **[2026 音视频多模态大模型实战手册：调用、微调决策与端侧部署指南](./docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md)**：聚焦 Mac Studio（主设备，高通量 VLM 推理与 LoRA 结构化微调）与 Google Pixel 10（移动端，LiteRT 实时感知）的工程全景手册，配套 4 套开箱即用练习代码（详见 [实操套件](./examples/multimodal_practice/README.md)）。
 
 - **[短剧/短视频 Mac Studio 落地方案](./ComfyUI/短剧短视频_MacStudio_落地方案.md)**：利用 Wan 2.2 I2V + T2V 分镜式镜头生成，结合 Lightning LoRA 与 Tiled VAE 解码，构建 15~30s 商业短剧全流程。
 - **[HunyuanVideo 1.5 腾讯混元视频生成](./ComfyUI/hunyuan_video_1.5/README.md)**：针对 M4 Max 128GB 调优的原生 ComfyUI 节点链与 API 自动化调用测试。
@@ -70,6 +71,7 @@
 ### 4. 高性能端侧与本地推理引擎 (Local LLM & Native Inference)
 
 在 128GB 内存上实现极速纯端侧模型吞吐与调度：
+- **[工业级端侧与边缘计算全景实战体系](./edge_ai_workspace/README.md)**：覆盖 Mac Studio 边缘中心节点、Android Pixel 10 现场移动传感器节点及 NVIDIA Jetson 工业具身智能三大落地场景。
 
 - **[ds4 (DwarfStar)](./ds4/README.md)**：antirez 开源的高性能原生 C 推理引擎与 Coding Agent，支持 DeepSeek V4 Flash/PRO、GLM 5.2 等长上下文模型。
 - **[h3 (MiniMax-H3)](./h3/README.md)**：antirez 开源的原生 C/Metal 音视频 DiT 推理引擎，专为 Mac 统一内存优化。
