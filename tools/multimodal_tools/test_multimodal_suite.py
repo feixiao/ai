@@ -1285,6 +1285,44 @@ class TestLocalMultimodalServer(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_server_models_alias_and_zero_byte_audio(self):
+        import importlib.util, urllib.request, json, threading
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+
+        server = HTTPServer(("127.0.0.1", 0), lab05.MultimodalAPIHandler)
+        port = server.server_port
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+
+        try:
+            req_models = urllib.request.Request(f"http://127.0.0.1:{port}/models")
+            with urllib.request.urlopen(req_models) as resp:
+                self.assertEqual(resp.status, 200)
+                self.assertIn("application/json", resp.headers.get("Content-Type", ""))
+                self.assertEqual(resp.headers.get("Access-Control-Allow-Origin"), "*")
+                data = json.loads(resp.read().decode("utf-8"))
+                self.assertEqual(data["object"], "list")
+                self.assertGreaterEqual(len(data["data"]), 4)
+
+            req_audio_empty = urllib.request.Request(
+                f"http://127.0.0.1:{port}/v1/audio/transcriptions",
+                data=b"",
+                headers={"Content-Type": "application/octet-stream"}
+            )
+            with urllib.request.urlopen(req_audio_empty) as resp:
+                self.assertEqual(resp.status, 200)
+                data_audio = json.loads(resp.read().decode("utf-8"))
+                self.assertIn("text", data_audio)
+                self.assertEqual(data_audio["language"], "zh")
+                self.assertEqual(data_audio["duration"], 2.0)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_server_string_image_tag_and_usage_tokens(self):
         import importlib.util, urllib.request, json, threading
         from http.server import HTTPServer
@@ -1712,7 +1750,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 106)
+        self.assertEqual(data["total_unit_tests"], 107)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1727,7 +1765,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 106)
+        self.assertEqual(data["total_unit_tests"], 107)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
