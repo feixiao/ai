@@ -588,6 +588,14 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertIn("qwen2.5-vl", p_dl.stdout)
         self.assertIn("Pixel 10", p_dl.stdout)
 
+    def test_quickstart_script_unknown_flag(self):
+        import subprocess
+        qs_script = ROOT_DIR / "quickstart.sh"
+        p = subprocess.run(["bash", str(qs_script), "--invalid-opt-xyz"], capture_output=True, text=True)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertIn("未知选项", p.stdout)
+        self.assertIn("极速启动入口", p.stdout)
+
     def test_run_all_labs_script(self):
         import subprocess
         runner = ROOT_DIR / "examples" / "multimodal_practice" / "run_all_labs.sh"
@@ -868,7 +876,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 69)
+        self.assertEqual(data["total_unit_tests"], 70)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
