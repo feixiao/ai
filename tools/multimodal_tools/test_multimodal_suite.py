@@ -60,6 +60,19 @@ class TestVramAndBudget(unittest.TestCase):
         res_mac = check_hardware_feasibility("qwen2.5-vl-7b", "mac_studio_m2_max_64g", "finetune")
         self.assertTrue(res_mac["feasible"])
 
+
+    def test_hardware_feasibility_recommendations_and_pixel_tight_warning(self):
+        res_tight = check_hardware_feasibility("qwen2.5-vl-7b", "pixel_10_tensor_g5", "inference")
+        self.assertTrue(res_tight["feasible"])
+        self.assertIn("Tight", res_tight["recommendation"])
+
+        res_oom = check_hardware_feasibility("qwen2.5-vl-7b", "pixel_10_tensor_g5", "finetune")
+        self.assertFalse(res_oom["feasible"])
+        self.assertIn("OOM_Risk", res_oom["recommendation"])
+
+        res_opt = check_hardware_feasibility("qwen2.5-vl-7b", "mac_studio_m4_ultra_128g", "finetune")
+        self.assertTrue(res_opt["feasible"])
+        self.assertEqual(res_opt["recommendation"], "Optimal")
     def test_invalid_model_or_device(self):
         with self.assertRaises(ValueError):
             check_hardware_feasibility("non_existent_model", "mac_studio_m2_max_64g")
@@ -1438,7 +1451,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 96)
+        self.assertEqual(data["total_unit_tests"], 97)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1453,7 +1466,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 96)
+        self.assertEqual(data["total_unit_tests"], 97)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
