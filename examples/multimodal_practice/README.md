@@ -13,6 +13,14 @@ bash run_all_labs.sh
 ```
 *自动完成环境探测（Apple Silicon 芯片检测、统一内存 UMA 探测、可选工具检查），并依次执行 4 套实操练习流水线。*
 
+### 方式二：交互式终端控制台菜单
+```bash
+bash run_all_labs.sh --menu
+# 或直接运行
+python3 interactive_menu.py
+```
+*提供 TUI 数字菜单，支持按需单选练习 1~4、环境探测或算力预算估算器。*
+
 ---
 
 ## 4 套实操练习详解

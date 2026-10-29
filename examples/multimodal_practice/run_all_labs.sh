@@ -8,6 +8,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PYTHON_BIN="${PYTHON:-python3}"
 
+if [[ "${1:-}" == "--menu" || "${1:-}" == "-m" ]]; then
+    exec "$PYTHON_BIN" "${SCRIPT_DIR}/interactive_menu.py"
+fi
+
 echo "=================================================================="
 echo "🚀 启动 2026 音视频多模态大模型 4 套端到端实操练习流水线"
 echo "=================================================================="

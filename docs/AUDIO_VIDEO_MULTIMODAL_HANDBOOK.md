@@ -414,7 +414,11 @@ python3 tools/multimodal_tools/dataset_formatter.py --split data/all.jsonl --tra
 ### 7.4 实操练习一键运行与基准评估
 可以通过一键运行脚本体验全部 4 套练习：
 ```bash
+# 一键执行全量流水线
 bash examples/multimodal_practice/run_all_labs.sh
+
+# 或进入交互式终端控制台菜单自由单选练习
+bash examples/multimodal_practice/run_all_labs.sh --menu
 ```
 
 全套体系通过 `bash autoresearch.sh` 实行持续基准验证，确保所有公式、语法、命令在 Mac Studio 及通用开发环境下均严格自洽闭环。
