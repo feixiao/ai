@@ -206,6 +206,30 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertFalse(res_missing["valid"])
         self.assertIn("Missing required key", res_missing["error"])
 
+    def test_validate_edge_export_spec_runtimes_and_boundary(self):
+        for runtime in ["litert", "mediapipe", "gguf_vulkan"]:
+            spec = {
+                "model_name": "qwen2.5-vl-3b-int4",
+                "target_runtime": runtime,
+                "quantization_type": "w4a16",
+                "max_seq_len": 2048,
+                "context_memory_budget_mb": 4500
+            }
+            res = validate_edge_export_spec(spec)
+            self.assertTrue(res["valid"])
+            self.assertIsNone(res["error"])
+
+        spec_over = {
+            "model_name": "qwen2.5-vl-3b-int4",
+            "target_runtime": "litert",
+            "quantization_type": "w4a16",
+            "max_seq_len": 2048,
+            "context_memory_budget_mb": 4501
+        }
+        res_over = validate_edge_export_spec(spec_over)
+        self.assertFalse(res_over["valid"])
+        self.assertIn("Exceeds Pixel 10 practical memory limit", res_over["error"])
+
     def test_load_or_simulate_video_frames(self):
         import importlib.util
         lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
@@ -1451,7 +1475,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 97)
+        self.assertEqual(data["total_unit_tests"], 98)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1466,7 +1490,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 97)
+        self.assertEqual(data["total_unit_tests"], 98)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
