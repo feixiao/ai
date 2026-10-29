@@ -151,6 +151,28 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertEqual(len(sim_frames), 3)
         self.assertEqual(sim_frames[0]["timestamp_sec"], 0.0)
         self.assertEqual(sim_frames[2]["timestamp_sec"], 4.0)
+
+    def test_synthetic_wav_and_vad_chunking(self):
+        import importlib.util
+        import tempfile
+        lab02_path = ROOT_DIR / "examples" / "multimodal_practice" / "02_audio_whisper_tts.py"
+        spec = importlib.util.spec_from_file_location("lab02", str(lab02_path))
+        lab02 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab02)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_wav = Path(tmpdir) / "test_synth.wav"
+            lab02.generate_synthetic_wav(str(test_wav), duration_sec=1.5, sample_rate=16000)
+            self.assertTrue(test_wav.exists())
+
+            chunks = lab02.simulate_vad_and_chunk(str(test_wav))
+            self.assertEqual(len(chunks), 3)
+            self.assertEqual(chunks[0]["vad_label"], "VOICE_ACTIVE")
+            self.assertEqual(chunks[1]["vad_label"], "SILENCE_IGNORED")
+
+            trans = lab02.transcribe_audio_whisper_simulation(chunks)
+            self.assertIn("Whisper", trans["engine"])
+            self.assertIn("巡检打卡", trans["transcribed_text"])
     def test_export_commands_and_android_snippet(self):
         import importlib.util
         lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
@@ -632,7 +654,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 55)
+        self.assertEqual(data["total_unit_tests"], 56)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
