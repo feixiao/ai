@@ -1226,6 +1226,61 @@ class TestLocalMultimodalServer(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_server_multi_image_types_and_empty_payload(self):
+        import importlib.util, urllib.request, json, threading
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+
+        server = HTTPServer(("127.0.0.1", 0), lab05.MultimodalAPIHandler)
+        port = server.server_port
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+
+        try:
+            payload_mixed = {
+                "model": "qwen2.5-vl-7b",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,abc"}},
+                            {"type": "image_placeholder", "frame_index": 1},
+                            {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,def"}},
+                            {"type": "text", "text": "对比以上三张抽帧中的异物位移"}
+                        ]
+                    }
+                ]
+            }
+            req = urllib.request.Request(
+                f"http://127.0.0.1:{port}/v1/chat/completions",
+                data=json.dumps(payload_mixed).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req) as resp:
+                self.assertEqual(resp.status, 200)
+                data = json.loads(resp.read().decode("utf-8"))
+                reply = data["choices"][0]["message"]["content"]
+                self.assertIn("接收时序抽帧: 3 张", reply)
+                self.assertIn("对比以上三张抽帧中的异物位移", reply)
+
+            req_empty = urllib.request.Request(
+                f"http://127.0.0.1:{port}/v1/chat/completions",
+                data=b"{}",
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req_empty) as resp:
+                self.assertEqual(resp.status, 200)
+                data = json.loads(resp.read().decode("utf-8"))
+                self.assertEqual(data["model"], "qwen2.5-vl-7b")
+                reply = data["choices"][0]["message"]["content"]
+                self.assertIn("接收时序抽帧: 0 张", reply)
+        finally:
+            server.shutdown()
+            server.server_close()
+
 class TestClientServerIntegration(unittest.TestCase):
     def test_live_clients_talking_to_server(self):
         import subprocess, socket, threading, time
@@ -1475,7 +1530,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 98)
+        self.assertEqual(data["total_unit_tests"], 99)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1490,7 +1545,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 98)
+        self.assertEqual(data["total_unit_tests"], 99)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
