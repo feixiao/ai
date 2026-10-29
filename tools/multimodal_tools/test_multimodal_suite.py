@@ -270,6 +270,14 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertIn("Whisper", p.stdout)
         self.assertIn("Pixel 10", p.stdout)
 
+    def test_setup_environment_help(self):
+        import subprocess
+        script = ROOT_DIR / "examples" / "multimodal_practice" / "setup_environment.sh"
+        p = subprocess.run(["bash", str(script), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("用法:", p.stdout)
+        self.assertIn("install-mac-mlx", p.stdout)
+
     def test_makefile_exists_and_runs_help(self):
         import subprocess
         makefile = ROOT_DIR / "examples" / "multimodal_practice" / "Makefile"
