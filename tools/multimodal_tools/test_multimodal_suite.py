@@ -132,6 +132,25 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertIn("base64_data", frames[0])
         self.assertIn("预置样本目录", desc)
 
+
+    def test_synthetic_bmp_and_simulate_frames(self):
+        import importlib.util
+        lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+        spec = importlib.util.spec_from_file_location("lab01", str(lab01_path))
+        lab01 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab01)
+
+        bmp = lab01.create_synthetic_bmp_frame(width=32, height=24, color=(10, 20, 30))
+        self.assertTrue(bmp.startswith(b"BM"))
+        row_bytes = 32 * 3
+        pad = (4 - (row_bytes % 4)) % 4
+        expected_size = 54 + (row_bytes + pad) * 24
+        self.assertEqual(len(bmp), expected_size)
+
+        sim_frames = lab01.simulate_video_frames(num_frames=3)
+        self.assertEqual(len(sim_frames), 3)
+        self.assertEqual(sim_frames[0]["timestamp_sec"], 0.0)
+        self.assertEqual(sim_frames[2]["timestamp_sec"], 4.0)
     def test_export_commands_and_android_snippet(self):
         import importlib.util
         lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
@@ -613,7 +632,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 54)
+        self.assertEqual(data["total_unit_tests"], 55)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
