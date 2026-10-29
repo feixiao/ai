@@ -269,6 +269,42 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("用户指定音频", p.stdout)
         self.assertIn("双向闭环完成", p.stdout)
+
+    def test_lab02_cli_live_endpoint_and_fallback(self):
+        import importlib.util, socket, threading, subprocess, time
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        lab02_path = ROOT_DIR / "examples" / "multimodal_practice" / "02_audio_whisper_tts.py"
+        sample_audio = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "audio" / "sample_inspection_16k.wav"
+
+        spec_srv = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec_srv)
+        spec_srv.loader.exec_module(lab05)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        server = HTTPServer(("127.0.0.1", port), lab05.MultimodalAPIHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        time.sleep(0.05)
+
+        try:
+            endpoint_url = f"http://127.0.0.1:{port}/v1/audio/transcriptions"
+            p_live = subprocess.run([sys.executable, str(lab02_path), "--endpoint", endpoint_url, "--audio", str(sample_audio)], capture_output=True, text=True)
+            self.assertEqual(p_live.returncode, 0)
+            self.assertIn("Live Whisper Endpoint", p_live.stdout)
+            self.assertIn("巡检打卡", p_live.stdout)
+            self.assertIn("双向闭环完成", p_live.stdout)
+
+            p_fallback = subprocess.run([sys.executable, str(lab02_path), "--endpoint", "http://127.0.0.1:59996/v1/audio/transcriptions"], capture_output=True, text=True)
+            self.assertEqual(p_fallback.returncode, 0)
+            self.assertIn("回退到本地仿真引擎", p_fallback.stdout)
+            self.assertIn("双向闭环完成", p_fallback.stdout)
+        finally:
+            server.shutdown()
+            server.server_close()
     def test_export_commands_and_android_snippet(self):
         import importlib.util
         lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
@@ -1150,7 +1186,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 86)
+        self.assertEqual(data["total_unit_tests"], 87)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1165,7 +1201,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 86)
+        self.assertEqual(data["total_unit_tests"], 87)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
