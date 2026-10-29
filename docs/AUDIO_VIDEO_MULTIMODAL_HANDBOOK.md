@@ -275,7 +275,29 @@ class PixelMultimodalInference(private val context: Context) {
 }
 ```
 
-### 3.4 Pixel 10 生产级稳定性保障机制
+### 3.4 Mac Studio (中心) 与 Pixel 10 (端侧) 协同分层推理时序 (Collaborative Edge Flow)
+
+在复杂的工业制造、安防巡检或多模态实时交互中，最佳工程范式并非“让手机硬跑重载大模型”，而是**端云/端边分层协同**：
+
+```mermaid
+sequenceDiagram
+    participant Cam as 现场摄像头 / CameraX
+    participant P10 as Google Pixel 10 (移动端)
+    participant Mac as Mac Studio (边缘工作站网关)
+
+    Cam->>P10: 1. 采集实时 1080P 视频帧 / AAudio 音频
+    P10->>P10: 2. 端侧轻量初筛 (LiteRT + Whisper-tiny, 功耗 < 2W)
+    alt 常态安全/无需深研 (95% 场景)
+        P10->>P10: 就地过滤丢弃，省电零网络开销
+    else 触发疑似异常 / 深度语义研判
+        P10->>Mac: 3. 局域网 POST /v1/chat/completions (时序关键帧切片)
+        Note over Mac: 4. Mac Studio UMA (400GB/s)<br/>Qwen2.5-VL-7B/72B 高通量深度分析
+        Mac-->>P10: 5. 返回精准结构化 JSON 判定与处置策略
+        P10->>P10: 6. 现场声光报警 / 本地 TTS 语音播报反馈
+    end
+```
+
+### 3.5 Pixel 10 生产级稳定性保障机制
 
 1. **前台服务与进程隔离**：将音视频大模型推理置于独立的 `:inference_process` 进程中，并绑定带有通知栏常驻的 `Foreground Service`，防止系统在内存紧张时直接杀死主应用；
 2. **`onTrimMemory` 阶梯回收**：
