@@ -618,6 +618,26 @@ class TestNumericalLoRAOptimization(unittest.TestCase):
             self.assertIn("验证集就绪", p.stdout)
             self.assertIn("契约收敛验证跑通", p.stdout)
 
+    def test_lora_numerical_scaling_and_mlx_command_custom_path(self):
+        import importlib.util
+        lab03_path = ROOT_DIR / "examples" / "multimodal_practice" / "03_vlm_lora_dataset_and_train.py"
+        spec = importlib.util.spec_from_file_location("lab03", str(lab03_path))
+        lab03 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab03)
+
+        res = lab03.run_numerical_lora_optimization(d=32, r=8, alpha=16, steps=30)
+        self.assertEqual(res["dimension_d"], 32)
+        self.assertEqual(res["lora_rank_r"], 8)
+        self.assertEqual(res["lora_alpha"], 16)
+        self.assertLess(res["final_loss"], res["init_loss"])
+        self.assertGreater(res["loss_reduction_pct"], 60.0)
+
+        sim = lab03.simulate_mlx_lora_training("/custom/dataset/path")
+        self.assertIn("--data /custom/dataset/path", sim["command"])
+        self.assertIn("mlx-community/Qwen2.5-VL-3B-Instruct-4bit", sim["command"])
+        self.assertIn("LoRA (rank=16, alpha=32)", sim["adapter_type"])
+        self.assertLessEqual(sim["peak_vram_gb"], 6.0)
+
 class TestInteractiveMenu(unittest.TestCase):
     def test_menu_quit_and_probe(self):
         import importlib.util
@@ -1303,7 +1323,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 90)
+        self.assertEqual(data["total_unit_tests"], 91)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1318,7 +1338,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 90)
+        self.assertEqual(data["total_unit_tests"], 91)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
