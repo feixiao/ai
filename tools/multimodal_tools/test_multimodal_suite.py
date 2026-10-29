@@ -373,6 +373,17 @@ class TestInteractiveMenu(unittest.TestCase):
         # Choice 10 (client example) runs successfully
         self.assertTrue(menu.run_choice("10"))
 
+    def test_menu_cli_choice_and_print_menu(self):
+        import subprocess
+        menu_path = ROOT_DIR / "examples" / "multimodal_practice" / "interactive_menu.py"
+        p_help = subprocess.run([sys.executable, str(menu_path), "--help"], capture_output=True, text=True)
+        self.assertEqual(p_help.returncode, 0)
+        self.assertIn("--choice", p_help.stdout)
+
+        p_choice = subprocess.run([sys.executable, str(menu_path), "--choice", "7"], capture_output=True, text=True)
+        self.assertEqual(p_choice.returncode, 0)
+        self.assertIn("宿主机硬件环境与多模态加速能力探测", p_choice.stdout)
+
 class TestEnvironmentScript(unittest.TestCase):
     def test_setup_environment_check(self):
         import subprocess
@@ -696,7 +707,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 58)
+        self.assertEqual(data["total_unit_tests"], 59)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
