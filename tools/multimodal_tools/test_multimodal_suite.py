@@ -391,6 +391,15 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertIn("test_multimodal_suite.py", content)
         self.assertIn("quickstart.sh", content)
 
+    def test_handbook_table_of_contents(self):
+        doc = ROOT_DIR / "docs" / "AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md"
+        self.assertTrue(doc.exists())
+        content = doc.read_text(encoding="utf-8")
+        self.assertIn("目录导航 (Table of Contents)", content)
+        self.assertIn("Mac Studio 实战", content)
+        self.assertIn("Pixel 10 实战", content)
+        self.assertIn("避坑指南", content)
+
 class TestSampleDataFixtures(unittest.TestCase):
     def test_sample_dataset_validation(self):
         sample_train = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "train.jsonl"
