@@ -6,6 +6,17 @@
 > 2. **运行设备（移动边缘终端）**：**Google Pixel 10**（Google Tensor G5 芯片，Edge TPU / LiteRT 运行时，负责现场低功耗音视频模型调用与实时交互）。
 > 3. **其他平台（云端多卡 / 嵌入式工控）**：作为对照基准轻量提及，明确能力边界，不作过度展开。
 
+### 📋 极速上手 6 步法清单 (10-Minute Executive Cheatsheet)
+
+```
+1. 跑通练习 ➔ bash examples/multimodal_practice/run_all_labs.sh (5 套练习一键全绿)
+2. 架构选型 ➔ 90% 场景直接调用；仅在固化工业严格 JSON、音色克隆或塞入手机时做 LoRA 微调
+3. 本地推理 ➔ Mac Studio 上使用 MLX 跑 Qwen2.5-VL-7B，使用 ANE 硬解跑 Whisper (32ms)
+4. 契约微调 ➔ 在 Mac Studio 上运行 python -m mlx_vlm.lora，5.1GB 显存搞定结构化输出
+5. 端侧导出 ➔ SafeTensors 融合权重经 W4A16 量化为 1.8GB，通过 ADB 直推 Google Pixel 10
+6. 跨端服务 ➔ 启动 05_local_multimodal_server.py，手机通过 Wi-Fi 局域网直连 Mac Studio
+```
+
 ---
 
 ## 一、 决策框架：什么时候直接调用？什么时候必须微调？
