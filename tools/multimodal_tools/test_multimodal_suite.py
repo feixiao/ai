@@ -971,6 +971,37 @@ class TestClientServerIntegration(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_client_chat_vision_text_only(self):
+        import importlib.util, socket, threading, time
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        client_path = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+
+        spec_srv = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec_srv)
+        spec_srv.loader.exec_module(lab05)
+
+        spec_cli = importlib.util.spec_from_file_location("client_mod", str(client_path))
+        client_mod = importlib.util.module_from_spec(spec_cli)
+        spec_cli.loader.exec_module(client_mod)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        server = HTTPServer(("127.0.0.1", port), lab05.MultimodalAPIHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        time.sleep(0.05)
+
+        try:
+            reply = client_mod.chat_multimodal_vision(f"http://127.0.0.1:{port}", "纯文本系统状态自检", image_paths=None)
+            self.assertIn("边缘网关分析报告", reply)
+            self.assertIn("纯文本系统状态自检", reply)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_client_example_cli_help(self):
         import subprocess
         client_script = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
@@ -1023,7 +1054,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 81)
+        self.assertEqual(data["total_unit_tests"], 82)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1038,7 +1069,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 81)
+        self.assertEqual(data["total_unit_tests"], 82)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
