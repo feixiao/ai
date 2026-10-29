@@ -83,6 +83,19 @@ class TestVramAndBudget(unittest.TestCase):
         self.assertIn("Optimal", p.stdout)
         self.assertIn("required_gb", p.stdout)
 
+    def test_vram_and_budget_cli_list_options(self):
+        import subprocess
+        script = TOOLS_DIR / "vram_and_budget.py"
+        p_models = subprocess.run([sys.executable, str(script), "--list-models"], capture_output=True, text=True)
+        self.assertEqual(p_models.returncode, 0)
+        self.assertIn("模型 ID", p_models.stdout)
+        self.assertIn("qwen2.5-vl-72b", p_models.stdout)
+
+        p_devices = subprocess.run([sys.executable, str(script), "--list-devices"], capture_output=True, text=True)
+        self.assertEqual(p_devices.returncode, 0)
+        self.assertIn("设备 ID", p_devices.stdout)
+        self.assertIn("pixel_10_tensor_g5", p_devices.stdout)
+
 class TestMultimodalPipeline(unittest.TestCase):
     def test_sample_video_frames_edge_cases(self):
         # Zero frames
@@ -918,7 +931,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 75)
+        self.assertEqual(data["total_unit_tests"], 76)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -933,7 +946,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 75)
+        self.assertEqual(data["total_unit_tests"], 76)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
