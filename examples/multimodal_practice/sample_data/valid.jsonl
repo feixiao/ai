@@ -1,0 +1,1 @@
+{"messages": [{"role": "user", "content": "<image>\n请审核当前监控帧作业人员的劳动防护穿戴情况与安全规范。"}, {"role": "assistant", "content": "{\"compliant\": false, \"violations\": [\"missing_safety_helmet\"], \"detected_objects\": [{\"label\": \"worker\", \"box\": [120, 45, 340, 520], \"helmet\": false}], \"risk_level\": \"HIGH\"}"}], "image": "frames/frame_00_0.0s.bmp"}

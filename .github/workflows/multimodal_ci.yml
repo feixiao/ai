@@ -1,0 +1,40 @@
+name: Multimodal Engineering & Autoresearch CI
+
+on:
+  push:
+    branches: [ main, master, "autoresearch/**" ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-suite:
+    name: Multimodal Suite Tests & Benchmark
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run Environment Check
+        run: |
+          bash quickstart.sh --check
+
+      - name: Run Full Unittest Suite (30+ tests)
+        run: |
+          python3 tools/multimodal_tools/test_multimodal_suite.py
+
+      - name: Run Autoresearch Benchmark Harness
+        run: |
+          bash autoresearch.sh
+
+      - name: Run 6-Stage Practice Labs Pipeline
+        run: |
+          bash quickstart.sh --demo
+
+      - name: Generate Technical Dashboard JSON Report
+        run: |
+          python3 tools/multimodal_tools/benchmark_summary.py --json

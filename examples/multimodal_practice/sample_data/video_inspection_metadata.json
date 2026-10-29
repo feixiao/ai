@@ -1,0 +1,37 @@
+{
+  "project_name": "Edge_Multimodal_Video_Safety_Audit",
+  "camera_id": "CAM_WORKSHOP_NORTH_01",
+  "resolution": "1920x1080@30fps",
+  "codec": "H.265 (Apple VideoToolbox Decoded)",
+  "sampling_strategy": "uniform_1fps",
+  "frames": [
+    {
+      "frame_index": 0,
+      "timestamp_sec": 0.0,
+      "file_path": "frames/frame_00_0.0s.bmp",
+      "target_roi": [100, 30, 400, 550],
+      "event_tag": "ENTRY"
+    },
+    {
+      "frame_index": 60,
+      "timestamp_sec": 2.0,
+      "file_path": "frames/frame_01_2.0s.bmp",
+      "target_roi": [80, 50, 300, 500],
+      "event_tag": "OPERATION_NORMAL"
+    },
+    {
+      "frame_index": 120,
+      "timestamp_sec": 4.0,
+      "file_path": "frames/frame_02_4.0s.bmp",
+      "target_roi": [180, 60, 420, 520],
+      "event_tag": "ALARM_TRIGGERED"
+    },
+    {
+      "frame_index": 180,
+      "timestamp_sec": 6.0,
+      "file_path": "frames/frame_03_6.0s.bmp",
+      "target_roi": [140, 70, 380, 510],
+      "event_tag": "SAFE_RESET"
+    }
+  ]
+}

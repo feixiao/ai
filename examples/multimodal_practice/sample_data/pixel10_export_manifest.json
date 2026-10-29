@@ -1,0 +1,21 @@
+{
+  "model_id": "Qwen2.5-VL-3B-Instruct",
+  "source_platform": "Mac Studio M-Series (Apple Silicon)",
+  "target_platform": "Pixel 10 (Tensor G5)",
+  "quantization": {
+    "format": "W4A16",
+    "weight_bits": 4,
+    "activation_bits": 16,
+    "compression_ratio": "3.33x"
+  },
+  "memory_profile_gb": {
+    "fp16_original_size": 6.0,
+    "quantized_weights_size": 1.8,
+    "kv_cache_reservation": 0.8,
+    "total_peak_ram": 3.0,
+    "device_safe_ceiling": 4.5,
+    "safe_to_deploy": true
+  },
+  "target_runtime": "Google LiteRT (Edge TPU Delegate)",
+  "output_bundle": "qwen2.5_vl_3b_w4a16.task"
+}

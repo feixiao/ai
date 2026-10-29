@@ -2,6 +2,7 @@
 
 > **定位**：基于 Apple Silicon 统一内存架构（UMA）的桌面边缘服务器（Edge Server / MEC）。  
 > **核心优势**：400 ~ 800 GB/s 显存带宽、VideoToolbox 多路 4K 硬解、16 核 ANE（Apple Neural Engine）超低功耗常驻、Metal GPU 高并行多模态计算。
+> 💡 **进阶全景与实操**：关于 Mac Studio 本地音视频多模态大模型调用、显存预算公式、MLX LoRA 结构化微调及动手练习，请参阅专篇 [音视频多模态大模型实战手册](../docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md) 与 [实操练习套件](../examples/multimodal_practice/)。
 
 ---
 
