@@ -390,6 +390,29 @@ class TestNumericalLoRAOptimization(unittest.TestCase):
         self.assertLess(res["final_loss"], res["init_loss"])
         self.assertGreater(res["loss_reduction_pct"], 70.0)
 
+    def test_lora_zero_init_and_frozen_base(self):
+        import importlib.util, random
+        lab03_path = ROOT_DIR / "examples" / "multimodal_practice" / "03_vlm_lora_dataset_and_train.py"
+        spec = importlib.util.spec_from_file_location("lab03", str(lab03_path))
+        lab03 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab03)
+
+        d, r, alpha = 8, 2, 4
+        scale = alpha / r
+        random.seed(123)
+        x = [random.random() for _ in range(d)]
+        W = [[random.random() for _ in range(d)] for _ in range(d)]
+        A = [[random.random() for _ in range(d)] for _ in range(r)]
+        B = [[0.0 for _ in range(r)] for _ in range(d)]
+
+        Ax = [sum(A[i][j] * x[j] for j in range(d)) for i in range(r)]
+        BAx = [sum(B[i][j] * Ax[j] for j in range(r)) for i in range(d)]
+        Wx = [sum(W[i][j] * x[j] for j in range(d)) for i in range(d)]
+        y = [Wx[i] + scale * BAx[i] for i in range(d)]
+
+        self.assertEqual(BAx, [0.0] * d)
+        self.assertEqual(y, Wx)
+
     def test_lab03_dataset_generation_and_schema_validation(self):
         import importlib.util
         import tempfile
@@ -837,7 +860,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 67)
+        self.assertEqual(data["total_unit_tests"], 68)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
