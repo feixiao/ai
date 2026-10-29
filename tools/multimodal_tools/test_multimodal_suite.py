@@ -483,7 +483,14 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertTrue(runner.exists())
         p = subprocess.run(["bash", str(runner)], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0)
-        self.assertIn("全部 6 套", p.stdout)
+        self.assertIn("全部 6 阶段", p.stdout)
+
+    def test_run_all_labs_menu_flag(self):
+        import subprocess
+        runner = ROOT_DIR / "examples" / "multimodal_practice" / "run_all_labs.sh"
+        p = subprocess.run(["bash", str(runner), "--menu", "--choice", "0"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("已退出多模态练习控制台", p.stdout)
     def test_multimodal_ci_workflow_exists(self):
         wf = ROOT_DIR / ".github" / "workflows" / "multimodal_ci.yml"
         self.assertTrue(wf.exists())
@@ -717,7 +724,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 60)
+        self.assertEqual(data["total_unit_tests"], 61)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
