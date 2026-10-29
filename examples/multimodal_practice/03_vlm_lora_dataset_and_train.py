@@ -209,14 +209,27 @@ def main():
     parser = argparse.ArgumentParser(description="实操 3：Mac Studio 多模态大模型 LoRA 微调练习")
     parser.add_argument("--demo", action="store_true", help="执行完整实操演示")
     parser.add_argument("--outdir", type=str, default="/tmp/multimodal_lora_data", help="微调数据输出目录")
+    parser.add_argument("--use-sample-data", action="store_true", help="直接使用预置 sample_data 真实多模态标注数据")
+    parser.add_argument("--steps", type=int, default=20, help="原生数学 LoRA 梯度下降步数 (默认 20)")
     args = parser.parse_args()
+
+    sample_dir = Path(__file__).resolve().parent / "sample_data"
+    is_using_sample = args.use_sample_data and (sample_dir / "train.jsonl").exists()
 
     print("===============================================================")
     print(" 🛠️ 实操 3：Mac Studio 多模态大模型 (VLM) LoRA 微调实战练习")
     print("===============================================================")
 
-    print(f"\n[步骤 1] 正在自动生成结构化 ShareGPT 多模态微调数据集: {args.outdir}")
-    train_f, valid_f = generate_multimodal_dataset(args.outdir)
+    if is_using_sample:
+        train_f = sample_dir / "train.jsonl"
+        valid_f = sample_dir / "valid.jsonl"
+        active_data_dir = str(sample_dir)
+        print(f"\n[步骤 1] 正在直接读取预置实体标注数据集: {sample_dir}")
+    else:
+        print(f"\n[步骤 1] 正在自动生成结构化 ShareGPT 多模态微调数据集: {args.outdir}")
+        train_f, valid_f = generate_multimodal_dataset(args.outdir)
+        active_data_dir = args.outdir
+
     print(f"  - 训练集就绪: {train_f}")
     print(f"  - 验证集就绪: {valid_f}")
 
@@ -225,7 +238,7 @@ def main():
     print(f"  - 样本总数: {val_res['total_lines']} 条 | 格式校验通过: {val_res['valid_lines']} 条 | 状态: {val_res['status']}")
 
     print("\n[步骤 3] 规划并演示 MLX LoRA Apple Silicon 本地微调命令...")
-    train_res = simulate_mlx_lora_training(args.outdir)
+    train_res = simulate_mlx_lora_training(active_data_dir)
     print(f"  - 执行命令: {train_res['command']}")
     print(f"  - 可训练参数量: {train_res['trainable_parameters']}")
     print(f"  - Mac Studio 峰值显存占用: {train_res['peak_vram_gb']} GB (远低于 32G/64G 限额，安全稳定)")
@@ -234,12 +247,13 @@ def main():
         bar = "█" * int((3.0 - step["loss"]) * 10)
         print(f"    Iter {step['iter']:3d} | Loss: {step['loss']:.2f} | 显存: {step['vram_used_gb']}G | {bar}")
 
-    print("\n[数学原理实操] 运行纯 Python 原生低秩矩阵 (W + scale * B·A) 梯度下降仿真...")
-    num_res = run_numerical_lora_optimization()
+    print(f"\n[数学原理实操] 运行纯 Python 原生低秩矩阵 (W + scale * B·A) {args.steps} 步梯度下降仿真...")
+    num_res = run_numerical_lora_optimization(steps=args.steps)
     print(f"  - 特征维度 d={num_res['dimension_d']}, LoRA 秩 r={num_res['lora_rank_r']}, 缩放因子 alpha={num_res['lora_alpha']}")
-    print(f"  - 初始损失 Loss: {num_res['init_loss']} -> 20 步更新后损失: {num_res['final_loss']} (降低 {num_res['loss_reduction_pct']}%)")
+    print(f"  - 初始损失 Loss: {num_res['init_loss']} -> {args.steps} 步更新后损失: {num_res['final_loss']} (降低 {num_res['loss_reduction_pct']}%)")
     for h in num_res["history"]:
         print(f"    Step {h['step']:2d}: Loss = {h['loss']:.4f}")
+
     print("\n[步骤 4] 验证微调后 Adapter 输出契约遵从性：")
     sample_output = {
         "compliant": False,
@@ -251,7 +265,7 @@ def main():
     print("  - 契约验证结论: 输出已由自然语言长难句强制固化为 100% 结构化 JSON 格式。")
 
     # 清理临时数据
-    if os.path.exists(args.outdir):
+    if not is_using_sample and os.path.exists(args.outdir):
         shutil.rmtree(args.outdir)
 
     print("\n✅ 实操 3 验证成功：LoRA 训练管线与契约收敛验证跑通！\n")

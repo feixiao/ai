@@ -204,6 +204,14 @@ class TestNumericalLoRAOptimization(unittest.TestCase):
         self.assertTrue(res["feasible"])
         self.assertLess(res["required_gb"], 3.0)
 
+    def test_lab03_use_sample_data_and_steps(self):
+        import subprocess
+        lab03_path = ROOT_DIR / "examples" / "multimodal_practice" / "03_vlm_lora_dataset_and_train.py"
+        p = subprocess.run([sys.executable, str(lab03_path), "--use-sample-data", "--steps", "10"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("预置实体标注数据集", p.stdout)
+        self.assertIn("10 步梯度下降", p.stdout)
+
 class TestInteractiveMenu(unittest.TestCase):
     def test_menu_quit_and_probe(self):
         import importlib.util
