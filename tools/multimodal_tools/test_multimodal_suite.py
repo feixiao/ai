@@ -290,6 +290,14 @@ class TestClientServerIntegration(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_client_example_standalone(self):
+        import subprocess
+        client_script = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+        self.assertTrue(client_script.exists())
+        p = subprocess.run([sys.executable, str(client_script), "--demo"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("客户端端到端调用", p.stdout)
+
 class TestBenchmarkSummary(unittest.TestCase):
     def test_generate_dashboard(self):
         from benchmark_summary import generate_dashboard
