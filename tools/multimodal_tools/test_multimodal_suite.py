@@ -476,6 +476,30 @@ class TestMultimodalPipeline(unittest.TestCase):
         finally:
             server.shutdown()
             server.server_close()
+
+    def test_lab02_transcription_vad_scaling_and_tts_keys(self):
+        import importlib.util
+        lab02_path = ROOT_DIR / "examples" / "multimodal_practice" / "02_audio_whisper_tts.py"
+        spec = importlib.util.spec_from_file_location("lab02", str(lab02_path))
+        lab02 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab02)
+
+        empty_chunks = [{"vad_label": "SILENCE_IGNORED"}]
+        res_empty = lab02.transcribe_audio_live_or_mock("dummy.wav", empty_chunks, endpoint_url=None)
+        self.assertEqual(res_empty["processed_voice_duration"], "0.0s")
+        self.assertIn("Apple Neural Engine", res_empty["engine"])
+
+        four_active = [{"vad_label": "VOICE_ACTIVE"} for _ in range(4)]
+        res_four = lab02.transcribe_audio_live_or_mock("dummy.wav", four_active, endpoint_url=None)
+        self.assertEqual(res_four["processed_voice_duration"], "3.2s")
+        self.assertEqual(res_four["detected_language"], "zh")
+        self.assertGreater(res_four["confidence"], 0.9)
+
+        tts_res = lab02.synthesize_speech_response("语音播报自检")
+        self.assertEqual(tts_res["audio_format"], "PCM_16BIT_24KHZ")
+        self.assertEqual(tts_res["sample_rate_hz"], 24000)
+        self.assertGreater(tts_res["synthesized_duration_sec"], 0)
+        self.assertGreater(tts_res["latency_ms"], 0)
     def test_export_commands_and_android_snippet(self):
         import importlib.util
         lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
@@ -1750,7 +1774,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 107)
+        self.assertEqual(data["total_unit_tests"], 108)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1765,7 +1789,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 107)
+        self.assertEqual(data["total_unit_tests"], 108)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
