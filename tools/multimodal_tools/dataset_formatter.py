@@ -164,6 +164,50 @@ def split_multimodal_dataset(
 
     return len(train_lines), len(valid_lines)
 
+def build_multimodal_dataset_from_folder(
+    image_dir: str,
+    prompt: str = "请分析图像中的目标与状态",
+    default_response: str = '{"status": "normal"}',
+    output_file: str = "dataset.jsonl"
+) -> int:
+    """
+    扫描目录中的图片文件，一键构建标准 ShareGPT 格式多模态微调标注数据集。
+    支持 .jpg, .jpeg, .png, .bmp, .webp 图像后缀。
+    """
+    p = Path(image_dir)
+    if not p.exists() or not p.is_dir():
+        raise FileNotFoundError(f"Image directory not found: {image_dir}")
+
+    valid_exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+    images = sorted([f for f in p.iterdir() if f.suffix.lower() in valid_exts])
+    if not images:
+        return 0
+
+    records = []
+    for img in images:
+        record = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": f"<image>\n{prompt}"
+                },
+                {
+                    "role": "assistant",
+                    "content": default_response
+                }
+            ],
+            "image": str(img.name)
+        }
+        records.append(record)
+
+    out_p = Path(output_file)
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_p, "w", encoding="utf-8") as f:
+        for r in records:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+    return len(records)
+
 def run_dataset_formatter_benchmark():
     """Deterministic validation test suite for dataset tools."""
     # 1. Test Alpaca conversion
@@ -208,7 +252,16 @@ def main():
     parser.add_argument("--train-out", type=str, default="train.jsonl", help="训练集输出路径")
     parser.add_argument("--valid-out", type=str, default="valid.jsonl", help="验证集输出路径")
     parser.add_argument("--ratio", type=float, default=0.85, help="训练集切分比例")
+    parser.add_argument("--build-from-folder", type=str, default=None, help="扫描图片目录一键生成微调数据集")
+    parser.add_argument("--prompt", type=str, default="请分析图像中的作业规范", help="用户指令模版")
+    parser.add_argument("--response", type=str, default='{"compliant": true}', help="助手默认回复内容")
+    parser.add_argument("--output", type=str, default="dataset.jsonl", help="生成输出路径")
     args = parser.parse_args()
+
+    if args.build_from_folder:
+        count = build_multimodal_dataset_from_folder(args.build_from_folder, args.prompt, args.response, args.output)
+        print(f"扫描目录 {args.build_from_folder} 完成，成功生成 {count} 条样本 -> {args.output}")
+        return
 
     if args.validate:
         stats = validate_multimodal_dataset(args.validate)

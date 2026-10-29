@@ -203,6 +203,22 @@ class TestDatasetFormatter(unittest.TestCase):
         self.assertIn("health_score", p.stdout)
         self.assertIn("100.0", p.stdout)
 
+    def test_build_multimodal_dataset_from_folder(self):
+        import tempfile
+        from dataset_formatter import build_multimodal_dataset_from_folder
+        frames_dir = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "frames"
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".jsonl") as f_out:
+            tmp_out = f_out.name
+        try:
+            count = build_multimodal_dataset_from_folder(str(frames_dir), output_file=tmp_out)
+            self.assertEqual(count, 4)
+            stats = validate_multimodal_dataset(tmp_out)
+            self.assertEqual(stats["valid_records"], 4)
+            self.assertEqual(stats["health_score"], 100.0)
+        finally:
+            if os.path.exists(tmp_out):
+                os.remove(tmp_out)
+
 class TestNumericalLoRAOptimization(unittest.TestCase):
     def test_lora_gradient_descent(self):
         import importlib.util
