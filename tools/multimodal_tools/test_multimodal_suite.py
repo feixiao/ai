@@ -888,13 +888,23 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 72)
+        self.assertEqual(data["total_unit_tests"], 73)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
         self.assertEqual(data["hardware_profiles_count"], 6)
         self.assertIn("qwen2.5-vl-72b", data["models"])
         self.assertIn("mac_studio_m4_ultra_192g", data["hardware_profiles"])
+
+    def test_benchmark_summary_cli_json(self):
+        import subprocess, json
+        script = TOOLS_DIR / "benchmark_summary.py"
+        p = subprocess.run([sys.executable, str(script), "--json"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        data = json.loads(p.stdout)
+        self.assertEqual(data["overall_score"], 100.0)
+        self.assertEqual(data["total_unit_tests"], 73)
+        self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
     def test_livekit_agent_directory_and_scripts(self):
