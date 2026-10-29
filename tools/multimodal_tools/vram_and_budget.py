@@ -163,5 +163,39 @@ def run_budget_benchmark():
 
     print("Budget estimator test suite: ALL PASSED")
 
-if __name__ == "__main__":
+def main():
+    import argparse
+    import json
+    parser = argparse.ArgumentParser(description="音视频多模态模型显存与算力预算估算器 (Mac Studio & Pixel 10)")
+    parser.add_argument("--benchmark", action="store_true", help="运行确定性校验基准测试")
+    parser.add_argument("--list-models", action="store_true", help="列出全部预置多模态模型")
+    parser.add_argument("--list-devices", action="store_true", help="列出全部预置硬件画像")
+    parser.add_argument("--model", type=str, default=None, help="模型标识符 (如 qwen2.5-vl-3b, whisper-large-v3-turbo)")
+    parser.add_argument("--device", type=str, default="mac_studio_m2_max_64g", help="硬件设备标识符")
+    parser.add_argument("--task", type=str, default="inference", choices=["inference", "finetune"], help="任务类型")
+    args = parser.parse_args()
+
+    if args.list_models:
+        print(f"{'模型 ID':<25} | {'模态类型':<18} | {'参数量 (B)':<10} | {'默认精度':<10}")
+        print("-" * 70)
+        for mid, m in MODEL_REGISTRY.items():
+            print(f"{mid:<25} | {m.modality:<18} | {m.params_billion:<10} | {m.default_dtype:<10}")
+        return
+
+    if args.list_devices:
+        print(f"{'设备 ID':<26} | {'物理内存 (GB)':<14} | {'显存带宽':<12} | {'推荐 AI 显存上限 (GB)'}")
+        print("-" * 75)
+        for did, d in HARDWARE_PROFILES.items():
+            print(f"{did:<26} | {d['total_ram_gb']:<14} | {d['uma_bandwidth_gbs']:<12} | {d['max_recommended_vram_gb']}")
+        return
+
+    if args.model:
+        res = check_hardware_feasibility(args.model, args.device, args.task)
+        print(json.dumps(res, indent=2, ensure_ascii=False))
+        return
+
+    # 默认执行校验测试
     run_budget_benchmark()
+
+if __name__ == "__main__":
+    main()

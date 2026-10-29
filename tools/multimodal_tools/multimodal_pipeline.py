@@ -151,5 +151,35 @@ def run_pipeline_benchmark():
 
     print("Multimodal pipeline test suite: ALL PASSED")
 
-if __name__ == "__main__":
+def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="多模态音视频管道处理与格式校验工具")
+    parser.add_argument("--benchmark", action="store_true", help="运行确定性校验基准测试")
+    parser.add_argument("--sample-video", action="store_true", help="演示视频帧均匀下采样")
+    parser.add_argument("--total-frames", type=int, default=300, help="总帧数")
+    parser.add_argument("--max-frames", type=int, default=8, help="抽取最大帧数")
+    parser.add_argument("--fps", type=float, default=30.0, help="视频帧率")
+    parser.add_argument("--chunk-audio", action="store_true", help="演示音频切片滑动窗口分块")
+    parser.add_argument("--audio-duration-sec", type=float, default=10.0, help="音频时长")
+    args = parser.parse_args()
+
+    if args.sample_video:
+        frames = sample_video_frames(args.total_frames, args.fps, args.max_frames)
+        print(f"从 {args.total_frames} 帧视频 (时长 {args.total_frames/args.fps:.1f}s) 抽取关键帧索引:")
+        print(f"  {frames}")
+        payload = build_multimodal_vlm_payload("测试视频事件分析", frames, args.fps)
+        print(f"VLM Payload 构造成功，包含 {len(payload['messages'][0]['content'])} 个多模态 Token 对象。")
+        return
+
+    if args.chunk_audio:
+        samples = int(args.audio_duration_sec * 16000)
+        chunks = chunk_audio_stream(samples, 16000, chunk_duration_sec=3.0, overlap_sec=0.5)
+        print(f"音频时长 {args.audio_duration_sec}s 切片完成，共切出 {len(chunks)} 个滑动窗口:")
+        for i, (s, e) in enumerate(chunks):
+            print(f"  Window {i:02d}: {s/16000:.1f}s -> {e/16000:.1f}s (共 {e-s} 采样点)")
+        return
+
     run_pipeline_benchmark()
+
+if __name__ == "__main__":
+    main()

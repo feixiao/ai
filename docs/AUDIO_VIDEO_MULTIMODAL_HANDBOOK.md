@@ -373,13 +373,33 @@ class PixelMultimodalInference(private val context: Context) {
 ## 七、 端到端工程验证与配套工具
 
 本手册配备了完整的数学计算与验证套件（位于项目 `tools/multimodal_tools/`）：
-* `vram_and_budget.py`：计算各类多模态模型在 Mac Studio（UMA）与 Pixel 10 上的显存常驻与 LoRA 微调开销；
-* `multimodal_pipeline.py`：模拟音视频帧下采样、VLM 消息构造与导出规范校验；
-* `eval_handbook.py`：全自动执行语法分析、深度校验、实操练习完整性与平台篇幅平衡检查。
 
+### 7.1 交互式显存与算力预算估算器 (`vram_and_budget.py`)
+支持在终端交互式核算任意模型在 Mac Studio 或 Pixel 10 上的推理/微调开销与可行性：
+```bash
+# 列出预置模型与默认精度
+python3 tools/multimodal_tools/vram_and_budget.py --list-models
+
+# 测算 Qwen2.5-VL-3B 在 Pixel 10 上的推理显存与安全边界
+python3 tools/multimodal_tools/vram_and_budget.py --model qwen2.5-vl-3b --device pixel_10_tensor_g5 --task inference
+
+# 测算 Qwen2.5-VL-7B 在 Mac Studio 上的 LoRA 微调显存占用
+python3 tools/multimodal_tools/vram_and_budget.py --model qwen2.5-vl-7b --device mac_studio_m2_max_64g --task finetune
+```
+
+### 7.2 音视频流采样与导出校验工具 (`multimodal_pipeline.py`)
+```bash
+# 模拟 10 秒 30 FPS 视频提取 8 个均匀关键帧与 VLM Payload 构建
+python3 tools/multimodal_tools/multimodal_pipeline.py --sample-video --total-frames 300 --fps 30
+
+# 模拟 10 秒 16kHz PCM 音频滑动窗口切片
+python3 tools/multimodal_tools/multimodal_pipeline.py --chunk-audio --audio-duration-sec 10
+```
+
+### 7.3 实操练习一键运行与基准评估
 可以通过一键运行脚本体验全部 4 套练习：
 ```bash
 bash examples/multimodal_practice/run_all_labs.sh
 ```
 
-通过这套体系，你可以清晰地在 Mac Studio 上完成多模态大模型的直接调用与微调，并将轻量化结果无缝迁移部署到 Pixel 10 现场端侧设备上。
+全套体系通过 `bash autoresearch.sh` 实行持续基准验证，确保所有公式、语法、命令在 Mac Studio 及通用开发环境下均严格自洽闭环。
