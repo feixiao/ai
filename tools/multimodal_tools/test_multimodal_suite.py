@@ -1040,6 +1040,15 @@ class TestClientServerIntegration(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("--server", p.stdout)
 
+    def test_client_cli_demo_mode(self):
+        import subprocess
+        client_script = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+        p = subprocess.run([sys.executable, str(client_script), "--demo"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("连接 Mac Studio 多模态网关", p.stdout)
+        self.assertIn("服务状态: healthy", p.stdout)
+        self.assertIn("客户端端到端调用圆满完成！", p.stdout)
+
     def test_lab01_cli_help(self):
         import subprocess
         s = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
@@ -1085,7 +1094,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 83)
+        self.assertEqual(data["total_unit_tests"], 84)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1100,7 +1109,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 83)
+        self.assertEqual(data["total_unit_tests"], 84)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
