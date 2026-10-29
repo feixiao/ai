@@ -107,6 +107,8 @@ def main():
     parser = argparse.ArgumentParser(description="实操 4：端侧量化导出与 Pixel 10 部署练习")
     parser.add_argument("--demo", action="store_true", help="执行完整实操演示")
     parser.add_argument("--model", type=str, default="Qwen2.5-VL-3B-Instruct", help="待导出模型")
+    parser.add_argument("--save-manifest", type=str, default=None, help="将生成的 manifest.json 保存至指定路径")
+    parser.add_argument("--save-android-code", type=str, default=None, help="将生成的 Kotlin 代码保存至指定路径")
     args = parser.parse_args()
 
     print("===============================================================")
@@ -128,10 +130,19 @@ def main():
         print(f"  ❌ 超标告警：峰值 {peak} GB > 安全阈值 {ceiling} GB，必须进一步压缩模型！")
 
     print("\n[步骤 3] 生成 Pixel 10 LiteRT 部署清单 (manifest.json)：")
-    print(json.dumps(manifest, indent=2, ensure_ascii=False))
+    manifest_str = json.dumps(manifest, indent=2, ensure_ascii=False)
+    print(manifest_str)
+    if args.save_manifest:
+        Path(args.save_manifest).write_text(manifest_str, encoding="utf-8")
+        print(f"  - 部署清单已成功保存: {args.save_manifest}")
 
     print("\n[步骤 4] 生成 Android 端的原生 CameraX + Edge TPU 零拷贝调用模版：")
-    print(generate_android_snippet())
+    android_code = generate_android_snippet()
+    print(android_code)
+    if args.save_android_code:
+        Path(args.save_android_code).write_text(android_code, encoding="utf-8")
+        print(f"  - Android 源码已成功保存: {args.save_android_code}")
+
     print("\n[步骤 5] 生成针对三类端侧运行时的标准转换命令矩阵：")
     cmds = get_export_cli_commands(args.model)
     for runtime, cmd in cmds.items():

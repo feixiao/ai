@@ -312,6 +312,22 @@ class TestSampleDataFixtures(unittest.TestCase):
             self.assertEqual(wf.getsampwidth(), 2)
             self.assertGreater(wf.getnframes(), 16000)
 
+    def test_sample_android_kotlin_and_manifest(self):
+        import json
+        kt_path = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "EdgeVisionAnalyzer.kt"
+        manifest_path = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "pixel10_export_manifest.json"
+        self.assertTrue(kt_path.exists())
+        self.assertTrue(manifest_path.exists())
+
+        kt_code = kt_path.read_text(encoding="utf-8")
+        self.assertIn("EdgeVisionAnalyzer", kt_code)
+        self.assertIn("CameraX", kt_code)
+        self.assertIn("LiteRtModel", kt_code)
+
+        manifest_data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest_data["model_id"], "Qwen2.5-VL-3B-Instruct")
+        self.assertTrue(manifest_data["memory_profile_gb"]["safe_to_deploy"])
+
 class TestLocalMultimodalServer(unittest.TestCase):
     def test_server_demo_self_test(self):
         import importlib.util
