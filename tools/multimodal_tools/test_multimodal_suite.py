@@ -201,6 +201,8 @@ class TestInteractiveMenu(unittest.TestCase):
         self.assertFalse(menu.run_choice("0"))
         # Choice 7 (probe) runs successfully
         self.assertTrue(menu.run_choice("7"))
+        # Choice 9 (benchmark summary) runs successfully
+        self.assertTrue(menu.run_choice("9"))
 
 class TestEnvironmentScript(unittest.TestCase):
     def test_setup_environment_check(self):

@@ -23,6 +23,7 @@ MENU_ITEMS = [
     ("6", "🚀 一键串行运行全部 5 套实操练习流水线", ["run_all_labs.sh"]),
     ("7", "🔍 执行宿主机环境与 UMA 统一内存硬件探测", ["probe_env"]),
     ("8", "📊 打开多模态模型显存与算力预算估算器 (vram_and_budget)", ["vram_budget"]),
+    ("9", "📈 查看音视频多模态技术雷达与基准全景看板 (benchmark_summary)", ["benchmark_summary"]),
 ]
 
 def probe_hardware_environment():
@@ -68,6 +69,9 @@ def run_choice(choice: str):
                 vram_script = TOOLS_DIR / "vram_and_budget.py"
                 subprocess.run([PYTHON_BIN, str(vram_script), "--list-models"])
                 subprocess.run([PYTHON_BIN, str(vram_script), "--model", "qwen2.5-vl-3b", "--device", "pixel_10_tensor_g5"])
+            elif cmd == ["benchmark_summary"]:
+                summary_script = TOOLS_DIR / "benchmark_summary.py"
+                subprocess.run([PYTHON_BIN, str(summary_script)])
             elif cmd == ["run_all_labs.sh"]:
                 sh_script = BASE_DIR / "run_all_labs.sh"
                 subprocess.run(["bash", str(sh_script)])
@@ -77,7 +81,7 @@ def run_choice(choice: str):
                 subprocess.run(full_cmd)
             return True
 
-    print(f"⚠️ 无效选项: {choice}，请输入 0~8 之间的数字。")
+    print(f"⚠️ 无效选项: {choice}，请输入 0~9 之间的数字。")
     return True
 
 def print_menu():
@@ -91,7 +95,7 @@ def print_menu():
 
 def main():
     parser = argparse.ArgumentParser(description="音视频多模态实操练习交互式控制台")
-    parser.add_argument("--choice", type=str, default=None, choices=["0", "1", "2", "3", "4", "5", "6", "7", "8"], help="直接执行指定编号任务")
+    parser.add_argument("--choice", type=str, default=None, choices=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], help="直接执行指定编号任务")
     parser.add_argument("--demo", action="store_true", help="演示模式：直接运行一键流水线 (选项 6)")
     args = parser.parse_args()
 
@@ -112,7 +116,7 @@ def main():
     while True:
         print_menu()
         try:
-            user_input = input("请输入选项编号 [0-8]: ").strip()
+            user_input = input("请输入选项编号 [0-9]: ").strip()
             cont = run_choice(user_input)
             if not cont:
                 break
