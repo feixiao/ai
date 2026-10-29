@@ -518,7 +518,7 @@ bash examples/multimodal_practice/run_all_labs.sh --menu
 | :--- | :--- | :--- | :--- |
 | **一键流水线** | 根目录快捷调度 | `make demo` | 串行执行抽帧、语音、LoRA数学、INT4导出、网关、客户端6阶段 |
 | **交互式控制台**| 终端 TUI 菜单 | `make menu` | 打开数字菜单自由单选执行各实操练习或硬件探测 |
-| **单元测试套件**| 原生 unittest | `make test` | 快速执行 103 项边界与数学公式全量单元测试 |
+| **单元测试套件**| 原生 unittest | `make test` | 快速执行 104 项边界与数学公式全量单元测试 |
 | **自动化基准** | Autoresearch | `make benchmark` | 评估手册结构、代码语法、执行力与篇幅平衡指标 (100分) |
 | **硬件环境探针**| 工具链检测 | `make check` | 探测 Mac Studio 芯片、UMA 内存、FFmpeg 及 Pixel 10 ADB |
 | **技术雷达看板**| 全景评估看板 | `make report` | 打印 6 项基准得分、13 款模型与 6 档硬件画像规格表 |

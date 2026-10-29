@@ -513,6 +513,33 @@ class TestMultimodalPipeline(unittest.TestCase):
                 if os.path.exists(f):
                     os.remove(f)
 
+    def test_lab04_cli_custom_model_and_file_content_assertions(self):
+        import subprocess, tempfile, json
+        lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".json") as f_man:
+            tmp_man = f_man.name
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".kt") as f_kt:
+            tmp_kt = f_kt.name
+        try:
+            p = subprocess.run(
+                [sys.executable, str(lab04_path), "--model", "Gemma-3n-2B", "--save-manifest", tmp_man, "--save-android-code", tmp_kt],
+                capture_output=True, text=True
+            )
+            self.assertEqual(p.returncode, 0)
+            manifest_content = json.loads(Path(tmp_man).read_text(encoding="utf-8"))
+            self.assertEqual(manifest_content["model_id"], "Gemma-3n-2B")
+            self.assertEqual(manifest_content["quantization"]["format"], "W4A16")
+            self.assertTrue(manifest_content["memory_profile_gb"]["safe_to_deploy"])
+
+            kt_content = Path(tmp_kt).read_text(encoding="utf-8")
+            self.assertIn("class EdgeVisionAnalyzer", kt_content)
+            self.assertIn("hardwareBuffer", kt_content)
+            self.assertIn("imageProxy.close()", kt_content)
+        finally:
+            for f in (tmp_man, tmp_kt):
+                if os.path.exists(f):
+                    os.remove(f)
+
     def test_lab04_quantization_calculation(self):
         import importlib.util
         lab04_path = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
@@ -1618,7 +1645,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 103)
+        self.assertEqual(data["total_unit_tests"], 104)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1633,7 +1660,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 103)
+        self.assertEqual(data["total_unit_tests"], 104)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
