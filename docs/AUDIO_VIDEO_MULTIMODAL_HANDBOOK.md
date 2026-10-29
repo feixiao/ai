@@ -155,6 +155,12 @@ def transcribe_audio_whisper(audio_path: str) -> str:
     return "识别文本：设备当前运行温度正常，气压传感器读数稳定。"
 ```
 
+#### 进阶实战：基于 WebRTC 的全双工流式实时语音 Agent (LiveKit + LM Studio / MLX)
+
+除了常规的“录音 ➔ 转写 ➔ 大模型推理 ➔ 语音合成”分段轮流交互外，针对需要即时打断、实时听说的全双工拟人场景，推荐采用 **LiveKit WebRTC 架构**：
+* **延迟突破**：传统串行模式端到端耗时通常在 1.5s ~ 3.0s；采用 WebRTC 流式 Silero VAD + 逐 Token 流式 TTS，交互延迟可压进 **< 500ms**；
+* **工程实现**：本仓库在 [`LiveKit/lmstudio_audio_agent/`](../LiveKit/lmstudio_audio_agent/) 提供了完整的本地实时语音 Agent 实现，支持通过 `start.sh` 一键拉起本地 `livekit-server` 并对接 Mac Studio 本地大模型（如 Qwen2.5-VL / Qwen3-VL）开展毫秒级语音对讲。
+
 ### 2.4 Mac Studio 上的高效微调 (MLX LoRA / QLoRA)
 
 当确实遇到“必须微调”的情况（如要求输出固定工业协议 JSON，或让 3B 模型学会特定设备缺陷），在 Mac Studio 上运行 **QLoRA**：

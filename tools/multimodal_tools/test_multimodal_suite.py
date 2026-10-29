@@ -309,6 +309,14 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertIn("qwen2.5-vl-72b", output)
         self.assertIn("pixel_10_tensor_g5", output)
 
+class TestLiveKitIntegration(unittest.TestCase):
+    def test_livekit_agent_directory_and_scripts(self):
+        livekit_dir = ROOT_DIR / "LiveKit" / "lmstudio_audio_agent"
+        self.assertTrue(livekit_dir.exists())
+        self.assertTrue((livekit_dir / "agent.py").exists())
+        self.assertTrue((livekit_dir / "start.sh").exists())
+        self.assertTrue((livekit_dir / "probe.py").exists())
+
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)
