@@ -203,6 +203,28 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertEqual(sim_frames[0]["timestamp_sec"], 0.0)
         self.assertEqual(sim_frames[2]["timestamp_sec"], 4.0)
 
+    def test_synthetic_bmp_frame_padding_and_dimensions(self):
+        import importlib.util, struct
+        lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+        spec = importlib.util.spec_from_file_location("lab01", str(lab01_path))
+        lab01 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab01)
+
+        for w, h in [(63, 63), (64, 64), (65, 32), (10, 10)]:
+            bmp_bytes = lab01.create_synthetic_bmp_frame(width=w, height=h, color=(100, 150, 200))
+            self.assertEqual(bmp_bytes[:2], b"BM")
+            file_size = struct.unpack("<I", bmp_bytes[2:6])[0]
+            self.assertEqual(len(bmp_bytes), file_size)
+
+            row_bytes = w * 3
+            padding = (4 - (row_bytes % 4)) % 4
+            expected_size = 54 + (row_bytes + padding) * h
+            self.assertEqual(file_size, expected_size)
+
+            header_w, header_h = struct.unpack("<II", bmp_bytes[18:26])
+            self.assertEqual(header_w, w)
+            self.assertEqual(header_h, h)
+
     def test_lab01_save_frames_and_cli_dump(self):
         import importlib.util, tempfile
         lab01_path = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
@@ -1341,7 +1363,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 92)
+        self.assertEqual(data["total_unit_tests"], 93)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1356,7 +1378,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 92)
+        self.assertEqual(data["total_unit_tests"], 93)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
