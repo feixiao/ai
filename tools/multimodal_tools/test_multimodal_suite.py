@@ -316,6 +316,27 @@ class TestDatasetFormatter(unittest.TestCase):
             if os.path.exists(tmp_out):
                 os.remove(tmp_out)
 
+    def test_validate_multimodal_dataset_anomalies_and_truncation(self):
+        import tempfile, json
+        from dataset_formatter import validate_multimodal_dataset
+
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".jsonl") as f:
+            f.write(json.dumps({"messages": [{"role": "user", "content": "long user prompt " * 20}, {"role": "assistant", "content": '{"ok": true}'}]}) + "\n")
+            f.write("NOT_A_VALID_JSON_STRING\n")
+            f.write(json.dumps({"messages": [{"role": "user", "content": "only user"}]}) + "\n")
+            tmp_path = f.name
+
+        try:
+            stats = validate_multimodal_dataset(tmp_path, max_seq_len=10)
+            self.assertEqual(stats["total_lines"], 3)
+            self.assertEqual(stats["valid_records"], 1)
+            self.assertEqual(stats["invalid_records"], 2)
+            self.assertGreater(stats["truncation_risk_count"], 0)
+            self.assertLess(stats["health_score"], 100.0)
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+
 class TestNumericalLoRAOptimization(unittest.TestCase):
     def test_lora_gradient_descent(self):
         import importlib.util
@@ -774,7 +795,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 63)
+        self.assertEqual(data["total_unit_tests"], 64)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
