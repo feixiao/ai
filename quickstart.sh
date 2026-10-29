@@ -23,6 +23,7 @@ show_help() {
   --report     打印多模态技术雷达与基准全景看板
   --server     在前台启动本地 OpenAI 兼容 HTTP 网关服务 (端口 8000)
   --clean      清理临时音频与数据测试缓存
+  --download-models 打印各大官方渠道模型权重极速拉取指令
   --help       显示本帮助文档
 ==================================================================
 EOF
@@ -47,6 +48,9 @@ case "${1:-}" in
     --clean)
         rm -rf /tmp/test_multimodal_audio.wav /tmp/multimodal_lora_data
         echo "🧹 临时缓存已清理完毕。"
+        ;;
+    --download-models)
+        exec bash "${SCRIPT_DIR}/examples/multimodal_practice/setup_environment.sh" --download-models
         ;;
     --help|-h)
         show_help

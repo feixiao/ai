@@ -371,6 +371,11 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(p_clean.returncode, 0)
         self.assertIn("已清理", p_clean.stdout)
 
+        p_dl = subprocess.run(["bash", str(qs_script), "--download-models"], capture_output=True, text=True)
+        self.assertEqual(p_dl.returncode, 0)
+        self.assertIn("qwen2.5-vl", p_dl.stdout)
+        self.assertIn("Pixel 10", p_dl.stdout)
+
     def test_run_all_labs_script(self):
         import subprocess
         runner = ROOT_DIR / "examples" / "multimodal_practice" / "run_all_labs.sh"
