@@ -495,6 +495,45 @@ class TestClientServerIntegration(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("客户端端到端调用", p.stdout)
 
+    def test_client_example_cli_help(self):
+        import subprocess
+        client_script = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+        p = subprocess.run([sys.executable, str(client_script), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("--server", p.stdout)
+
+    def test_lab01_cli_help(self):
+        import subprocess
+        s = ROOT_DIR / "examples" / "multimodal_practice" / "01_video_vlm_inference.py"
+        p = subprocess.run([sys.executable, str(s), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("--endpoint", p.stdout)
+        self.assertIn("--dump-frames", p.stdout)
+
+    def test_lab02_cli_help(self):
+        import subprocess
+        s = ROOT_DIR / "examples" / "multimodal_practice" / "02_audio_whisper_tts.py"
+        p = subprocess.run([sys.executable, str(s), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("--endpoint", p.stdout)
+        self.assertIn("--play", p.stdout)
+
+    def test_lab03_cli_help(self):
+        import subprocess
+        s = ROOT_DIR / "examples" / "multimodal_practice" / "03_vlm_lora_dataset_and_train.py"
+        p = subprocess.run([sys.executable, str(s), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("--use-sample-data", p.stdout)
+        self.assertIn("--steps", p.stdout)
+
+    def test_lab04_cli_help(self):
+        import subprocess
+        s = ROOT_DIR / "examples" / "multimodal_practice" / "04_export_to_pixel10.py"
+        p = subprocess.run([sys.executable, str(s), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("--save-manifest", p.stdout)
+        self.assertIn("--save-android-code", p.stdout)
+
 class TestBenchmarkSummary(unittest.TestCase):
     def test_generate_dashboard(self):
         from benchmark_summary import generate_dashboard
