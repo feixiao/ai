@@ -939,6 +939,40 @@ class TestClientServerIntegration(unittest.TestCase):
         # Unused port must return False
         self.assertFalse(client_mod.check_server_reachable("http://127.0.0.1:59998", timeout=0.5))
 
+    def test_client_get_server_health_and_reachability_positive(self):
+        import importlib.util, socket, threading, time
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        client_path = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+
+        spec_srv = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec_srv)
+        spec_srv.loader.exec_module(lab05)
+
+        spec_cli = importlib.util.spec_from_file_location("client_mod", str(client_path))
+        client_mod = importlib.util.module_from_spec(spec_cli)
+        spec_cli.loader.exec_module(client_mod)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        server = HTTPServer(("127.0.0.1", port), lab05.MultimodalAPIHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        time.sleep(0.05)
+
+        try:
+            self.assertTrue(client_mod.check_server_reachable(f"http://127.0.0.1:{port}", timeout=2.0))
+            health = client_mod.get_server_health(f"http://127.0.0.1:{port}")
+            self.assertEqual(health.get("status"), "healthy")
+            self.assertIn("Mac Studio", health.get("service", ""))
+            self.assertIn("Apple Silicon", health.get("hardware_profile", ""))
+            self.assertIn("Metal GPU", health.get("accelerators", []))
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_client_list_gateway_models(self):
         import importlib.util, socket, threading, time
         from http.server import HTTPServer
@@ -1094,7 +1128,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 84)
+        self.assertEqual(data["total_unit_tests"], 85)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1109,7 +1143,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 84)
+        self.assertEqual(data["total_unit_tests"], 85)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
