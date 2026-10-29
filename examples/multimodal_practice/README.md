@@ -21,6 +21,18 @@ python3 interactive_menu.py
 ```
 *提供 TUI 数字菜单，支持按需单选练习 1~4、环境探测或算力预算估算器。*
 
+### 方式三：真机环境就绪检查与 Pixel 10 ADB 模型推送
+```bash
+# 检查 Mac Studio 与 Pixel 10 工具链 (Python, Metal, FFmpeg, ADB 在线设备)
+bash setup_environment.sh --check
+
+# 一键安装 Apple Silicon 原生 MLX 多模态组件
+bash setup_environment.sh --install-mac-mlx
+
+# 将量化导出的模型通过 ADB 推送至在线的 Pixel 10 手机端
+bash setup_environment.sh --push-pixel10 /path/to/qwen2.5_vl_3b_w4a16.task
+```
+
 ---
 
 ## 4 套实操练习详解

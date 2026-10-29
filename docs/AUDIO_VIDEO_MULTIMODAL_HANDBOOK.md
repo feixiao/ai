@@ -237,6 +237,9 @@ python3 -m ai_edge_torch.convert \
 # 2. 导出为 GGUF 格式 (供 llama.cpp 移动端 Vulkan 运行)
 python3 llama.cpp/convert_hf_to_gguf.py ./fused_model --outtype f16 --outfile model-f16.gguf
 ./llama.cpp/build/bin/llama-quantize model-f16.gguf model-q4_k_m.gguf Q4_K_M
+
+# 3. 通过 ADB 将导出的轻量化模型推送至 Pixel 10
+bash examples/multimodal_practice/setup_environment.sh --push-pixel10 ./qwen2.5_vl_3b_w4a16.tflite
 ```
 
 

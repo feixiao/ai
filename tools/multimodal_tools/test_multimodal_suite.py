@@ -191,6 +191,15 @@ class TestInteractiveMenu(unittest.TestCase):
         # Choice 6 (probe) runs successfully
         self.assertTrue(menu.run_choice("6"))
 
+class TestEnvironmentScript(unittest.TestCase):
+    def test_setup_environment_check(self):
+        import subprocess
+        script = ROOT_DIR / "examples" / "multimodal_practice" / "setup_environment.sh"
+        self.assertTrue(script.exists())
+        res = subprocess.run(["bash", str(script), "--check"], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("环境探测", res.stdout)
+
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)
