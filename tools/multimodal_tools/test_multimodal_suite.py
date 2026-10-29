@@ -66,6 +66,14 @@ class TestVramAndBudget(unittest.TestCase):
         with self.assertRaises(ValueError):
             check_hardware_feasibility("qwen2.5-vl-3b", "non_existent_device")
 
+    def test_vram_and_budget_cli_model_and_device(self):
+        import subprocess
+        script = TOOLS_DIR / "vram_and_budget.py"
+        p = subprocess.run([sys.executable, str(script), "--model", "qwen2.5-vl-3b", "--device", "pixel_10_tensor_g5"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("Optimal", p.stdout)
+        self.assertIn("required_gb", p.stdout)
+
 class TestMultimodalPipeline(unittest.TestCase):
     def test_sample_video_frames_edge_cases(self):
         # Zero frames
@@ -138,6 +146,13 @@ class TestMultimodalPipeline(unittest.TestCase):
         self.assertIn("EdgeVisionAnalyzer", snippet)
         self.assertIn("CameraX", snippet)
 
+    def test_multimodal_pipeline_cli_flags(self):
+        import subprocess
+        script = TOOLS_DIR / "multimodal_pipeline.py"
+        p = subprocess.run([sys.executable, str(script), "--sample-video"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("抽取关键帧索引", p.stdout)
+
 class TestDatasetFormatter(unittest.TestCase):
     def test_estimate_tokens(self):
         self.assertEqual(estimate_tokens("", num_images=0), 0)
@@ -178,6 +193,15 @@ class TestDatasetFormatter(unittest.TestCase):
             for p in [temp_path, t1, v1, t2, v2]:
                 if os.path.exists(p):
                     os.remove(p)
+
+    def test_dataset_formatter_cli_validate(self):
+        import subprocess
+        script = TOOLS_DIR / "dataset_formatter.py"
+        sample_train = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "train.jsonl"
+        p = subprocess.run([sys.executable, str(script), "--validate", str(sample_train)], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("health_score", p.stdout)
+        self.assertIn("100.0", p.stdout)
 
 class TestNumericalLoRAOptimization(unittest.TestCase):
     def test_lora_gradient_descent(self):
