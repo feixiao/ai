@@ -102,11 +102,45 @@ def benchmark_audio_duplex() -> dict:
         "details": f"Chunks={len(chunks)}, ASR_ok={asr_ok}, BargeIn={simulated_interruption_latency_ms}ms (<500ms), TTFT={simulated_tts_ttft_ms}ms"
     }
 
+def validate_agent_output_schema(output) -> dict:
+    """
+    Validates multimodal Agent inspection response against strict industrial JSON Schema.
+    Ensures 0% schema drift, valid enum values, and structural integrity.
+    """
+    if isinstance(output, str):
+        try:
+            data = json.loads(output)
+        except Exception as e:
+            return {"valid": False, "errors": [f"Malformed JSON: {e}"]}
+    elif isinstance(output, dict):
+        data = output
+    else:
+        return {"valid": False, "errors": ["Output must be JSON string or dict"]}
+
+    errors = []
+    required_keys = {"device_id", "status", "inspection_items", "anomaly_detected"}
+    missing = required_keys - set(data.keys())
+    if missing:
+        errors.append(f"Missing required keys: {sorted(list(missing))}")
+
+    if "status" in data and data["status"] not in ("NORMAL", "WARNING", "CRITICAL", "OFFLINE"):
+        errors.append(f"Invalid status value: {data['status']}")
+
+    if "anomaly_detected" in data and not isinstance(data["anomaly_detected"], bool):
+        errors.append("anomaly_detected must be boolean")
+
+    if "inspection_items" in data:
+        if not isinstance(data["inspection_items"], list):
+            errors.append("inspection_items must be a list")
+        else:
+            for idx, item in enumerate(data["inspection_items"]):
+                if not isinstance(item, dict) or "item" not in item:
+                    errors.append(f"inspection_items[{idx}] must be dict with 'item' key")
+
+    return {"valid": len(errors) == 0, "errors": errors}
+
 def benchmark_schema_contract() -> dict:
     """Benchmark 3: Strict Schema & Output Contract Adherence (100% JSON compliance)."""
-    expected_schema_keys = {"device_id", "status", "inspection_items", "anomaly_detected"}
-    
-    # Test valid contract response
     sample_agent_output = json.dumps({
         "device_id": "PUMP-COMP-01",
         "status": "NORMAL",
@@ -116,26 +150,25 @@ def benchmark_schema_contract() -> dict:
         ],
         "anomaly_detected": False
     })
+    v_valid = validate_agent_output_schema(sample_agent_output)
     
-    try:
-        parsed = json.loads(sample_agent_output)
-        contract_valid = expected_schema_keys.issubset(parsed.keys())
-    except Exception:
-        contract_valid = False
-        
-    # Test schema drift rejection
+    # Schema drift rejection
     malformed_output = "The device PUMP-COMP-01 is operating normally with no issues."
-    try:
-        json.loads(malformed_output)
-        drift_rejected = False
-    except Exception:
-        drift_rejected = True
-        
-    schema_ok = contract_valid and drift_rejected
+    v_drift = validate_agent_output_schema(malformed_output)
+    
+    # Invalid enum rejection
+    invalid_enum_output = {"device_id": "PUMP-01", "status": "UNKNOWN", "inspection_items": [], "anomaly_detected": False}
+    v_enum = validate_agent_output_schema(invalid_enum_output)
+    
+    # Missing key rejection
+    missing_key_output = {"device_id": "PUMP-01", "status": "NORMAL"}
+    v_missing = validate_agent_output_schema(missing_key_output)
+    
+    schema_ok = v_valid["valid"] and not v_drift["valid"] and not v_enum["valid"] and not v_missing["valid"]
     return {
         "passed": schema_ok,
         "score": 100.0 if schema_ok else 0.0,
-        "details": f"Valid schema check: {contract_valid}, Drift rejection check: {drift_rejected}"
+        "details": f"Valid schema check: {v_valid['valid']}, Drift rejection check: {not v_drift['valid']}, EnumRejected={not v_enum['valid']}, MissingRejected={not v_missing['valid']}"
     }
 
 def decide_agent_routing(task_complexity: str, network_available: bool = True, thermal_status: str = "NOMINAL") -> str:

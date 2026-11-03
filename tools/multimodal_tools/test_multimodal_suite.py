@@ -1938,7 +1938,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 126)
+        self.assertEqual(data["total_unit_tests"], 127)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1956,7 +1956,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 126)
+        self.assertEqual(data["total_unit_tests"], 127)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)
@@ -2082,6 +2082,28 @@ class TestAgentCapabilityEvaluation(unittest.TestCase):
         for r_id, r_data in res["recipes"].items():
             self.assertTrue(r_data["feasible"])
             self.assertLessEqual(r_data["vram_required_gb"], r_data["vram_limit_gb"])
+
+    def test_validate_agent_output_schema_comprehensive(self):
+        from eval_agent_capabilities import validate_agent_output_schema
+        valid_res = validate_agent_output_schema({
+            "device_id": "FAN-01",
+            "status": "NORMAL",
+            "inspection_items": [{"item": "speed", "normal": True}],
+            "anomaly_detected": False
+        })
+        self.assertTrue(valid_res["valid"])
+        self.assertEqual(valid_res["errors"], [])
+
+        self.assertFalse(validate_agent_output_schema(12345)["valid"])
+
+        res_enum = validate_agent_output_schema({
+            "device_id": "FAN-01",
+            "status": "MAYBE_BROKEN",
+            "inspection_items": [],
+            "anomaly_detected": True
+        })
+        self.assertFalse(res_enum["valid"])
+        self.assertIn("Invalid status value", res_enum["errors"][0])
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)
