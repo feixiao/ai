@@ -1870,7 +1870,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 117)
+        self.assertEqual(data["total_unit_tests"], 119)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1888,7 +1888,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 117)
+        self.assertEqual(data["total_unit_tests"], 119)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)
@@ -1901,6 +1901,30 @@ class TestLiveKitIntegration(unittest.TestCase):
         self.assertTrue((livekit_dir / "agent.py").exists())
         self.assertTrue((livekit_dir / "start.sh").exists())
         self.assertTrue((livekit_dir / "probe.py").exists())
+
+    def test_livekit_pick_best_chat_model_logic(self):
+        sys.path.insert(0, str(ROOT_DIR / "LiveKit" / "lmstudio_audio_agent"))
+        from probe import pick_best_chat_model
+        mock_models = [
+            {"id": "text-embedding-v1", "type": "embeddings", "state": "not-loaded"},
+            {"id": "qwen3-vl-32b-thinking-mlx", "type": "vlm", "state": "not-loaded"},
+            {"id": "qwen/qwen3-vl-8b", "type": "vlm", "state": "loaded"},
+        ]
+        self.assertEqual(pick_best_chat_model(mock_models), "qwen/qwen3-vl-8b")
+        self.assertEqual(pick_best_chat_model([]), "qwen/qwen3-vl-8b")
+
+        # Test keyword matching when no model is explicitly loaded
+        unloaded_models = [
+            {"id": "whisper-audio-large", "type": "audio", "state": "not-loaded"},
+            {"id": "qwen3-vl-8b-instruct", "type": "vlm", "state": "not-loaded"},
+        ]
+        self.assertEqual(pick_best_chat_model(unloaded_models), "qwen3-vl-8b-instruct")
+
+    def test_livekit_probe_timeout_resilience(self):
+        sys.path.insert(0, str(ROOT_DIR / "LiveKit" / "lmstudio_audio_agent"))
+        from probe import probe_models
+        res = probe_models(timeout=0.01)
+        self.assertIsInstance(res, list)
 
 
 class TestAgentCapabilityEvaluation(unittest.TestCase):
