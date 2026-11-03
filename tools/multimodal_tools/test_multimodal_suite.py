@@ -1863,6 +1863,8 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertIn("GOLD STANDARD", output)
         self.assertIn("qwen2.5-vl-72b", output)
         self.assertIn("pixel_10_tensor_g5", output)
+        self.assertIn("Agent Capability Evaluation Radar", output)
+        self.assertIn("FULL STACK READY", output)
 
     def test_generate_json_summary(self):
         from benchmark_summary import generate_json_summary
@@ -1876,7 +1878,9 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(data["hardware_profiles_count"], 6)
         self.assertIn("qwen2.5-vl-72b", data["models"])
         self.assertIn("mac_studio_m4_ultra_192g", data["hardware_profiles"])
-
+        self.assertIn("agent_capability_radar", data)
+        self.assertEqual(data["agent_capability_radar"]["composite_score"], 100.0)
+        self.assertEqual(data["agent_capability_radar"]["vlm_perception"], 100.0)
     def test_benchmark_summary_cli_json(self):
         import subprocess, json
         script = TOOLS_DIR / "benchmark_summary.py"
@@ -1887,6 +1891,8 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(data["total_unit_tests"], 117)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
+        self.assertIn("agent_capability_radar", data)
+        self.assertEqual(data["agent_capability_radar"]["composite_score"], 100.0)
 
 class TestLiveKitIntegration(unittest.TestCase):
     def test_livekit_agent_directory_and_scripts(self):
