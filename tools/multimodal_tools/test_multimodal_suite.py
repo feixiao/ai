@@ -1868,7 +1868,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 115)
+        self.assertEqual(data["total_unit_tests"], 117)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1884,7 +1884,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 115)
+        self.assertEqual(data["total_unit_tests"], 117)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
@@ -1931,6 +1931,25 @@ class TestAgentCapabilityEvaluation(unittest.TestCase):
         p = subprocess.run([sys.executable, str(agent_script)], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0)
         self.assertIn("综合 Agent 能力评测得分: 100.0", p.stdout)
+
+    def test_eval_agent_capabilities_cli_json(self):
+        import subprocess, json
+        agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+        p = subprocess.run([sys.executable, str(agent_script), "--json"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        data = json.loads(p.stdout)
+        self.assertTrue(data["all_passed"])
+        self.assertEqual(data["average_score"], 100.0)
+        self.assertIn("vlm_perception", data["suites"])
+
+    def test_eval_agent_capabilities_cli_suite_filter(self):
+        import subprocess, json
+        agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+        p = subprocess.run([sys.executable, str(agent_script), "--suite", "audio", "--json"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        data = json.loads(p.stdout)
+        self.assertEqual(len(data["suites"]), 1)
+        self.assertIn("audio_duplex", data["suites"])
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

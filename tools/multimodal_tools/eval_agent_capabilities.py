@@ -10,7 +10,8 @@ Systematically evaluates the multimodal agent across 5 core dimensions:
 """
 import sys
 import json
-import time
+import wave
+import argparse
 from pathlib import Path
 
 TOOLS_DIR = Path(__file__).resolve().parent
@@ -26,7 +27,11 @@ from vram_and_budget import check_hardware_feasibility, estimate_inference_memor
 
 def benchmark_vlm_perception() -> dict:
     """Benchmark 1: Multimodal Perception & Temporal Grounding."""
-    sampled_indices = sample_video_frames(total_frames=120, fps=30.0, max_frames=4)
+    frames_dir = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "frames"
+    real_bmps = list(frames_dir.glob("*.bmp")) if frames_dir.exists() else []
+    
+    total_frames = max(len(real_bmps) * 30, 120)
+    sampled_indices = sample_video_frames(total_frames=total_frames, fps=30.0, max_frames=4)
     payload = build_multimodal_vlm_payload(
         prompt="核查车间关键设备运行状态与安全违规行为",
         sampled_frame_indices=sampled_indices,
@@ -54,17 +59,27 @@ def benchmark_vlm_perception() -> dict:
         len(simulated_resp["timestamp_seconds"]) == 4 and
         simulated_resp["confidence"] >= 0.90
     )
+    fixture_note = f" (Found {len(real_bmps)} real BMP fixtures)" if real_bmps else ""
     return {
         "passed": perception_ok,
         "score": 100.0 if perception_ok else 0.0,
-        "details": f"Processed {len(frame_placeholders)} keyframes with temporal grounding: {perception_ok}"
+        "details": f"Processed {len(frame_placeholders)} keyframes with temporal grounding: {perception_ok}{fixture_note}"
     }
 
 def benchmark_audio_duplex() -> dict:
     """Benchmark 2: Audio Duplex & Streaming Responsiveness (<500ms)."""
-    # 2 seconds of 16kHz audio = 32000 samples
+    wav_path = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "audio" / "sample_inspection_16k.wav"
     total_samples = 32000
-    chunks = chunk_audio_stream(total_samples, sample_rate=16000, chunk_duration_sec=1.0, overlap_sec=0.2)
+    sample_rate = 16000
+    if wav_path.exists():
+        try:
+            with wave.open(str(wav_path), "rb") as wf:
+                total_samples = wf.getnframes()
+                sample_rate = wf.getframerate()
+        except Exception:
+            pass
+
+    chunks = chunk_audio_stream(total_samples, sample_rate=sample_rate, chunk_duration_sec=1.0, overlap_sec=0.2)
     chunking_ok = len(chunks) >= 2
     
     # Simulate ASR transcription
@@ -125,11 +140,9 @@ def benchmark_schema_contract() -> dict:
 
 def benchmark_edge_mec_collaboration() -> dict:
     """Benchmark 4: Edge-MEC Collaborative Routing & Resource Safety."""
-    # Test Edge memory feasibility (Pixel 10 <= 4.5GB)
     pixel_eval = check_hardware_feasibility("gemma-3n-2b", "pixel_10_tensor_g5", "inference")
     pixel_ok = pixel_eval["feasible"] and pixel_eval["required_gb"] <= 4.5
     
-    # Test Mac Studio UMA feasibility (Qwen2.5-VL-7B <= 48GB limit)
     mac_eval = check_hardware_feasibility("qwen2.5-vl-7b", "mac_studio_m2_max_64g", "finetune")
     mac_ok = mac_eval["feasible"] and mac_eval["required_gb"] <= 48.0
     
@@ -192,17 +205,34 @@ def benchmark_production_recipes() -> dict:
         "details": f"All 4 production recipes validated: {list(recipes.keys())}"
     }
 
-def run_agent_capability_benchmark() -> dict:
-    """Run all agent capability benchmark suites and return aggregate results."""
-    suites = {
-        "vlm_perception": benchmark_vlm_perception(),
-        "audio_duplex": benchmark_audio_duplex(),
-        "schema_contract": benchmark_schema_contract(),
-        "edge_mec_collaboration": benchmark_edge_mec_collaboration(),
-        "production_recipes": benchmark_production_recipes()
+def run_agent_capability_benchmark(suite_filter: str = "all") -> dict:
+    """Run agent capability benchmark suites and return aggregate results."""
+    all_suites = {
+        "vlm_perception": benchmark_vlm_perception,
+        "audio_duplex": benchmark_audio_duplex,
+        "schema_contract": benchmark_schema_contract,
+        "edge_mec_collaboration": benchmark_edge_mec_collaboration,
+        "production_recipes": benchmark_production_recipes
     }
     
-    total_score = sum(s["score"] for s in suites.values()) / len(suites)
+    if suite_filter == "all":
+        selected = all_suites
+    else:
+        mapping = {
+            "vlm": "vlm_perception",
+            "audio": "audio_duplex",
+            "schema": "schema_contract",
+            "edge": "edge_mec_collaboration",
+            "recipes": "production_recipes"
+        }
+        target_key = mapping.get(suite_filter, suite_filter)
+        if target_key in all_suites:
+            selected = {target_key: all_suites[target_key]}
+        else:
+            selected = all_suites
+
+    suites = {name: fn() for name, fn in selected.items()}
+    total_score = sum(s["score"] for s in suites.values()) / max(len(suites), 1)
     all_passed = all(s["passed"] for s in suites.values())
     
     return {
@@ -212,10 +242,20 @@ def run_agent_capability_benchmark() -> dict:
     }
 
 def main():
+    parser = argparse.ArgumentParser(description="音视频多模态 Agent 能力评测体系基准测试")
+    parser.add_argument("--json", action="store_true", help="以 JSON 格式输出评估结果")
+    parser.add_argument("--suite", type=str, default="all", choices=["all", "vlm", "audio", "schema", "edge", "recipes"], help="指定单选测试套件")
+    args = parser.parse_args()
+
+    results = run_agent_capability_benchmark(suite_filter=args.suite)
+    
+    if args.json:
+        print(json.dumps(results, ensure_ascii=False, indent=2))
+        sys.exit(0 if results["all_passed"] else 1)
+
     print("=" * 70)
     print(" 🤖 音视频多模态 Agent 能力评测体系基准测试 (Agent Capability Eval)")
     print("=" * 70)
-    results = run_agent_capability_benchmark()
     
     for name, r in results["suites"].items():
         status = "PASSED" if r["passed"] else "FAILED"
