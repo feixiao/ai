@@ -1870,7 +1870,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 119)
+        self.assertEqual(data["total_unit_tests"], 120)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1888,7 +1888,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 119)
+        self.assertEqual(data["total_unit_tests"], 120)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)
@@ -1980,6 +1980,14 @@ class TestAgentCapabilityEvaluation(unittest.TestCase):
         data = json.loads(p.stdout)
         self.assertEqual(len(data["suites"]), 1)
         self.assertIn("audio_duplex", data["suites"])
+
+    def test_decide_agent_routing_policy(self):
+        from eval_agent_capabilities import decide_agent_routing
+        self.assertEqual(decide_agent_routing("low"), "pixel10")
+        self.assertEqual(decide_agent_routing("high"), "mac_studio")
+        self.assertEqual(decide_agent_routing("high", network_available=False), "pixel10_offline")
+        self.assertEqual(decide_agent_routing("low", thermal_status="SEVERE"), "mac_studio")
+        self.assertEqual(decide_agent_routing("low", network_available=False, thermal_status="SEVERE"), "throttle_hibernate")
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

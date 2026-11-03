@@ -138,6 +138,22 @@ def benchmark_schema_contract() -> dict:
         "details": f"Valid schema check: {contract_valid}, Drift rejection check: {drift_rejected}"
     }
 
+def decide_agent_routing(task_complexity: str, network_available: bool = True, thermal_status: str = "NOMINAL") -> str:
+    """
+    Edge-MEC collaborative dispatch policy between Google Pixel 10 (Edge) and Mac Studio (MEC).
+    - SEVERE thermal status: offload to Mac Studio if connected, else throttle/hibernate.
+    - Offline without network: execute locally on Pixel 10 LiteRT INT4.
+    - Low complexity (routine check): run locally on Pixel 10.
+    - High complexity (7B/72B VLM reasoning): offload to Mac Studio UMA.
+    """
+    if thermal_status == "SEVERE":
+        return "mac_studio" if network_available else "throttle_hibernate"
+    if not network_available:
+        return "pixel10_offline"
+    if task_complexity in ("high", "ultra"):
+        return "mac_studio"
+    return "pixel10"
+
 def benchmark_edge_mec_collaboration() -> dict:
     """Benchmark 4: Edge-MEC Collaborative Routing & Resource Safety."""
     pixel_eval = check_hardware_feasibility("gemma-3n-2b", "pixel_10_tensor_g5", "inference")
@@ -146,24 +162,23 @@ def benchmark_edge_mec_collaboration() -> dict:
     mac_eval = check_hardware_feasibility("qwen2.5-vl-7b", "mac_studio_m2_max_64g", "finetune")
     mac_ok = mac_eval["feasible"] and mac_eval["required_gb"] <= 48.0
     
-    # Test routing logic
-    query_a_complexity = "low"
-    route_a = "pixel10" if query_a_complexity == "low" else "mac_studio"
-    route_a_ok = route_a == "pixel10"
+    # Test routing logic via policy
+    route_low = decide_agent_routing("low") == "pixel10"
+    route_high = decide_agent_routing("high") == "mac_studio"
+    route_offline = decide_agent_routing("high", network_available=False) == "pixel10_offline"
+    route_thermal_net = decide_agent_routing("low", thermal_status="SEVERE") == "mac_studio"
+    route_thermal_off = decide_agent_routing("low", network_available=False, thermal_status="SEVERE") == "throttle_hibernate"
+    routing_all_ok = route_low and route_high and route_offline and route_thermal_net and route_thermal_off
     
-    query_b_complexity = "high"
-    route_b = "mac_studio" if query_b_complexity == "high" else "pixel10"
-    route_b_ok = route_b == "mac_studio"
-    
-    # Thermal throttling simulation
+    # Thermal frame throttling ratio
     thermal_states = {"NOMINAL": 1.0, "MODERATE": 0.5, "SEVERE": 0.0}
     thermal_ok = (thermal_states["MODERATE"] == 0.5 and thermal_states["SEVERE"] == 0.0)
     
-    collab_ok = pixel_ok and mac_ok and route_a_ok and route_b_ok and thermal_ok
+    collab_ok = pixel_ok and mac_ok and routing_all_ok and thermal_ok
     return {
         "passed": collab_ok,
         "score": 100.0 if collab_ok else 0.0,
-        "details": f"PixelEdge={pixel_ok}, MacUMA={mac_ok}, RouteA={route_a_ok}, RouteB={route_b_ok}, Thermal={thermal_ok}"
+        "details": f"PixelEdge={pixel_ok}, MacUMA={mac_ok}, RoutingPolicies={routing_all_ok}, Thermal={thermal_ok}"
     }
 
 def benchmark_production_recipes() -> dict:
