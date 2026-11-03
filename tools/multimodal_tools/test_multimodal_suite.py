@@ -1027,7 +1027,8 @@ class TestInteractiveMenu(unittest.TestCase):
         self.assertTrue(menu.run_choice("9"))
         # Choice 10 (client example) runs successfully
         self.assertTrue(menu.run_choice("10"))
-
+        # Choice 11 (agent capability eval) runs successfully
+        self.assertTrue(menu.run_choice("11"))
     def test_menu_cli_choice_and_print_menu(self):
         import subprocess
         menu_path = ROOT_DIR / "examples" / "multimodal_practice" / "interactive_menu.py"
@@ -1867,7 +1868,8 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 111)
+        self.assertEqual(data["total_unit_tests"], 115)
+        self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
@@ -1882,7 +1884,8 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 111)
+        self.assertEqual(data["total_unit_tests"], 115)
+        self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
 
 class TestLiveKitIntegration(unittest.TestCase):
@@ -1893,6 +1896,41 @@ class TestLiveKitIntegration(unittest.TestCase):
         self.assertTrue((livekit_dir / "start.sh").exists())
         self.assertTrue((livekit_dir / "probe.py").exists())
 
+
+class TestAgentCapabilityEvaluation(unittest.TestCase):
+    def test_eval_agent_capabilities_modules(self):
+        from eval_agent_capabilities import (
+            benchmark_vlm_perception,
+            benchmark_audio_duplex,
+            benchmark_schema_contract,
+            benchmark_edge_mec_collaboration,
+            benchmark_production_recipes
+        )
+        self.assertTrue(benchmark_vlm_perception()["passed"])
+        self.assertTrue(benchmark_audio_duplex()["passed"])
+        self.assertTrue(benchmark_schema_contract()["passed"])
+        self.assertTrue(benchmark_edge_mec_collaboration()["passed"])
+        self.assertTrue(benchmark_production_recipes()["passed"])
+
+    def test_eval_agent_capabilities_full_benchmark(self):
+        from eval_agent_capabilities import run_agent_capability_benchmark
+        res = run_agent_capability_benchmark()
+        self.assertTrue(res["all_passed"])
+        self.assertEqual(res["average_score"], 100.0)
+        self.assertEqual(len(res["suites"]), 5)
+
+    def test_eval_agent_schema_contract_edge_cases(self):
+        from eval_agent_capabilities import benchmark_schema_contract
+        res = benchmark_schema_contract()
+        self.assertEqual(res["score"], 100.0)
+        self.assertIn("Valid schema check: True", res["details"])
+
+    def test_eval_agent_capabilities_cli(self):
+        import subprocess
+        agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+        p = subprocess.run([sys.executable, str(agent_script)], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("综合 Agent 能力评测得分: 100.0", p.stdout)
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

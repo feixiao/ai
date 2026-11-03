@@ -4,7 +4,7 @@
 
 PYTHON ?= python3
 
-.PHONY: all help demo menu test check report server clean
+.PHONY: all help demo menu test check report server eval-agent clean
 
 all: demo
 
@@ -13,8 +13,9 @@ help:
 	@echo "🎬 音视频多模态实操练习套件快捷指令 (Mac Studio & Pixel 10)"
 	@echo "=================================================================="
 	@echo "  make demo        - 运行全部 6 阶段端到端实操练习流水线"
-	@echo "  make menu        - 打开交互式终端控制台菜单 (选项 0~10)"
-	@echo "  make test        - 运行 111 项全量标准单元测试套件 (unittest)"
+	@echo "  make menu        - 打开交互式终端控制台菜单 (选项 0~11)"
+	@echo "  make test        - 运行 115 项全量标准单元测试套件 (unittest)"
+	@echo "  make eval-agent  - 执行音视频多模态 Agent 能力全量基准评测"
 	@echo "  make check       - 探测 Mac Studio 统一内存与 Pixel 10 ADB 环境"
 	@echo "  make report      - 打印多模态技术雷达与基准全景看板"
 	@echo "  make server      - 启动本地 OpenAI 兼容多模态微服务网关 (端口 8000)"
@@ -37,6 +38,9 @@ report:
 
 server:
 	$(PYTHON) 05_local_multimodal_server.py --port 8000 --host 0.0.0.0
+
+eval-agent:
+	$(PYTHON) ../../tools/multimodal_tools/eval_agent_capabilities.py
 
 clean:
 	rm -rf /tmp/test_multimodal_audio.wav /tmp/multimodal_lora_data

@@ -25,6 +25,7 @@ MENU_ITEMS = [
     ("8", "📊 打开多模态模型显存与算力预算估算器 (vram_and_budget)", ["vram_budget"]),
     ("9", "📈 查看音视频多模态技术雷达与基准全景看板 (benchmark_summary)", ["benchmark_summary"]),
     ("10", "📡 运行原生轻量客户端调用参考实现 (client_example)", ["client_example.py", "--demo"]),
+    ("11", "🤖 执行音视频多模态 Agent 能力全量基准评测 (eval_agent_capabilities)", ["eval_agent_capabilities"]),
 ]
 
 def probe_hardware_environment():
@@ -76,13 +77,16 @@ def run_choice(choice: str):
             elif cmd == ["run_all_labs.sh"]:
                 sh_script = BASE_DIR / "run_all_labs.sh"
                 subprocess.run(["bash", str(sh_script)])
+            elif cmd == ["eval_agent_capabilities"]:
+                agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+                subprocess.run([PYTHON_BIN, str(agent_script)])
             else:
                 target_script = BASE_DIR / cmd[0]
                 full_cmd = [PYTHON_BIN, str(target_script)] + cmd[1:]
                 subprocess.run(full_cmd)
             return True
 
-    print(f"⚠️ 无效选项: {choice}，请输入 0~10 之间的数字。")
+    print(f"⚠️ 无效选项: {choice}，请输入 0~11 之间的数字。")
     return True
 
 def print_menu():
@@ -96,7 +100,7 @@ def print_menu():
 
 def main():
     parser = argparse.ArgumentParser(description="音视频多模态实操练习交互式控制台")
-    parser.add_argument("--choice", type=str, default=None, choices=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"], help="直接执行指定编号任务")
+    parser.add_argument("--choice", type=str, default=None, choices=["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"], help="直接执行指定编号任务")
     parser.add_argument("--demo", action="store_true", help="演示模式：直接运行一键流水线 (选项 6)")
     args = parser.parse_args()
 

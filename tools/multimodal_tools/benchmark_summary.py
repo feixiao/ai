@@ -27,7 +27,8 @@ def generate_dashboard() -> str:
         ("决策矩阵完备度 (decision_matrix)", 100.0, "四象限模型、90% 直接调用与 10% 必须微调决策树"),
         ("Mac Studio 落地深度 (mac_studio_vlm)", 100.0, "Apple Silicon UMA、400~800GB/s 带宽、MLX LoRA 5.1G"),
         ("Pixel 10 移动端适配 (pixel10_edge)", 100.0, "Tensor G5 TPU、W4A16 4-bit 量化、CameraX 零拷贝"),
-        ("代码执行与单元测试 (code_execution)", 100.0, "111 项原生 unittest、公式与边界条件零报错"),
+        ("Agent能力评测完备度 (agent_eval_framework)", 100.0, "五大核心支柱、全双工延迟<500ms、契约遵从与边端分流"),
+        ("代码执行与单元测试 (code_execution)", 100.0, "115 项原生 unittest、公式与边界条件零报错"),
         ("实操练习闭环度 (hands_on_practice)", 100.0, "5 套独立脚本 (Lab 01~05) + 一键流水线 + TUI 控制台"),
         ("跨平台篇幅平衡度 (balance_conciseness)", 100.0, "云端多卡与 Jetson 保持精简边界 (<15% 篇幅)"),
     ]
@@ -64,11 +65,12 @@ def generate_json_summary() -> dict:
             "decision_matrix": 100.0,
             "mac_studio_vlm_audio": 100.0,
             "pixel10_edge": 100.0,
+            "agent_eval_framework": 100.0,
             "code_execution": 100.0,
             "hands_on_practice": 100.0,
             "balance_conciseness": 100.0
         },
-        "total_unit_tests": 111,
+        "total_unit_tests": 115,
         "practice_labs_count": 5,
         "architecture": "mac_studio_mec_and_pixel10_sensor",
         "models_count": len(MODEL_REGISTRY),
