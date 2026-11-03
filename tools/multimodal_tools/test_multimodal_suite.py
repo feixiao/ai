@@ -1627,6 +1627,7 @@ class TestClientServerIntegration(unittest.TestCase):
         p = subprocess.run([sys.executable, str(client_script), "--demo"], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0)
         self.assertIn("客户端端到端调用", p.stdout)
+        self.assertIn("Agent 综合能力得分", p.stdout)
 
     def test_client_server_reachability_probe(self):
         import importlib.util

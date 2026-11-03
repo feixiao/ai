@@ -425,7 +425,8 @@ sequenceDiagram
   1. 纯 Python 标准库构建零依赖 OpenAI 兼容 HTTP 网关服务；
   2. 暴露 `GET /health`（硬件/加速器状态）、`GET /v1/models`（模型清单）；
   3. 暴露 `POST /v1/chat/completions`（多模态视觉问答）、`POST /v1/audio/transcriptions`（语音转写）；
-  4. 支持 Pixel 10 移动端、Web 前端或 Agent 框架跨局域网高速调用。
+  4. 暴露 `GET /v1/agent/eval`（多模态 Agent 能力评测状态与五维雷达指标）；
+  5. 支持 Pixel 10 移动端、Web 前端或 Agent 框架跨局域网高速调用。
 * **执行练习命令**：
   ```bash
   python3 examples/multimodal_practice/05_local_multimodal_server.py --demo
