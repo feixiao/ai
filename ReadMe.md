@@ -1,6 +1,6 @@
 # AI 探索与实战工坊 (AI Practice & Engineering)
 
-> 本仓库是一套面向开发者与创作者的 AI 工程化实战知识库与代码工作台，深度聚焦于 **Mac Studio (Apple M4 Max · 128GB 统一内存)** 极限生产力环境下的本地大模型推理、多模态音视频生成 (ComfyUI / DiT)、智能体设计模式 (Agentic Design Patterns) 以及现代编码助手生态 (Coding Agent CLI)。
+> 本仓库是一套面向开发者与创作者的 AI 工程化实战知识库与代码工作台，深度聚焦于 **Mac Studio (Apple M4 Max · 128GB 统一内存)** 极限生产力环境下的本地大模型推理、多模态音视频生成 (ComfyUI / DiT)、多智能体框架协同 (Agentic Workflows) 以及现代编码助手生态 (Coding Agent CLI)。
 
 ---
 
@@ -17,7 +17,7 @@
 ## 目录索引
 
 - [1. 多模态生成与音视频落地 (Mac Studio 128G 实战)](#1-多模态生成与音视频落地-mac-studio-128g-实战)
-- [2. 智能体设计模式与多 Agent 框架 (Agentic Workflows)](#2-智能体设计模式与多-agent-框架-agentic-workflows)
+- [2. 多 Agent 框架与智能体实战 (Agentic Workflows)](#2-多-agent-框架与智能体实战-agentic-workflows)
 - [3. 智能编码助手与 CLI 演进生态 (Coding Agent CLI Ecosystem)](#3-智能编码助手与-cli-演进生态-coding-agent-cli-ecosystem)
 - [4. 高性能端侧与本地推理引擎 (Local LLM & Native Inference)](#4-高性能端侧与本地推理引擎-local-llm--native-inference)
 - [5. Prompt 工程、评估与协议规范 (Prompt & MCP)](#5-prompt-工程评估与协议规范-prompt--mcp)
@@ -28,8 +28,6 @@
 ### 1. 多模态生成与音视频落地 (Mac Studio 128G 实战)
 
 依托 128GB 统一内存的大容量与高带宽特性，沉淀端到端生图、生视频与数字人流水线：
-- **[2026 音视频多模态大模型实战手册：调用、微调决策与端侧部署指南](./docs/AUDIO_VIDEO_MULTIMODAL_HANDBOOK.md)**：聚焦 Mac Studio（主设备，高通量 VLM 推理与 LoRA 结构化微调）与 Google Pixel 10（移动端，LiteRT 实时感知）的工程全景手册，配套 5 套开箱即用练习代码与原生客户端（详见 [实操套件](./examples/multimodal_practice/README.md)），支持 `./quickstart.sh` 或 `make demo` 一键极速起步。
-
 - **[短剧/短视频 Mac Studio 落地方案](./ComfyUI/短剧短视频_MacStudio_落地方案.md)**：利用 Wan 2.2 I2V + T2V 分镜式镜头生成，结合 Lightning LoRA 与 Tiled VAE 解码，构建 15~30s 商业短剧全流程。
 - **[HunyuanVideo 1.5 腾讯混元视频生成](./ComfyUI/hunyuan_video_1.5/README.md)**：针对 M4 Max 128GB 调优的原生 ComfyUI 节点链与 API 自动化调用测试。
 - **[Wan 2.2 ComfyUI Mac Studio 部署与测试](./ComfyUI/Wan2.2_ComfyUI_MacStudio_安装测试指南.md)**：Wan 2.2 14B GGUF 高低噪分段架构与统一内存防溢出配置。
@@ -41,13 +39,10 @@
 
 ---
 
-### 2. 智能体设计模式与多 Agent 框架 (Agentic Workflows)
+### 2. 多 Agent 框架与智能体实战 (Agentic Workflows)
 
-- **[《智能体设计模式》实战源码](./AgenticDesignPatterns/ReadMe.md)**
-  - **[LangChain & LCEL 实现](./AgenticDesignPatterns/langchain/)**：Prompt 链（Chaining）、动态路由（Routing）、并行分发（Parallelization）、反思调优（Reflection）、工具调用（Tool Calling/ReAct）、结构化规划（Planning）、多 Agent 协同（Multi-Agent Collaboration）与记忆管理（Memory）。
-  - **[Microsoft AutoGen 实现](./AgenticDesignPatterns/autogen/)**：基于多 Agent 对话拓扑的 Agentic Pattern 完整映射。
 - **[helloagents](./helloagent/ReadMe.md)**：基于 [hello-agents](https://github.com/datawhalechina/hello-agents) 的轻量级核心智能体原理与实践。
-- **[AutoGen & AutoGenBench](./autogen/ReadMe.md)**：多智能体协作、AutoGen Studio 原型调试及 [性能基准测试](./autogenbench/ReadMe.md)。
+- **[AutoGenBench](./autogenbench/ReadMe.md)**：多智能体协作性能评测与 AutoGen 基准跑分套件。
 - **[CrewAI](./crewai/ReadMe.md)**：基于角色设定（Role-playing）与团队协作的自动化 Agent 工作流。
 - **[LangChain 进阶范例](./LangChain/ReadMe.md)**：从基础问答（ex01）到复杂并行执行与结构化输出解析（ex06）。
 - **[Go 语言 Agent 生态]**：[adk-go](https://github.com/google/adk-go) 现代化代码优先 Go Agent 工具包。
@@ -71,8 +66,6 @@
 ### 4. 高性能端侧与本地推理引擎 (Local LLM & Native Inference)
 
 在 128GB 内存上实现极速纯端侧模型吞吐与调度：
-- **[工业级端侧与边缘计算全景实战体系](./edge_ai_workspace/README.md)**：覆盖 Mac Studio 边缘中心节点、Android Pixel 10 现场移动传感器节点及 NVIDIA Jetson 工业具身智能三大落地场景。
-
 - **[ds4 (DwarfStar)](./ds4/README.md)**：antirez 开源的高性能原生 C 推理引擎与 Coding Agent，支持 DeepSeek V4 Flash/PRO、GLM 5.2 等长上下文模型。
 - **[h3 (MiniMax-H3)](./h3/README.md)**：antirez 开源的原生 C/Metal 音视频 DiT 推理引擎，专为 Mac 统一内存优化。
 - **[Ollama 本地模型矩阵与部署](./ollama/ReadMe.md)**：DeepSeek-R1 系列、Qwen2.5 部署优化及 ModelScope 国内镜像加速。

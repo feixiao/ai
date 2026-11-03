@@ -4,15 +4,12 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Repository Overview
 
-This repository is a hands-on AI engineering knowledge base and practice playground covering **Agentic Design Patterns**, **Multi-Agent Frameworks**, **Local LLM Inference**, and **Multimodal Generative AI** (Image, Video, Audio).
+This repository is a hands-on AI engineering knowledge base and practice playground covering **Agentic Workflows**, **Multi-Agent Frameworks**, **Coding Agent CLIs**, **Local LLM Inference**, and **Multimodal Generative AI** (Image, Video, Audio).
 
 ## Architecture & Module Structure
 
-- `AgenticDesignPatterns/`: Core implementations of foundational agent design patterns, implemented in two frameworks:
-  - `langchain/`: Patterns implemented with LangChain & LCEL (`chap01` Prompt Chaining, `chap02` Routing, `chap03` Parallelization, `chap04` Reflection, `chap05` Tool Calling/ReAct, `chap06` Planning, `chap07` Multi-Agent Collaboration, `chap08` Memory Management, `chap11`).
-  - `autogen/`: Patterns implemented with Microsoft AutoGen (`chap01` ~ `chap08`).
 - `LangChain/`: Progressive LangChain examples (`ex01` basic QA ~ `ex06` parallel execution and output parsing).
-- `autogen/` & `autogenbench/`: AutoGen agent workflows, AutoGen Studio UI prototyping, and agent benchmarking.
+- `autogenbench/`: AutoGen agent benchmarking and evaluation.
 - `crewai/`: CrewAI projects (`hello_crew`) configuring role-playing agents, task definitions, and tool integration via `uv` / `crewai` CLI.
 - `helloagent/`: Minimal agent and function calling examples using `hello-agents`.
 - `ComfyUI/` & `media/`: Generative AI workflows (Wan2.2, Flux, Z-Image-Turbo, SadTalker, TTS), JSON workflow definitions, benchmark scripts, and Apple Silicon / Mac Studio deployment guides.
@@ -26,7 +23,6 @@ This repository is a hands-on AI engineering knowledge base and practice playgro
 - `PiAgent/`: Configuration patterns, deployment scripts (`install.sh`), Google Gemini Pro integration, and reverse proxy/gateway setups for Pi Agent (`pi` / `pi-coding-agent`).
 - `omp/`: Configuration patterns, deployment scripts (`install.sh`), multi-model roles, and local gateway integration for omp (oh-my-pi) Coding Agent CLI.
 - `TensorFlowLite/`, `PyTorch/`, `spleeter/`: Deep learning experiments and audio source separation scripts.
-- `docs/` & `examples/multimodal_practice/`: 2026 音视频多模态大模型实战手册、LoRA 结构化微调、Mac Studio (MLX/UMA) 与 Pixel 10 (Tensor G5 / LiteRT) 移动端部署套件及开箱即用练习代码。
 
 ## Environment & Common Commands
 
@@ -54,21 +50,12 @@ ollama pull deepseek-r1:8b
 export LLM_MODEL="deepseek-r1:14b"
 ```
 
-### Running Agentic Design Patterns & LangChain
+### Running LangChain
 
 ```bash
 # LangChain examples
 pip install -r LangChain/requirements.txt
 python LangChain/ex01.py
-
-# Agentic Design Patterns (LangChain)
-cd AgenticDesignPatterns/langchain
-pip install -r requirements.txt
-python chap01.py
-
-# Agentic Design Patterns (AutoGen)
-cd AgenticDesignPatterns/autogen
-python chap01.py
 ```
 
 ### Running CrewAI
@@ -88,5 +75,5 @@ python ComfyUI/comfyui_benchmark.py
 
 ## Key Development Conventions
 
-- **Model Compatibility**: When working with local LLMs that lack native tool-calling capabilities (e.g. `deepseek-r1`), use structured JSON prompting and lightweight decision chains rather than relying on native tool APIs (see `AgenticDesignPatterns/langchain/chap05.py`).
+- **Model Compatibility**: When working with local LLMs that lack native tool-calling capabilities (e.g. `deepseek-r1`), use structured JSON prompting and lightweight decision chains rather than relying on native tool APIs (see `LangChain/ex06.py` or `helloagent/chap00.py`).
 - **Provider Switching**: Scripts typically support switching between `ollama` and `openai` via factory helpers (`build_model(provider, model_name)`) and environment variables (`LLM_MODEL`, `OPENAI_API_KEY`).
