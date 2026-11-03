@@ -41,6 +41,13 @@ def list_gateway_models(server_url: str) -> list:
         data = json.loads(resp.read().decode("utf-8"))
         return [m.get("id") for m in data.get("data", [])]
 
+def get_agent_evaluation(server_url: str) -> dict:
+    """查询远程 Mac Studio 网关运行的音视频多模态 Agent 能力评测结果"""
+    url = f"{server_url.rstrip('/')}/v1/agent/eval"
+    req = urllib.request.Request(url, headers={"Connection": "close"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
 def chat_multimodal_vision(server_url: str, prompt: str, image_paths: list = None) -> str:
     """向 Mac Studio 网关发送时序视觉图像帧并获取结构化分析"""
     url = f"{server_url.rstrip('/')}/v1/chat/completions"

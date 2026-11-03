@@ -72,6 +72,19 @@ class MultimodalAPIHandler(BaseHTTPRequestHandler):
                     {"id": "qwen2.5-vl-3b-int4", "object": "model", "owned_by": "pixel10_edge"}
                 ]
             })
+        elif self.path in ("/v1/agent/eval", "/eval"):
+            try:
+                tools_path = Path(__file__).resolve().parent.parent.parent / "tools" / "multimodal_tools"
+                if str(tools_path) not in sys.path:
+                    sys.path.insert(0, str(tools_path))
+                from eval_agent_capabilities import run_agent_capability_benchmark
+                res = run_agent_capability_benchmark()
+                self._send_json(200, {
+                    "status": "success",
+                    "evaluation": res
+                })
+            except Exception as e:
+                self._send_json(500, {"error": "EvaluationError", "message": str(e)})
         else:
             self._send_json(404, {"error": "Not Found", "message": f"Route {self.path} not supported."})
 

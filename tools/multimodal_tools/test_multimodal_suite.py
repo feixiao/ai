@@ -1313,6 +1313,35 @@ class TestLocalMultimodalServer(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_server_agent_eval_route(self):
+        import importlib.util
+        import urllib.request
+        import json
+        import threading
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+
+        server = HTTPServer(("127.0.0.1", 0), lab05.MultimodalAPIHandler)
+        port = server.server_port
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+
+        try:
+            req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/agent/eval")
+            with urllib.request.urlopen(req) as resp:
+                self.assertEqual(resp.status, 200)
+                data = json.loads(resp.read().decode("utf-8"))
+                self.assertEqual(data["status"], "success")
+                self.assertTrue(data["evaluation"]["all_passed"])
+                self.assertEqual(data["evaluation"]["average_score"], 100.0)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_server_invalid_json_bad_request(self):
         import importlib.util
         import urllib.request
@@ -1643,6 +1672,37 @@ class TestClientServerIntegration(unittest.TestCase):
             server.shutdown()
             server.server_close()
 
+    def test_client_get_agent_evaluation(self):
+        import importlib.util, socket, threading, time
+        from http.server import HTTPServer
+        srv_file = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        client_path = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+        
+        spec_srv = importlib.util.spec_from_file_location("srv", str(srv_file))
+        srv = importlib.util.module_from_spec(spec_srv)
+        spec_srv.loader.exec_module(srv)
+
+        spec_c = importlib.util.spec_from_file_location("c", str(client_path))
+        c = importlib.util.module_from_spec(spec_c)
+        spec_c.loader.exec_module(c)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        server = HTTPServer(("127.0.0.1", port), srv.MultimodalAPIHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        time.sleep(0.05)
+
+        try:
+            eval_data = c.get_agent_evaluation(f"http://127.0.0.1:{port}")
+            self.assertEqual(eval_data["status"], "success")
+            self.assertTrue(eval_data["evaluation"]["all_passed"])
+            self.assertEqual(eval_data["evaluation"]["average_score"], 100.0)
+        finally:
+            server.shutdown()
+            server.server_close()
+
     def test_client_list_gateway_models(self):
         import importlib.util, socket, threading, time
         from http.server import HTTPServer
@@ -1877,7 +1937,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 124)
+        self.assertEqual(data["total_unit_tests"], 126)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1895,7 +1955,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 124)
+        self.assertEqual(data["total_unit_tests"], 126)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)

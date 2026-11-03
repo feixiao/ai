@@ -237,7 +237,7 @@ def main():
     print(f"METRIC balance_conciseness={balance_score}")
 
     # Print Actionable Session Insights (ASI) metadata
-    print("ASI total_unit_tests=124")
+    print("ASI total_unit_tests=126")
     print("ASI registered_models=13")
     print("ASI hardware_profiles=6")
     print("ASI practice_labs=5")
