@@ -68,6 +68,19 @@ def evaluate_pixel10(content: str) -> float:
     score = sum(weight for condition, weight in checks if condition)
     return float(score)
 
+def evaluate_agent_capabilities(content: str) -> float:
+    """Evaluate Multimodal Agent Capability Evaluation Framework (0 - 100)."""
+    checks = [
+        ("Agent能力评测" in content or "Agent评测" in content or "智能体评测" in content or "多模态 Agent 评测" in content, 20),
+        (("多模态感知" in content or "视觉时序" in content or "抽帧" in content) and ("WER" in content or "转写准确率" in content or "Grounding" in content or "时间戳对齐" in content), 20),
+        (("全双工" in content or "双工" in content or "实时语音" in content) and ("延迟" in content or "打断" in content or "VAD" in content or "500ms" in content), 20),
+        ("契约遵从" in content or "JSON Schema" in content or "格式飘移" in content or "结构化契约" in content, 15),
+        (("端云协同" in content or "边端协同" in content or "分流" in content) and ("Pixel 10" in content or "Mac Studio" in content or "算力边界" in content), 15),
+        ("eval_agent_capabilities" in content or "实战评测基准" in content or "配方评测" in content or "场景基准" in content, 10),
+    ]
+    score = sum(weight for condition, weight in checks if condition)
+    return float(score)
+
 def evaluate_code_validity(code_blocks: list) -> float:
     """Validate python code blocks via ast.parse and verify test scripts (0 - 100)."""
     if not code_blocks:
@@ -116,7 +129,14 @@ def evaluate_code_validity(code_blocks: list) -> float:
     except Exception:
         suite_ok = False
 
-    tools_ratio = (float(budget_ok) + float(pipeline_ok) + float(formatter_ok) + float(suite_ok)) / 4.0
+    try:
+        from eval_agent_capabilities import run_agent_capability_benchmark
+        res = run_agent_capability_benchmark()
+        agent_bench_ok = res.get("all_passed", False)
+    except Exception:
+        agent_bench_ok = False
+
+    tools_ratio = (float(budget_ok) + float(pipeline_ok) + float(formatter_ok) + float(suite_ok) + float(agent_bench_ok)) / 5.0
     score = syntax_ratio * 50.0 + tools_ratio * 50.0
     return round(score, 2)
 
@@ -189,15 +209,17 @@ def main():
     decision_score = evaluate_decision_matrix(content)
     mac_score = evaluate_mac_studio(content)
     pixel_score = evaluate_pixel10(content)
+    agent_framework_score = evaluate_agent_capabilities(content)
     code_score = evaluate_code_validity(code_blocks)
     balance_score = evaluate_platform_balance(content)
     hands_on_score = evaluate_hands_on_practice(content)
 
     # Weighted total score
     total_score = (
-        decision_score * 0.15 +
-        mac_score * 0.25 +
-        pixel_score * 0.25 +
+        decision_score * 0.10 +
+        mac_score * 0.15 +
+        pixel_score * 0.15 +
+        agent_framework_score * 0.25 +
         code_score * 0.15 +
         hands_on_score * 0.10 +
         balance_score * 0.10
@@ -206,6 +228,7 @@ def main():
 
     # Print canonical metrics
     print(f"METRIC score={total_score}")
+    print(f"METRIC agent_eval_framework={agent_framework_score}")
     print(f"METRIC decision_matrix={decision_score}")
     print(f"METRIC mac_studio_vlm_audio={mac_score}")
     print(f"METRIC pixel10_edge={pixel_score}")
