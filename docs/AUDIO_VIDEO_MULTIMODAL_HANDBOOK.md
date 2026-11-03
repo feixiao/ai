@@ -42,6 +42,10 @@
 - [五、 五套开箱即用、可直接动手实操练习的工程范例 (Hands-on Practice Labs)](#五-五套开箱即用可直接动手实操练习的工程范例-hands-on-practice-labs)
 - [六、 避坑指南与高频故障排查 (Troubleshooting & Production Pitfalls)](#六-避坑指南与高频故障排查-troubleshooting--production-pitfalls)
 - [七、 端到端工程验证与配套工具](#七-端到端工程验证与配套工具)
+- [八、 音视频多模态 Agent 能力评测体系与实战验证基准](#八-音视频多模态-agent-能力评测体系与实战验证基准)
+  - [8.1 评测维度设计：五大核心能力雷达](#81-评测维度设计五大核心能力雷达)
+  - [8.2 自动化评测工具与流水线 (eval_agent_capabilities.py)](#82-自动化评测工具与流水线-eval_agent_capabilitiespy)
+  - [8.3 Agent 能力基准评测矩阵与合格线对照表](#83-agent-能力基准评测矩阵与合格线对照表)
 - [附录：四大典型多模态落地配方清单 (Production Recipes Checklist)](#附录四大典型多模态落地配方清单-production-recipes-checklist)
 
 ---
@@ -527,9 +531,97 @@ bash examples/multimodal_practice/run_all_labs.sh --menu
 | **数据格式工程**| 数据集工具 | `python3 tools/multimodal_tools/dataset_formatter.py --validate data.jsonl` | 扫描多模态数据语法、Token 截断风险并支持确定性切分 |
 | **抽帧采样调试**| 视频流仿真 | `python3 tools/multimodal_tools/multimodal_pipeline.py --sample-video` | 验证多模态 Token 构建与滑动窗口 VAD 切片逻辑 |
 | **客户端直连** | 原生客户端调用 | `python3 examples/multimodal_practice/client_example.py --server http://127.0.0.1:8000` | 零依赖直接请求 Mac Studio 网关完成视觉问答与语音转写 |
+| **Agent能力评测** | 智能体基准评估 | `python3 tools/multimodal_tools/eval_agent_capabilities.py` | 自动化评测多模态感知、全双工延迟、契约遵从与端云协同 |
 
 全套体系通过 `bash autoresearch.sh` 实行持续基准验证，确保所有公式、语法、命令在 Mac Studio 及通用开发环境下均严格自洽闭环。
 
+
+## 八、 音视频多模态 Agent 能力评测体系与实战验证基准
+
+在构建音视频多模态 Agent（如智能安防巡检、会议双工助手、移动手持巡检仪）时，**传统的单纯评测 LLM 文本逻辑或基准跑分的做法已完全无法覆盖音视频与实时交互的工业落地需求**。音视频多模态 Agent 的能力评测必须建立“视-听-思-行-边”全维度的综合量化体系。
+
+### 8.1 评测维度设计：五大核心能力雷达
+
+音视频多模态 Agent 能力评测体系围绕五大核心支柱构建：
+
+```mermaid
+flowchart LR
+    subgraph Radar["音视频多模态 Agent 能力评测五维雷达"]
+        M1["1. 多模态时序感知<br/>抽帧定位 / 时间戳对齐 / Whisper ASR WER"]
+        M2["2. 全双工实时交互<br/>VAD 切片 / 打断响应 / 端到端延迟 < 500ms"]
+        M3["3. 结构化契约遵循<br/>100% JSON Schema 遵从 / 0% 格式飘移"]
+        M4["4. 端云/边端协同分流<br/>Pixel 10 端侧算力边界 / Mac Studio 调度 / 温控自适应"]
+        M5["5. 生产配方场景基准<br/>安防稽核 / 手持巡检 / 会议纪要 / 视频打标"]
+    end
+    M1 --> M2 --> M3 --> M4 --> M5
+```
+
+1. **多模态时序感知与定位能力 (Multimodal Perception & Temporal Grounding)**：
+   * **视觉时序理解与抽帧定位**：评测 Agent 是否能从高帧率视频中通过均匀采样（Uniform Sampling）或场景跳变检测抽取出关键帧，并准确输出时序事件与对应的时间戳对齐信息（Timestamp Alignment）。
+   * **语音转写准确率与领域专词 WER**：评测 Whisper ASR 在车间噪音、多方会议混叠场景下的字错误率（CER/WER），尤其对工规型号（如 `PUMP-COMP-01`）和专业术语的识别精度。
+2. **全双工实时语音交互与时延性能 (Duplex Voice Interaction & Latency)**：
+   * **端到端交互延迟 (Speech-to-Speech Latency)**：依托 LiveKit WebRTC 架构，从用户发音结束到 Agent 首包音频回传，总时延必须压缩在 **< 500ms**（业内黄金门槛），拒绝传统 REST 轮询 2~3 秒的卡顿感。
+   * **流式 VAD 截断与抢话打断响应 (Barge-in / Interruption)**：评测 Agent 是否支持流式 Silero VAD 动态感知用户插话；在用户打断时，必须在 200ms 内瞬间截断当前 TTS 播放流并立即重置上下文状态机。
+   * **首包音频合成时延 (TTS TTFT)**：评测流式 TTS 引擎（如 Kokoro-82M / ChatTTS）首包音频 Token 生成延迟（要求 < 300ms）。
+3. **结构化契约与格式严谨性遵从度 (Strict Schema & Contract Adherence)**：
+   * **工业 JSON Schema 严格遵从率**：在自动化巡检和安防工单场景中，Agent 必须 100% 输出符合严格 Schema 的结构化契约（如包含 `device_id`、`status`、`inspection_items`、`anomaly_detected`），严禁输出任何自然语言寒暄或格式飘移。
+   * **格式微调前后的对比测试**：对比直接 Prompting 与 LoRA 微调后模型在 1,000 次连续推理下的 Schema 错误率（微调后必须达到 0 漂移）。
+4. **端云/边端协同分流与算力边界 (Edge-MEC Collaboration & Resource Safety)**：
+   * **算力边界分流判定准确率**：移动端（Pixel 10）Agent 必须能在毫秒级判断当前多模态任务是否可在本地 LiteRT INT4 离线运行（常态巡检，内存 <= 4.5GB）；当遇到画面重度遮挡、多路交叉推理等高算力需求时，必须无缝且准确地分流调度至 Mac Studio 中心大模型（Qwen2.5-VL 7B/72B）。
+   * **温控与功耗动态降频自适应 (Thermal Status Adaptation)**：评测在移动设备遭遇 `MODERATE` 发热时，Agent 能否主动将视频抽帧率降半；在 `SEVERE` 严重发热时，能否暂停本地密集推理转为纯云端代理上报，防止设备强制关机。
+5. **四大生产落地配方场景基准 (Production Recipe Domain Benchmarks)**：
+   * **配方 1 (智能安防与违章作业实时稽核)**：评测工人安全帽/反光背心穿戴识别率与误报抑制；
+   * **配方 2 (移动手持巡检仪现场交互)**：评测离线环境下仪表读数、异响检测与离线交互可靠性；
+   * **配方 3 (会议实时转写与智能纪要助手)**：评测多说话人转写、纪要结构化提取与即时拟人播报；
+   * **配方 4 (短视频镜头质检与自动化打标)**：评测长视频关键帧截取、高光片段打分与时间戳索引生成质量。
+
+### 8.2 自动化评测工具与流水线 (`eval_agent_capabilities.py`)
+
+本手册提供了专门的 Agent 综合能力自动化评测工具 `tools/multimodal_tools/eval_agent_capabilities.py`，支持纯本地环境零依赖确定性执行：
+
+```bash
+# 执行多模态 Agent 五大能力全量基准测试
+python3 tools/multimodal_tools/eval_agent_capabilities.py
+```
+
+#### 核心评测执行架构代码实现范式：
+
+```python
+import json
+from multimodal_pipeline import sample_video_frames, build_multimodal_vlm_payload, chunk_audio_stream
+from vram_and_budget import check_hardware_feasibility
+
+def evaluate_multimodal_agent_turn(frames_count: int, prompt: str) -> dict:
+    indices = sample_video_frames(total_frames=frames_count, fps=30.0, max_frames=4)
+    payload = build_multimodal_vlm_payload(prompt, indices, fps=30.0, model_name="qwen2.5-vl-7b")
+    feasibility = check_hardware_feasibility("qwen2.5-vl-3b", "pixel_10_tensor_g5", "inference")
+    sample_agent_json = json.dumps({
+        "device_id": "VALVE-02",
+        "status": "NORMAL",
+        "inspection_items": [{"item": "pressure", "value": "2.4bar", "normal": True}],
+        "anomaly_detected": False
+    })
+    parsed = json.loads(sample_agent_json)
+    contract_ok = "device_id" in parsed and "anomaly_detected" in parsed
+    return {
+        "keyframes_sampled": len(indices),
+        "edge_feasible": feasibility["feasible"],
+        "contract_valid": contract_ok
+    }
+```
+
+### 8.3 Agent 能力基准评测矩阵与合格线对照表
+
+| 评测维度 | 核心量化指标 | 目标基准 (Gold Target) | 最低合格线 (Pass Floor) | 自动化验证方法 |
+| :--- | :--- | :--- | :--- | :--- |
+| **视觉时序感知** | 关键帧抽样精度 / 时间戳对齐 | 4~8 关键帧均匀对齐，无跳帧 | >= 2 关键帧且无时间戳倒挂 | `eval_agent_capabilities.py` (VLM 模块) |
+| **语音转写准确** | Whisper ASR 工业专词识别率 | 专有名词正确率 >= 95% | 专有名词正确率 >= 80% | `eval_agent_capabilities.py` (ASR 模块) |
+| **全双工实时交互**| 端到端交互延迟 (Speech-to-Speech)| **< 500 ms** (WebRTC 流式) | < 1200 ms | WebRTC 流式打断时序测试与 TTFT 测算 |
+| **打断抢话时延** | Barge-in 用户打断响应时延 | **< 200 ms** 瞬间停播 | < 400 ms | 流式 Silero VAD 动态中断检测 |
+| **结构化契约** | JSON Schema 输出遵从率 | **100% 格式无漂移** (0 异常) | >= 98% 遵从率 | 结构化输出校验器与 JSON Schema 校验 |
+| **边端协同分流** | 端侧内存硬顶 / 分流决策准确率 | Pixel 10 <= 4.5GB，分流率 100%| Pixel 10 <= 4.8GB，分流率 >=90% | `vram_and_budget.py` 硬件可行性核算 |
+| **温控动态自适应**| Thermal Status 降频响应时延 | MODERATE 帧率减半，SEVERE 冻结| 3 秒内完成降频响应 | 移动端温控监听回调模拟验证 |
+| **四大业务配方** | 场景基准通过率 (安防/巡检/会议/质检)| 4/4 全部场景全绿通过 | >= 3/4 场景通过 | `eval_agent_capabilities.py` 配方套件 |
 ---
 
 ## 附录：四大典型多模态落地配方清单 (Production Recipes Checklist)
