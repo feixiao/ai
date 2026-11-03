@@ -14,7 +14,7 @@ help:
 	@echo "=================================================================="
 	@echo "  make demo        - 运行音视频多模态 6 阶段端到端实操练习流水线"
 	@echo "  make menu        - 打开交互式终端控制台菜单 (选项 0~11)"
-	@echo "  make test        - 运行全量 120 项标准单元测试套件 (unittest)"
+	@echo "  make test        - 运行全量 122 项标准单元测试套件 (unittest)"
 	@echo "  make benchmark   - 执行 autoresearch 自动化技术基准评估"
 	@echo "  make eval-agent  - 执行音视频多模态 Agent 能力全量基准评测"
 	@echo "  make check       - 探测 Mac Studio 统一内存与 Pixel 10 ADB 环境"

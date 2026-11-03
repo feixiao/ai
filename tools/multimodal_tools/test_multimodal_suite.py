@@ -1163,6 +1163,13 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertIn("qwen2.5-vl", p_dl.stdout)
         self.assertIn("Pixel 10", p_dl.stdout)
 
+    def test_quickstart_script_eval_agent(self):
+        import subprocess
+        qs_script = ROOT_DIR / "quickstart.sh"
+        p = subprocess.run(["bash", str(qs_script), "--eval-agent"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("综合 Agent 能力评测得分: 100.0", p.stdout)
+
     def test_quickstart_script_unknown_flag(self):
         import subprocess
         qs_script = ROOT_DIR / "quickstart.sh"
@@ -1870,7 +1877,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 120)
+        self.assertEqual(data["total_unit_tests"], 122)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1888,7 +1895,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 120)
+        self.assertEqual(data["total_unit_tests"], 122)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)
@@ -1988,6 +1995,14 @@ class TestAgentCapabilityEvaluation(unittest.TestCase):
         self.assertEqual(decide_agent_routing("high", network_available=False), "pixel10_offline")
         self.assertEqual(decide_agent_routing("low", thermal_status="SEVERE"), "mac_studio")
         self.assertEqual(decide_agent_routing("low", network_available=False, thermal_status="SEVERE"), "throttle_hibernate")
+
+    def test_eval_agent_capabilities_cli_help(self):
+        import subprocess
+        agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+        p = subprocess.run([sys.executable, str(agent_script), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("--json", p.stdout)
+        self.assertIn("--suite", p.stdout)
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)
