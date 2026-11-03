@@ -1027,7 +1027,8 @@ class TestInteractiveMenu(unittest.TestCase):
         self.assertTrue(menu.run_choice("9"))
         # Choice 10 (client example) runs successfully
         self.assertTrue(menu.run_choice("10"))
-
+        # Choice 11 (agent capability eval) runs successfully
+        self.assertTrue(menu.run_choice("11"))
     def test_menu_cli_choice_and_print_menu(self):
         import subprocess
         menu_path = ROOT_DIR / "examples" / "multimodal_practice" / "interactive_menu.py"
@@ -1161,6 +1162,13 @@ class TestEnvironmentScript(unittest.TestCase):
         self.assertEqual(p_dl.returncode, 0)
         self.assertIn("qwen2.5-vl", p_dl.stdout)
         self.assertIn("Pixel 10", p_dl.stdout)
+
+    def test_quickstart_script_eval_agent(self):
+        import subprocess
+        qs_script = ROOT_DIR / "quickstart.sh"
+        p = subprocess.run(["bash", str(qs_script), "--eval-agent"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("综合 Agent 能力评测得分: 100.0", p.stdout)
 
     def test_quickstart_script_unknown_flag(self):
         import subprocess
@@ -1301,6 +1309,35 @@ class TestLocalMultimodalServer(unittest.TestCase):
                 urllib.request.urlopen(req_404)
             except urllib.error.HTTPError as e:
                 self.assertEqual(e.code, 404)
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_server_agent_eval_route(self):
+        import importlib.util
+        import urllib.request
+        import json
+        import threading
+        from http.server import HTTPServer
+
+        lab05_path = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        spec = importlib.util.spec_from_file_location("lab05", str(lab05_path))
+        lab05 = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(lab05)
+
+        server = HTTPServer(("127.0.0.1", 0), lab05.MultimodalAPIHandler)
+        port = server.server_port
+        t = threading.Thread(target=server.serve_forever, daemon=True)
+        t.start()
+
+        try:
+            req = urllib.request.Request(f"http://127.0.0.1:{port}/v1/agent/eval")
+            with urllib.request.urlopen(req) as resp:
+                self.assertEqual(resp.status, 200)
+                data = json.loads(resp.read().decode("utf-8"))
+                self.assertEqual(data["status"], "success")
+                self.assertTrue(data["evaluation"]["all_passed"])
+                self.assertEqual(data["evaluation"]["average_score"], 100.0)
         finally:
             server.shutdown()
             server.server_close()
@@ -1590,6 +1627,7 @@ class TestClientServerIntegration(unittest.TestCase):
         p = subprocess.run([sys.executable, str(client_script), "--demo"], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0)
         self.assertIn("客户端端到端调用", p.stdout)
+        self.assertIn("Agent 综合能力得分", p.stdout)
 
     def test_client_server_reachability_probe(self):
         import importlib.util
@@ -1631,6 +1669,37 @@ class TestClientServerIntegration(unittest.TestCase):
             self.assertIn("Mac Studio", health.get("service", ""))
             self.assertIn("Apple Silicon", health.get("hardware_profile", ""))
             self.assertIn("Metal GPU", health.get("accelerators", []))
+        finally:
+            server.shutdown()
+            server.server_close()
+
+    def test_client_get_agent_evaluation(self):
+        import importlib.util, socket, threading, time
+        from http.server import HTTPServer
+        srv_file = ROOT_DIR / "examples" / "multimodal_practice" / "05_local_multimodal_server.py"
+        client_path = ROOT_DIR / "examples" / "multimodal_practice" / "client_example.py"
+        
+        spec_srv = importlib.util.spec_from_file_location("srv", str(srv_file))
+        srv = importlib.util.module_from_spec(spec_srv)
+        spec_srv.loader.exec_module(srv)
+
+        spec_c = importlib.util.spec_from_file_location("c", str(client_path))
+        c = importlib.util.module_from_spec(spec_c)
+        spec_c.loader.exec_module(c)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(("127.0.0.1", 0))
+            port = s.getsockname()[1]
+
+        server = HTTPServer(("127.0.0.1", port), srv.MultimodalAPIHandler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        time.sleep(0.05)
+
+        try:
+            eval_data = c.get_agent_evaluation(f"http://127.0.0.1:{port}")
+            self.assertEqual(eval_data["status"], "success")
+            self.assertTrue(eval_data["evaluation"]["all_passed"])
+            self.assertEqual(eval_data["evaluation"]["average_score"], 100.0)
         finally:
             server.shutdown()
             server.server_close()
@@ -1862,19 +1931,24 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertIn("GOLD STANDARD", output)
         self.assertIn("qwen2.5-vl-72b", output)
         self.assertIn("pixel_10_tensor_g5", output)
+        self.assertIn("Agent Capability Evaluation Radar", output)
+        self.assertIn("FULL STACK READY", output)
 
     def test_generate_json_summary(self):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 111)
+        self.assertEqual(data["total_unit_tests"], 131)
+        self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertEqual(data["models_count"], 13)
         self.assertEqual(data["hardware_profiles_count"], 6)
         self.assertIn("qwen2.5-vl-72b", data["models"])
         self.assertIn("mac_studio_m4_ultra_192g", data["hardware_profiles"])
-
+        self.assertIn("agent_capability_radar", data)
+        self.assertEqual(data["agent_capability_radar"]["composite_score"], 100.0)
+        self.assertEqual(data["agent_capability_radar"]["vlm_perception"], 100.0)
     def test_benchmark_summary_cli_json(self):
         import subprocess, json
         script = TOOLS_DIR / "benchmark_summary.py"
@@ -1882,8 +1956,11 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 111)
+        self.assertEqual(data["total_unit_tests"], 131)
+        self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
+        self.assertIn("agent_capability_radar", data)
+        self.assertEqual(data["agent_capability_radar"]["composite_score"], 100.0)
 
 class TestLiveKitIntegration(unittest.TestCase):
     def test_livekit_agent_directory_and_scripts(self):
@@ -1893,6 +1970,183 @@ class TestLiveKitIntegration(unittest.TestCase):
         self.assertTrue((livekit_dir / "start.sh").exists())
         self.assertTrue((livekit_dir / "probe.py").exists())
 
+    def test_livekit_pick_best_chat_model_logic(self):
+        sys.path.insert(0, str(ROOT_DIR / "LiveKit" / "lmstudio_audio_agent"))
+        from probe import pick_best_chat_model
+        mock_models = [
+            {"id": "text-embedding-v1", "type": "embeddings", "state": "not-loaded"},
+            {"id": "qwen3-vl-32b-thinking-mlx", "type": "vlm", "state": "not-loaded"},
+            {"id": "qwen/qwen3-vl-8b", "type": "vlm", "state": "loaded"},
+        ]
+        self.assertEqual(pick_best_chat_model(mock_models), "qwen/qwen3-vl-8b")
+        self.assertEqual(pick_best_chat_model([]), "qwen/qwen3-vl-8b")
+
+        # Test keyword matching when no model is explicitly loaded
+        unloaded_models = [
+            {"id": "whisper-audio-large", "type": "audio", "state": "not-loaded"},
+            {"id": "qwen3-vl-8b-instruct", "type": "vlm", "state": "not-loaded"},
+        ]
+        self.assertEqual(pick_best_chat_model(unloaded_models), "qwen3-vl-8b-instruct")
+
+    def test_livekit_probe_timeout_resilience(self):
+        sys.path.insert(0, str(ROOT_DIR / "LiveKit" / "lmstudio_audio_agent"))
+        from probe import probe_models
+        res = probe_models(timeout=0.01)
+        self.assertIsInstance(res, list)
+
+
+class TestAgentCapabilityEvaluation(unittest.TestCase):
+    def test_eval_agent_capabilities_modules(self):
+        from eval_agent_capabilities import (
+            benchmark_vlm_perception,
+            benchmark_audio_duplex,
+            benchmark_schema_contract,
+            benchmark_edge_mec_collaboration,
+            benchmark_production_recipes
+        )
+        self.assertTrue(benchmark_vlm_perception()["passed"])
+        self.assertTrue(benchmark_audio_duplex()["passed"])
+        self.assertTrue(benchmark_schema_contract()["passed"])
+        self.assertTrue(benchmark_edge_mec_collaboration()["passed"])
+        self.assertTrue(benchmark_production_recipes()["passed"])
+
+    def test_eval_agent_capabilities_full_benchmark(self):
+        from eval_agent_capabilities import run_agent_capability_benchmark
+        res = run_agent_capability_benchmark()
+        self.assertTrue(res["all_passed"])
+        self.assertEqual(res["average_score"], 100.0)
+        self.assertEqual(len(res["suites"]), 5)
+
+    def test_eval_agent_schema_contract_edge_cases(self):
+        from eval_agent_capabilities import benchmark_schema_contract
+        res = benchmark_schema_contract()
+        self.assertEqual(res["score"], 100.0)
+        self.assertIn("Valid schema check: True", res["details"])
+
+    def test_eval_agent_capabilities_cli(self):
+        import subprocess
+        agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+        p = subprocess.run([sys.executable, str(agent_script)], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("综合 Agent 能力评测得分: 100.0", p.stdout)
+
+    def test_eval_agent_capabilities_cli_json(self):
+        import subprocess, json
+        agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+        p = subprocess.run([sys.executable, str(agent_script), "--json"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        data = json.loads(p.stdout)
+        self.assertTrue(data["all_passed"])
+        self.assertEqual(data["average_score"], 100.0)
+        self.assertIn("vlm_perception", data["suites"])
+
+    def test_eval_agent_capabilities_cli_suite_filter(self):
+        import subprocess, json
+        agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+        p = subprocess.run([sys.executable, str(agent_script), "--suite", "audio", "--json"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        data = json.loads(p.stdout)
+        self.assertEqual(len(data["suites"]), 1)
+        self.assertIn("audio_duplex", data["suites"])
+
+    def test_decide_agent_routing_policy(self):
+        from eval_agent_capabilities import decide_agent_routing
+        self.assertEqual(decide_agent_routing("low"), "pixel10")
+        self.assertEqual(decide_agent_routing("high"), "mac_studio")
+        self.assertEqual(decide_agent_routing("high", network_available=False), "pixel10_offline")
+        self.assertEqual(decide_agent_routing("low", thermal_status="SEVERE"), "mac_studio")
+        self.assertEqual(decide_agent_routing("low", network_available=False, thermal_status="SEVERE"), "throttle_hibernate")
+
+    def test_eval_agent_capabilities_cli_help(self):
+        import subprocess
+        agent_script = TOOLS_DIR / "eval_agent_capabilities.py"
+        p = subprocess.run([sys.executable, str(agent_script), "--help"], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0)
+        self.assertIn("--json", p.stdout)
+        self.assertIn("--suite", p.stdout)
+
+    def test_evaluate_multimodal_agent_turn(self):
+        from eval_agent_capabilities import evaluate_multimodal_agent_turn
+        res = evaluate_multimodal_agent_turn(frames_count=120)
+        self.assertEqual(res["keyframes_sampled"], 4)
+        self.assertTrue(res["edge_feasible"])
+        self.assertTrue(res["contract_valid"])
+        self.assertEqual(res["payload_model"], "qwen2.5-vl-7b")
+        self.assertEqual(res["payload_messages_count"], 1)
+
+    def test_benchmark_production_recipes_hardware_feasibility(self):
+        from eval_agent_capabilities import benchmark_production_recipes
+        res = benchmark_production_recipes()
+        self.assertTrue(res["passed"])
+        self.assertEqual(len(res["recipes"]), 4)
+        for r_id, r_data in res["recipes"].items():
+            self.assertTrue(r_data["feasible"])
+            self.assertLessEqual(r_data["vram_required_gb"], r_data["vram_limit_gb"])
+
+    def test_validate_agent_output_schema_comprehensive(self):
+        from eval_agent_capabilities import validate_agent_output_schema
+        valid_res = validate_agent_output_schema({
+            "device_id": "FAN-01",
+            "status": "NORMAL",
+            "inspection_items": [{"item": "speed", "normal": True}],
+            "anomaly_detected": False
+        })
+        self.assertTrue(valid_res["valid"])
+        self.assertEqual(valid_res["errors"], [])
+
+        self.assertFalse(validate_agent_output_schema(12345)["valid"])
+
+        res_enum = validate_agent_output_schema({
+            "device_id": "FAN-01",
+            "status": "MAYBE_BROKEN",
+            "inspection_items": [],
+            "anomaly_detected": True
+        })
+        self.assertFalse(res_enum["valid"])
+        self.assertIn("Invalid status value", res_enum["errors"][0])
+
+    def test_evaluate_audio_duplex_latency_benchmarks(self):
+        from eval_agent_capabilities import evaluate_audio_duplex_latency
+        res_gold = evaluate_audio_duplex_latency(barge_in_ms=185, tts_ttft_ms=120, e2e_latency_ms=450)
+        self.assertTrue(res_gold["passed"])
+        self.assertEqual(res_gold["grade"], "GOLD")
+
+        res_pass = evaluate_audio_duplex_latency(barge_in_ms=350, tts_ttft_ms=500, e2e_latency_ms=1000)
+        self.assertTrue(res_pass["passed"])
+        self.assertEqual(res_pass["grade"], "PASS")
+
+        res_fail = evaluate_audio_duplex_latency(barge_in_ms=500, tts_ttft_ms=700, e2e_latency_ms=1500)
+        self.assertFalse(res_fail["passed"])
+        self.assertEqual(res_fail["grade"], "FAIL")
+
+    def test_evaluate_vlm_temporal_grounding(self):
+        from eval_agent_capabilities import evaluate_vlm_temporal_grounding
+        res_valid = evaluate_vlm_temporal_grounding([0.0, 2.0, 4.0, 6.0], [{"event": "a", "timestamp_sec": 2.0}])
+        self.assertTrue(res_valid["valid"])
+        self.assertTrue(res_valid["monotonic"])
+        self.assertEqual(res_valid["keyframes_count"], 4)
+
+        res_inv = evaluate_vlm_temporal_grounding([0.0, 4.0, 2.0])
+        self.assertFalse(res_inv["valid"])
+        self.assertFalse(res_inv["monotonic"])
+
+        res_insuf = evaluate_vlm_temporal_grounding([1.0], min_keyframes=2)
+        self.assertFalse(res_insuf["valid"])
+
+        self.assertFalse(evaluate_vlm_temporal_grounding("not_a_list")["valid"])
+
+class TestHandbookEvaluationFunctions(unittest.TestCase):
+    def test_evaluate_agent_capabilities_function(self):
+        from eval_handbook import evaluate_agent_capabilities, DOC_PATH
+        content = DOC_PATH.read_text(encoding="utf-8")
+        self.assertEqual(evaluate_agent_capabilities(content), 100.0)
+        self.assertEqual(evaluate_agent_capabilities(""), 0.0)
+
+    def test_evaluate_decision_matrix_function(self):
+        from eval_handbook import evaluate_decision_matrix, DOC_PATH
+        content = DOC_PATH.read_text(encoding="utf-8")
+        self.assertEqual(evaluate_decision_matrix(content), 100.0)
+        self.assertEqual(evaluate_decision_matrix(""), 0.0)
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

@@ -41,6 +41,13 @@ def list_gateway_models(server_url: str) -> list:
         data = json.loads(resp.read().decode("utf-8"))
         return [m.get("id") for m in data.get("data", [])]
 
+def get_agent_evaluation(server_url: str) -> dict:
+    """查询远程 Mac Studio 网关运行的音视频多模态 Agent 能力评测结果"""
+    url = f"{server_url.rstrip('/')}/v1/agent/eval"
+    req = urllib.request.Request(url, headers={"Connection": "close"})
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
 def chat_multimodal_vision(server_url: str, prompt: str, image_paths: list = None) -> str:
     """向 Mac Studio 网关发送时序视觉图像帧并获取结构化分析"""
     url = f"{server_url.rstrip('/')}/v1/chat/completions"
@@ -141,6 +148,12 @@ def main():
         print(f"\n[3] 正在请求 /v1/audio/transcriptions (音频: {sample_audio.name})...")
         transcript = transcribe_audio_file(server_url, str(sample_audio) if sample_audio.exists() else None)
         print(f"  - Whisper 转写结果: \"{transcript}\"")
+
+        # 4. Agent 能力评测雷达状态
+        print("\n[4] 正在请求 /v1/agent/eval 检查 Agent 全维能力评测状态...")
+        eval_resp = get_agent_evaluation(server_url)
+        avg_score = eval_resp.get("evaluation", {}).get("average_score", 0.0)
+        print(f"  - Agent 综合能力得分: {avg_score:.1f} / 100.0 (状态: {eval_resp.get('status')})")
 
         print("\n✅ 客户端端到端调用圆满完成！\n")
     finally:

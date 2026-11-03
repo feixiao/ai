@@ -72,6 +72,19 @@ class MultimodalAPIHandler(BaseHTTPRequestHandler):
                     {"id": "qwen2.5-vl-3b-int4", "object": "model", "owned_by": "pixel10_edge"}
                 ]
             })
+        elif self.path in ("/v1/agent/eval", "/eval"):
+            try:
+                tools_path = Path(__file__).resolve().parent.parent.parent / "tools" / "multimodal_tools"
+                if str(tools_path) not in sys.path:
+                    sys.path.insert(0, str(tools_path))
+                from eval_agent_capabilities import run_agent_capability_benchmark
+                res = run_agent_capability_benchmark()
+                self._send_json(200, {
+                    "status": "success",
+                    "evaluation": res
+                })
+            except Exception as e:
+                self._send_json(500, {"error": "EvaluationError", "message": str(e)})
         else:
             self._send_json(404, {"error": "Not Found", "message": f"Route {self.path} not supported."})
 
@@ -163,6 +176,7 @@ def run_server(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT):
     print(f"  - 模型清单: http://{host}:{port}/v1/models")
     print(f"  - 视觉问答: http://{host}:{port}/v1/chat/completions")
     print(f"  - 语音转写: http://{host}:{port}/v1/audio/transcriptions")
+    print(f"  - 智能体评测: http://{host}:{port}/v1/agent/eval")
     print("按 Ctrl+C 终止服务。")
     try:
         server.serve_forever()
@@ -243,6 +257,14 @@ def run_demo_self_test(host: str = "127.0.0.1") -> bool:
             asr_resp = json.loads(r.read().decode())
             print(f"  - 转写文本: \"{asr_resp['text']}\"")
             assert "巡检打卡" in asr_resp["text"]
+
+        # 5. 测试 GET /v1/agent/eval
+        print("\n[步骤 5] 发起 GET /v1/agent/eval 模拟智能体全维能力评估路由...")
+        with urllib.request.urlopen(f"{base_url}/v1/agent/eval", timeout=5) as r:
+            eval_resp = json.loads(r.read().decode())
+            print(f"  - 评测响应状态: {eval_resp['status']}, 综合得分: {eval_resp['evaluation']['average_score']}")
+            assert eval_resp["status"] == "success"
+            assert eval_resp["evaluation"]["all_passed"] is True
 
         print(f"\n✅ 实操 5 验证成功：OpenAI 兼容本地多模态网关全路由联调通过！\n")
         return True

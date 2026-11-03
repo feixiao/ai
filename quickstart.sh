@@ -17,8 +17,9 @@ show_help() {
 
 选项:
   --demo       (默认) 运行全量 6 阶段音视频多模态实操练习流水线
-  --menu       打开交互式终端控制台菜单 (TUI 选项 0~10)
-  --test       运行全量 111 项标准单元测试套件 (unittest)
+  --menu       打开交互式终端控制台菜单 (TUI 选项 0~11)
+  --test       运行全量 131 项标准单元测试套件 (unittest)
+  --eval-agent 执行音视频多模态 Agent 能力全量基准评测
   --check      探测宿主机 Apple Silicon 芯片、UMA 内存及 Pixel 10 ADB 状态
   --report     打印多模态技术雷达与基准全景看板
   --server     在前台启动本地 OpenAI 兼容 HTTP 网关服务 (端口 8000)
@@ -35,6 +36,9 @@ case "${1:-}" in
         ;;
     --test|-t)
         exec "$PYTHON_BIN" "${SCRIPT_DIR}/tools/multimodal_tools/test_multimodal_suite.py"
+        ;;
+    --eval-agent|-e)
+        exec "$PYTHON_BIN" "${SCRIPT_DIR}/tools/multimodal_tools/eval_agent_capabilities.py"
         ;;
     --check|-c)
         exec bash "${SCRIPT_DIR}/examples/multimodal_practice/setup_environment.sh" --check

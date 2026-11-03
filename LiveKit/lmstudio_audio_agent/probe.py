@@ -1,6 +1,10 @@
 import os
-import requests
-
+import json
+try:
+    import requests
+except ImportError:
+    requests = None
+import urllib.request
 LMSTUDIO_HOST = os.getenv("LMSTUDIO_HOST", "100.126.144.68")
 LMSTUDIO_PORT = os.getenv("LMSTUDIO_PORT", "1234")
 BASE_URL = f"http://{LMSTUDIO_HOST}:{LMSTUDIO_PORT}"
@@ -13,28 +17,54 @@ def probe_models(timeout: float = 5.0):
     v1_url = f"{BASE_URL}/v1/models"
     
     try:
-        resp = requests.get(v0_url, timeout=timeout)
-        if resp.status_code == 200:
-            data = resp.json().get("data", [])
-            models = []
-            for item in data:
-                models.append({
-                    "id": item.get("id"),
-                    "type": item.get("type"),
-                    "state": item.get("state", "unknown"),
-                    "arch": item.get("arch"),
-                    "quantization": item.get("quantization"),
-                    "context_length": item.get("max_context_length"),
-                })
-            return models
+        if requests:
+            resp = requests.get(v0_url, timeout=timeout)
+            if resp.status_code == 200:
+                data = resp.json().get("data", [])
+                return [
+                    {
+                        "id": item.get("id"),
+                        "type": item.get("type"),
+                        "state": item.get("state", "unknown"),
+                        "arch": item.get("arch"),
+                        "quantization": item.get("quantization"),
+                        "context_length": item.get("max_context_length"),
+                    }
+                    for item in data
+                ]
+        else:
+            req = urllib.request.Request(v0_url, headers={"User-Agent": "LMStudioProbe/1.0"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                if resp.status == 200:
+                    raw = json.loads(resp.read().decode("utf-8"))
+                    return [
+                        {
+                            "id": item.get("id"),
+                            "type": item.get("type"),
+                            "state": item.get("state", "unknown"),
+                            "arch": item.get("arch"),
+                            "quantization": item.get("quantization"),
+                            "context_length": item.get("max_context_length"),
+                        }
+                        for item in raw.get("data", [])
+                    ]
     except Exception:
         pass
 
     # 回退到标准 v1/models
-    resp = requests.get(v1_url, timeout=timeout)
-    resp.raise_for_status()
-    data = resp.json().get("data", [])
-    return [{"id": item.get("id"), "state": "available"} for item in data]
+    try:
+        if requests:
+            resp = requests.get(v1_url, timeout=timeout)
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
+            return [{"id": item.get("id"), "state": "available"} for item in data]
+        else:
+            req = urllib.request.Request(v1_url, headers={"User-Agent": "LMStudioProbe/1.0"})
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                raw = json.loads(resp.read().decode("utf-8"))
+                return [{"id": item.get("id"), "state": "available"} for item in raw.get("data", [])]
+    except Exception:
+        return []
 
 def pick_best_chat_model(models):
     """
