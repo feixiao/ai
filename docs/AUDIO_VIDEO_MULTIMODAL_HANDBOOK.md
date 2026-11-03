@@ -582,6 +582,16 @@ flowchart LR
 ```bash
 # 执行多模态 Agent 五大能力全量基准测试
 python3 tools/multimodal_tools/eval_agent_capabilities.py
+
+# 输出结构化 JSON 格式评估报告 (供 CI/CD 流水线解析)
+python3 tools/multimodal_tools/eval_agent_capabilities.py --json
+
+# 针对单项核心能力进行定向压测 (可选: vlm, audio, schema, edge, recipes)
+python3 tools/multimodal_tools/eval_agent_capabilities.py --suite audio --json
+
+# 快捷 Makefile 或极速启动入口
+make eval-agent
+./quickstart.sh --eval-agent
 ```
 
 #### 核心评测执行架构代码实现范式：
