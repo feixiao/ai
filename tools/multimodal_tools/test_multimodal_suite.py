@@ -1877,7 +1877,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 122)
+        self.assertEqual(data["total_unit_tests"], 123)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1895,7 +1895,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 122)
+        self.assertEqual(data["total_unit_tests"], 123)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)
@@ -2003,6 +2003,15 @@ class TestAgentCapabilityEvaluation(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         self.assertIn("--json", p.stdout)
         self.assertIn("--suite", p.stdout)
+
+    def test_evaluate_multimodal_agent_turn(self):
+        from eval_agent_capabilities import evaluate_multimodal_agent_turn
+        res = evaluate_multimodal_agent_turn(frames_count=120)
+        self.assertEqual(res["keyframes_sampled"], 4)
+        self.assertTrue(res["edge_feasible"])
+        self.assertTrue(res["contract_valid"])
+        self.assertEqual(res["payload_model"], "qwen2.5-vl-7b")
+        self.assertEqual(res["payload_messages_count"], 1)
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

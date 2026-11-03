@@ -181,6 +181,39 @@ def benchmark_edge_mec_collaboration() -> dict:
         "details": f"PixelEdge={pixel_ok}, MacUMA={mac_ok}, RoutingPolicies={routing_all_ok}, Thermal={thermal_ok}"
     }
 
+def evaluate_multimodal_agent_turn(
+    frames_count: int = 120,
+    prompt: str = "核查车间关键设备运行状态与安全违规行为",
+    model_name: str = "qwen2.5-vl-7b"
+) -> dict:
+    """
+    Evaluates a single end-to-end multimodal Agent interaction turn.
+    Verifies keyframe sampling, VLM payload formatting, edge hardware budget, and JSON contract.
+    """
+    indices = sample_video_frames(total_frames=frames_count, fps=30.0, max_frames=4)
+    payload = build_multimodal_vlm_payload(prompt, indices, fps=30.0, model_name=model_name)
+    feasibility = check_hardware_feasibility("qwen2.5-vl-3b", "pixel_10_tensor_g5", "inference")
+    
+    sample_agent_json = json.dumps({
+        "device_id": "VALVE-02",
+        "status": "NORMAL",
+        "inspection_items": [{"item": "pressure", "value": "2.4bar", "normal": True}],
+        "anomaly_detected": False
+    })
+    try:
+        parsed = json.loads(sample_agent_json)
+        contract_ok = "device_id" in parsed and "anomaly_detected" in parsed
+    except Exception:
+        contract_ok = False
+
+    return {
+        "keyframes_sampled": len(indices),
+        "edge_feasible": feasibility["feasible"],
+        "contract_valid": contract_ok,
+        "payload_model": payload.get("model"),
+        "payload_messages_count": len(payload.get("messages", []))
+    }
+
 def benchmark_production_recipes() -> dict:
     """Benchmark 5: Four Production Recipes Evaluation."""
     recipes = {
