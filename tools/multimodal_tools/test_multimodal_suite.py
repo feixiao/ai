@@ -1938,7 +1938,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 129)
+        self.assertEqual(data["total_unit_tests"], 131)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1956,7 +1956,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 129)
+        self.assertEqual(data["total_unit_tests"], 131)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)
@@ -2134,6 +2134,19 @@ class TestAgentCapabilityEvaluation(unittest.TestCase):
         self.assertFalse(res_insuf["valid"])
 
         self.assertFalse(evaluate_vlm_temporal_grounding("not_a_list")["valid"])
+
+class TestHandbookEvaluationFunctions(unittest.TestCase):
+    def test_evaluate_agent_capabilities_function(self):
+        from eval_handbook import evaluate_agent_capabilities, DOC_PATH
+        content = DOC_PATH.read_text(encoding="utf-8")
+        self.assertEqual(evaluate_agent_capabilities(content), 100.0)
+        self.assertEqual(evaluate_agent_capabilities(""), 0.0)
+
+    def test_evaluate_decision_matrix_function(self):
+        from eval_handbook import evaluate_decision_matrix, DOC_PATH
+        content = DOC_PATH.read_text(encoding="utf-8")
+        self.assertEqual(evaluate_decision_matrix(content), 100.0)
+        self.assertEqual(evaluate_decision_matrix(""), 0.0)
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)
