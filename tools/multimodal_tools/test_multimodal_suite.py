@@ -1877,7 +1877,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 123)
+        self.assertEqual(data["total_unit_tests"], 124)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1895,7 +1895,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 123)
+        self.assertEqual(data["total_unit_tests"], 124)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)
@@ -2012,6 +2012,15 @@ class TestAgentCapabilityEvaluation(unittest.TestCase):
         self.assertTrue(res["contract_valid"])
         self.assertEqual(res["payload_model"], "qwen2.5-vl-7b")
         self.assertEqual(res["payload_messages_count"], 1)
+
+    def test_benchmark_production_recipes_hardware_feasibility(self):
+        from eval_agent_capabilities import benchmark_production_recipes
+        res = benchmark_production_recipes()
+        self.assertTrue(res["passed"])
+        self.assertEqual(len(res["recipes"]), 4)
+        for r_id, r_data in res["recipes"].items():
+            self.assertTrue(r_data["feasible"])
+            self.assertLessEqual(r_data["vram_required_gb"], r_data["vram_limit_gb"])
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)

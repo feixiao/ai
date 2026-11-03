@@ -216,41 +216,31 @@ def evaluate_multimodal_agent_turn(
 
 def benchmark_production_recipes() -> dict:
     """Benchmark 5: Four Production Recipes Evaluation."""
-    recipes = {
-        "recipe_1_safety_audit": {
-            "device": "Mac Studio",
-            "model": "qwen2.5-vl-7b",
-            "task": "PPE & worker compliance audit",
-            "expected_latency_ms": 120,
-            "simulated_pass": True
-        },
-        "recipe_2_handheld_patrol": {
-            "device": "Pixel 10",
-            "model": "qwen2.5-vl-3b-int4",
-            "task": "Offline handheld inspection patrol",
-            "expected_latency_ms": 85,
-            "simulated_pass": True
-        },
-        "recipe_3_meeting_assistant": {
-            "device": "Mac Studio",
-            "model": "whisper-large-v3-turbo + kokoro-tts",
-            "task": "Real-time meeting ASR & conversational agent",
-            "expected_latency_ms": 32,
-            "simulated_pass": True
-        },
-        "recipe_4_short_video_qa": {
-            "device": "Mac Studio",
-            "model": "qwen2.5-vl-72b",
-            "task": "Keyframe highlight tagging and QA",
-            "expected_latency_ms": 450,
-            "simulated_pass": True
+    recipe_configs = [
+        ("recipe_1_safety_audit", "qwen2.5-vl-7b", "mac_studio_m2_max_64g", "PPE & worker compliance audit", 120),
+        ("recipe_2_handheld_patrol", "qwen2.5-vl-3b", "pixel_10_tensor_g5", "Offline handheld inspection patrol", 85),
+        ("recipe_3_meeting_assistant", "whisper-large-v3-turbo", "mac_studio_m2_max_64g", "Real-time meeting ASR & conversational agent", 32),
+        ("recipe_4_short_video_qa", "qwen2.5-vl-72b", "mac_studio_m4_ultra_128g", "Keyframe highlight tagging and QA", 450),
+    ]
+    recipes = {}
+    for r_id, model_id, dev_id, task_desc, latency_ms in recipe_configs:
+        feasibility = check_hardware_feasibility(model_id, dev_id, "inference")
+        recipes[r_id] = {
+            "device": dev_id,
+            "model": model_id,
+            "task": task_desc,
+            "expected_latency_ms": latency_ms,
+            "vram_required_gb": feasibility["required_gb"],
+            "vram_limit_gb": feasibility["device_max_vram_gb"],
+            "feasible": feasibility["feasible"],
+            "recommendation": feasibility["recommendation"]
         }
-    }
-    all_passed = all(r["simulated_pass"] for r in recipes.values())
+    all_passed = all(r["feasible"] for r in recipes.values())
     return {
         "passed": all_passed,
         "score": 100.0 if all_passed else 0.0,
-        "details": f"All 4 production recipes validated: {list(recipes.keys())}"
+        "details": f"All 4 production recipes validated with hardware feasibility: {list(recipes.keys())}",
+        "recipes": recipes
     }
 
 def run_agent_capability_benchmark(suite_filter: str = "all") -> dict:
