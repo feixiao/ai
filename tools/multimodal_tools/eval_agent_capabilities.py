@@ -25,6 +25,43 @@ from multimodal_pipeline import (
 )
 from vram_and_budget import check_hardware_feasibility, estimate_inference_memory_gb
 
+def evaluate_vlm_temporal_grounding(timestamps: list, events: list = None, min_keyframes: int = 2) -> dict:
+    """
+    Evaluates VLM temporal perception and keyframe grounding alignment:
+    - Verifies minimum keyframe count (>= min_keyframes)
+    - Verifies strictly monotonic timestamps (no timestamp inversion / duplicate frames)
+    - Verifies event timestamp bounds [0, max_time]
+    """
+    errors = []
+    if not isinstance(timestamps, list):
+        return {"valid": False, "errors": ["timestamps must be a list"]}
+
+    if len(timestamps) < min_keyframes:
+        errors.append(f"Insufficient keyframes: {len(timestamps)} < {min_keyframes}")
+
+    # Monotonic check
+    monotonic = True
+    for i in range(1, len(timestamps)):
+        if timestamps[i] <= timestamps[i - 1]:
+            monotonic = False
+            errors.append(f"Timestamp inversion at index {i}: {timestamps[i]} <= {timestamps[i - 1]}")
+
+    max_t = max(timestamps) if timestamps else 0.0
+    if events:
+        for idx, ev in enumerate(events):
+            t = ev.get("timestamp_sec")
+            if t is None or not (0.0 <= t <= max_t + 1.0):
+                errors.append(f"Event {idx} timestamp {t} out of range [0, {max_t}]")
+
+    return {
+        "valid": len(errors) == 0,
+        "keyframes_count": len(timestamps),
+        "monotonic": monotonic,
+        "duration_sec": max_t,
+        "events_count": len(events or []),
+        "errors": errors
+    }
+
 def benchmark_vlm_perception() -> dict:
     """Benchmark 1: Multimodal Perception & Temporal Grounding."""
     frames_dir = ROOT_DIR / "examples" / "multimodal_practice" / "sample_data" / "frames"
@@ -54,16 +91,22 @@ def benchmark_vlm_perception() -> dict:
         "anomaly_flag": False,
         "confidence": 0.96
     }
+    grounding_eval = evaluate_vlm_temporal_grounding(
+        timestamps=simulated_resp["timestamp_seconds"],
+        events=[{"event": "worker_present", "timestamp_sec": 1.0}],
+        min_keyframes=2
+    )
     perception_ok = (
         len(frame_placeholders) == 4 and has_text and model_ok and 
-        len(simulated_resp["timestamp_seconds"]) == 4 and
+        grounding_eval["valid"] and
         simulated_resp["confidence"] >= 0.90
     )
     fixture_note = f" (Found {len(real_bmps)} real BMP fixtures)" if real_bmps else ""
     return {
         "passed": perception_ok,
         "score": 100.0 if perception_ok else 0.0,
-        "details": f"Processed {len(frame_placeholders)} keyframes with temporal grounding: {perception_ok}{fixture_note}"
+        "details": f"Processed {len(frame_placeholders)} keyframes with temporal grounding: {perception_ok}{fixture_note}",
+        "grounding_evaluation": grounding_eval
     }
 
 def evaluate_audio_duplex_latency(barge_in_ms: float, tts_ttft_ms: float, e2e_latency_ms: float) -> dict:

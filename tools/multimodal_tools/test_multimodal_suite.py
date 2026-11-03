@@ -1938,7 +1938,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         from benchmark_summary import generate_json_summary
         data = generate_json_summary()
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 128)
+        self.assertEqual(data["total_unit_tests"], 129)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["practice_labs_count"], 5)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
@@ -1956,7 +1956,7 @@ class TestBenchmarkSummary(unittest.TestCase):
         self.assertEqual(p.returncode, 0)
         data = json.loads(p.stdout)
         self.assertEqual(data["overall_score"], 100.0)
-        self.assertEqual(data["total_unit_tests"], 128)
+        self.assertEqual(data["total_unit_tests"], 129)
         self.assertEqual(data["metrics"]["agent_eval_framework"], 100.0)
         self.assertEqual(data["architecture"], "mac_studio_mec_and_pixel10_sensor")
         self.assertIn("agent_capability_radar", data)
@@ -2118,6 +2118,22 @@ class TestAgentCapabilityEvaluation(unittest.TestCase):
         res_fail = evaluate_audio_duplex_latency(barge_in_ms=500, tts_ttft_ms=700, e2e_latency_ms=1500)
         self.assertFalse(res_fail["passed"])
         self.assertEqual(res_fail["grade"], "FAIL")
+
+    def test_evaluate_vlm_temporal_grounding(self):
+        from eval_agent_capabilities import evaluate_vlm_temporal_grounding
+        res_valid = evaluate_vlm_temporal_grounding([0.0, 2.0, 4.0, 6.0], [{"event": "a", "timestamp_sec": 2.0}])
+        self.assertTrue(res_valid["valid"])
+        self.assertTrue(res_valid["monotonic"])
+        self.assertEqual(res_valid["keyframes_count"], 4)
+
+        res_inv = evaluate_vlm_temporal_grounding([0.0, 4.0, 2.0])
+        self.assertFalse(res_inv["valid"])
+        self.assertFalse(res_inv["monotonic"])
+
+        res_insuf = evaluate_vlm_temporal_grounding([1.0], min_keyframes=2)
+        self.assertFalse(res_insuf["valid"])
+
+        self.assertFalse(evaluate_vlm_temporal_grounding("not_a_list")["valid"])
 def run_suite():
     suite = unittest.defaultTestLoader.loadTestsFromModule(sys.modules[__name__])
     runner = unittest.TextTestRunner(verbosity=2)
