@@ -23,6 +23,7 @@ This repository is a hands-on AI engineering knowledge base and practice playgro
 - `PiAgent/`: Configuration patterns, deployment scripts (`install.sh`), Google Gemini Pro integration, and reverse proxy/gateway setups for Pi Agent (`pi` / `pi-coding-agent`).
 - `omp/`: Configuration patterns, deployment scripts (`install.sh`), multi-model roles, and local gateway integration for omp (oh-my-pi) Coding Agent CLI.
 - `TensorFlowLite/`, `PyTorch/`, `spleeter/`: Deep learning experiments and audio source separation scripts.
+- `docs/`: Architecture guides and reference documentation, including OpenMotion full-stack video creation and AI talking-head pipeline (`openmotion-quickstart.md`).
 
 ## Environment & Common Commands
 
